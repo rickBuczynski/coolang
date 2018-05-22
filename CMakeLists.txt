@@ -1,0 +1,18 @@
+cmake_minimum_required (VERSION 3.9)
+
+project(coolang)
+
+set (CMAKE_CXX_STANDARD 11)
+
+if(MSVC)
+  # see https://github.com/google/googletest/blob/master/googletest/README.md and https://stackoverflow.com/questions/12540970/how-to-make-gtest-build-mdd-instead-of-mtd-by-default-using-cmake
+  # TODO MSVC uses shared crt by default but I should find a way to check and only force shared if using it
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+endif()
+
+add_subdirectory(3rd_party/googletest)
+add_subdirectory(compiler)
+
+add_executable(${PROJECT_NAME} main.cpp)
+
+target_link_libraries(${PROJECT_NAME} compiler)
