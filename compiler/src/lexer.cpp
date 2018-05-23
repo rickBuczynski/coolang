@@ -1,4 +1,11 @@
+#include <algorithm>
 #include "coolang/compiler/lexer.h"
+#include "coolang/compiler/token.h"
+
+std::string lower_case(std::string word) {
+  std::transform(word.begin(), word.end(), word.begin(), tolower);
+  return word;
+}
 
 Lexer::Lexer(std::string input_file_name) {
   infile = fopen(input_file_name.c_str(), "r");
@@ -6,29 +13,22 @@ Lexer::Lexer(std::string input_file_name) {
 
 Lexer::~Lexer() { fclose(infile); }
 
-int Lexer::GetNextToken() { return CurTok = gettok(); }
+Token Lexer::GetNextToken() { return CurTok = gettok(); }
 
 /// gettok - Return the next token from standard input.
-int Lexer::gettok() {
+Token Lexer::gettok() {
   // Skip any whitespace.
   while (isspace(LastChar)) LastChar = get_next_char_in_file();
+
+  std::locale loc;
 
   if (isalpha(LastChar)) {  // identifier: [a-zA-Z][a-zA-Z0-9]*
     IdentifierStr = LastChar;
     while (isalnum((LastChar = get_next_char_in_file())))
       IdentifierStr += LastChar;
 
-    if (IdentifierStr == "def") return tok_def;
-    if (IdentifierStr == "extern") return tok_extern;
-    if (IdentifierStr == "if") return tok_if;
-    if (IdentifierStr == "then") return tok_then;
-    if (IdentifierStr == "else") return tok_else;
-    if (IdentifierStr == "for") return tok_for;
-    if (IdentifierStr == "in") return tok_in;
-    if (IdentifierStr == "binary") return tok_binary;
-    if (IdentifierStr == "unary") return tok_unary;
-    if (IdentifierStr == "var") return tok_var;
-    return tok_identifier;
+    if (lower_case(IdentifierStr) == "else") return Token(TokenType::ELSE);
+    return Token(TokenType::ERROR);
   }
 
   if (isdigit(LastChar) || LastChar == '.') {  // Number: [0-9.]+
@@ -39,7 +39,7 @@ int Lexer::gettok() {
     } while (isdigit(LastChar) || LastChar == '.');
 
     NumVal = strtod(NumStr.c_str(), nullptr);
-    return tok_number;
+    return Token(TokenType::INT_CONST, (int)NumVal);
   }
 
   if (LastChar == '#') {
@@ -52,12 +52,9 @@ int Lexer::gettok() {
   }
 
   // Check for end of file.  Don't eat the EOF.
-  if (LastChar == EOF) return tok_eof;
+  if (LastChar == EOF) return Token(TokenType::END_OF_FILE);
 
-  // Otherwise, just return the character as its ascii value.
-  int ThisChar = LastChar;
-  LastChar = get_next_char_in_file();
-  return ThisChar;
+  return Token(TokenType::ERROR);
 }
 
 int Lexer::get_next_char_in_file() { return getc(infile); }
