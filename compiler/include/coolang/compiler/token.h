@@ -71,10 +71,20 @@ class Token {
   TokenType token_type() { return token_type_; };
 
   std::string ToString() {
-    return std::to_string(line_num_) + ": " + TokenTypeToString(token_type_);
+    return std::to_string(line_num_) + ": " + TokenTypeToString(token_type_) +
+           " " + ValAsString();
   };
 
  private:
+  std::string ValAsString() {
+    if (std::holds_alternative<std::string>(val_))
+      return std::get<std::string>(val_);
+    else if (std::holds_alternative<int>(val_))
+      return std::to_string(std::get<int>(val_));
+    else if (std::holds_alternative<bool>(val_))
+      return std::get<bool>(val_) == true ? "true" : "false";
+  }
+
   TokenType token_type_;
   int line_num_;
   std::variant<std::string, int, bool> val_;
