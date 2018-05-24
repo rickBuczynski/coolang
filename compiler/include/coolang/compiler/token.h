@@ -86,9 +86,7 @@ class Token {
             return arg == true ? "true" : "false";
           } else if constexpr (std::is_same_v<T, std::string>) {
             return arg;
-          } else {
-            static_assert(std::false_type::value, "non-exhaustive visitor!");
-          }
+          } 
         },
         val_);
   }
