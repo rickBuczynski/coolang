@@ -54,20 +54,30 @@ std::string TokenTypeToString(TokenType token_type);
 
 class Token {
  public:
-  Token(TokenType _token_type) : token_type(_token_type){};
+  Token(TokenType token_type, int line_num)
+      : token_type_(token_type), line_num_(line_num){};
 
-  Token(TokenType _token_type, int int_val)
-      : token_type(_token_type), val(int_val){};
+  Token(TokenType _token_type, int line_num, int int_val)
+      : token_type_(_token_type), line_num_(line_num), val_(int_val){};
+
+  Token(TokenType _token_type, int line_num, bool bool_val)
+      : token_type_(_token_type), line_num_(line_num), val_(bool_val){};
+
+  Token(TokenType _token_type, int line_num, std::string string_val)
+      : token_type_(_token_type), line_num_(line_num), val_(string_val){};
 
   Token(){};
 
-  TokenType token_type;
-  int line_num;
-  std::variant<std::string, int, bool> val;
+  TokenType token_type() { return token_type_; };
 
   std::string ToString() {
-    return std::to_string(line_num) + ": " + TokenTypeToString(token_type);
+    return std::to_string(line_num_) + ": " + TokenTypeToString(token_type_);
   };
+
+ private:
+  TokenType token_type_;
+  int line_num_;
+  std::variant<std::string, int, bool> val_;
 };
 
 #endif  // COOLANG_COMPILER_TOKEN_H_

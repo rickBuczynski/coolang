@@ -19,7 +19,7 @@ std::string get_lexer_output(std::string input_file_name) {
 
   std::string lexer_output = "#name \"" + input_file_name + "\"" + '\n';
 
-  while ((tok = lexer.GetNextToken()).token_type != TokenType::END_OF_FILE) {
+  while ((tok = lexer.GetNextToken()).token_type() != TokenType::END_OF_FILE) {
     lexer_output += tok.ToString();
     lexer_output += '\n';
   }

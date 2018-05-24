@@ -3,12 +3,12 @@
 
 #include <string>
 #include <variant>
+#include <fstream>
 #include "coolang/compiler/token.h"
 
 class Lexer {
  public:
   Lexer(std::string input_file_name);
-  ~Lexer();
 
   Token GetNextToken();
 
@@ -20,7 +20,10 @@ class Lexer {
   int get_next_char_in_file();
   Token gettok();
 
-  FILE* infile;
+  std::ifstream infile;
+  std::string cur_line;
+  int cur_line_num = 1;
+  int cur_char_of_line = 0;
 
   /// CurTok/getNextToken - Provide a simple token buffer.  CurTok is the
   /// current token the parser is looking at.  getNextToken reads another token

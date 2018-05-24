@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <fstream>
 #include "coolang/compiler/lexer.h"
 #include "coolang/compiler/token.h"
 
@@ -7,11 +8,10 @@ std::string lower_case(std::string word) {
   return word;
 }
 
-Lexer::Lexer(std::string input_file_name) {
-  infile = fopen(input_file_name.c_str(), "r");
+Lexer::Lexer(std::string input_file_name) : infile(input_file_name) {
+  std::getline(infile, cur_line);
+  cur_line += '\n';
 }
-
-Lexer::~Lexer() { fclose(infile); }
 
 Token Lexer::GetNextToken() { return CurTok = gettok(); }
 
@@ -27,8 +27,10 @@ Token Lexer::gettok() {
     while (isalnum((LastChar = get_next_char_in_file())))
       IdentifierStr += LastChar;
 
-    if (lower_case(IdentifierStr) == "else") return Token(TokenType::ELSE);
-    return Token(TokenType::ERROR);
+    if (lower_case(IdentifierStr) == "else") {
+      return Token(TokenType::ELSE, cur_line_num);
+    }
+    return Token(TokenType::ERROR, cur_line_num);
   }
 
   if (isdigit(LastChar) || LastChar == '.') {  // Number: [0-9.]+
@@ -52,9 +54,25 @@ Token Lexer::gettok() {
   }
 
   // Check for end of file.  Don't eat the EOF.
-  if (LastChar == EOF) return Token(TokenType::END_OF_FILE);
+  if (LastChar == EOF) return Token(TokenType::END_OF_FILE, cur_line_num);
 
-  return Token(TokenType::ERROR);
+  return Token(TokenType::ERROR, cur_line_num);
 }
 
-int Lexer::get_next_char_in_file() { return getc(infile); }
+int Lexer::get_next_char_in_file() {
+  if (cur_char_of_line >= cur_line.length()) {
+    std::getline(infile, cur_line);
+    cur_line += '\n';
+    cur_line_num++;
+    cur_char_of_line = 0;
+  }
+
+  if (infile.eof()) {
+    return EOF;
+  }
+
+  char next = cur_line[cur_char_of_line];
+  cur_char_of_line++;
+
+  return next;
+}
