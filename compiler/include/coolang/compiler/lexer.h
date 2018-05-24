@@ -13,7 +13,6 @@ class Lexer {
   Token GetNextToken();
 
   Token GetCurTok() { return CurTok; };
-  std::string GetIdentifierStr() { return IdentifierStr; };
   double GetNumVal() { return NumVal; };
 
  private:
@@ -32,7 +31,6 @@ class Lexer {
 
   int LastChar = ' ';
 
-  std::string IdentifierStr;  // Filled in if tok_identifier
   double NumVal;              // Filled in if tok_number
 };
 
