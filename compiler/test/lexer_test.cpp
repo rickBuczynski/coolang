@@ -29,9 +29,12 @@ std::string get_lexer_output(std::string input_file_name) {
 TEST(LexerTest, AllElseTrue) {
   std::string lexer_output = get_lexer_output("all_else_true.cl.cool");
   std::cout << lexer_output;
-  std::cout << get_expected_output(LEXER_TEST_DATA_PATH
-                                   "/all_else_true.cl.cool.out");
-  EXPECT_EQ(1 + 1, 2);
+
+  std::string expected_output = get_expected_output(LEXER_TEST_DATA_PATH
+                                  "/all_else_true.cl.cool.out");
+  std::cout << expected_output;
+
+  EXPECT_EQ(lexer_output, expected_output);
 }
 
 }  // namespace

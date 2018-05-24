@@ -71,8 +71,16 @@ class Token {
   TokenType token_type() { return token_type_; };
 
   std::string ToString() {
-    return std::to_string(line_num_) + ": " + TokenTypeToString(token_type_) +
-           " " + ValAsString();
+    std::string token_as_string =
+        "#" + std::to_string(line_num_) + " " + TokenTypeToString(token_type_);
+
+    std::string val_as_string = ValAsString();
+
+    if (val_as_string.length() > 0) {
+      token_as_string += " " + val_as_string;
+    } 
+
+    return token_as_string;
   };
 
  private:
