@@ -22,7 +22,7 @@ class Lexer {
 
   std::ifstream infile;
   std::string cur_line;
-  int cur_line_num = 1;
+  int cur_line_num = 0;
   int cur_char_of_line = 0;
 
   /// CurTok/getNextToken - Provide a simple token buffer.  CurTok is the

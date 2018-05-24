@@ -8,10 +8,7 @@ std::string lower_case(std::string word) {
   return word;
 }
 
-Lexer::Lexer(std::string input_file_name) : infile(input_file_name) {
-  std::getline(infile, cur_line);
-  cur_line += '\n';
-}
+Lexer::Lexer(std::string input_file_name) : infile(input_file_name) {}
 
 Token Lexer::GetNextToken() { return CurTok = gettok(); }
 
