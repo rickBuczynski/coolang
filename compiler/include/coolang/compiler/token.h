@@ -77,12 +77,20 @@ class Token {
 
  private:
   std::string ValAsString() {
-    if (std::holds_alternative<std::string>(val_))
-      return std::get<std::string>(val_);
-    else if (std::holds_alternative<int>(val_))
-      return std::to_string(std::get<int>(val_));
-    else if (std::holds_alternative<bool>(val_))
-      return std::get<bool>(val_) == true ? "true" : "false";
+    return std::visit(
+        [](auto&& arg) -> std::string {
+          using T = std::decay_t<decltype(arg)>;
+          if constexpr (std::is_same_v<T, int>) {
+            return std::to_string(arg);
+          } else if constexpr (std::is_same_v<T, bool>) {
+            return arg == true ? "true" : "false";
+          } else if constexpr (std::is_same_v<T, std::string>) {
+            return arg;
+          } else {
+            static_assert(std::false_type::value, "non-exhaustive visitor!");
+          }
+        },
+        val_);
   }
 
   TokenType token_type_;
