@@ -68,8 +68,5 @@ int Lexer::get_next_char_in_file() {
     return EOF;
   }
 
-  char next = cur_line[cur_char_of_line];
-  cur_char_of_line++;
-
-  return next;
+  return cur_line[cur_char_of_line++];
 }
