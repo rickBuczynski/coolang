@@ -23,10 +23,13 @@ Token Lexer::gettok() {
 
   if (isalpha(char_stream_.Peek())) {  // identifier: [a-zA-Z][a-zA-Z0-9]*
     std::string identifier;
-    identifier += char_stream_.Peek();
 
-    while (isalnum((char_stream_.Pop()))) {
+    identifier += char_stream_.Peek();
+    char_stream_.Pop();
+
+    while (isalnum((char_stream_.Peek()))) {
       identifier += char_stream_.Peek();
+      char_stream_.Pop();
     }
 
     // keywords
@@ -50,27 +53,10 @@ Token Lexer::gettok() {
     }
   }
 
-  if (char_stream_.Peek() == '(') {
-    if (char_stream_.Pop() == '*') {
-      AdvanceToEndOfComment();
-      return gettok();
-    }
-  }
-
-  if (char_stream_.Peek() == '-') {
-    if (char_stream_.Pop() == '-') {
-      // comment until new line
-      while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n' &&
-             char_stream_.Peek() != '\r') {
-        char_stream_.Pop();
-      }
-      if (char_stream_.Peek() != EOF) return gettok();
-    }
-  }
-
   if (TokenTypeForSingleCharSymbol(char_stream_.Peek()).has_value()) {
     char cur_char = char_stream_.Peek();
-    char next_char = char_stream_.Pop();
+    char_stream_.Pop();
+    char next_char = char_stream_.Peek();
 
     if (cur_char == '(' && next_char == '*') {
       AdvanceToEndOfComment();
@@ -79,6 +65,12 @@ Token Lexer::gettok() {
       // end comment token *) outside of comment, this is an error
       char_stream_.Pop();
       return Token(TokenType::ERROR, char_stream_.CurLineNum());
+    } else if (cur_char == '-' && next_char == '-') {
+      while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n' &&
+             char_stream_.Peek() != '\r') {
+        char_stream_.Pop();
+      }
+      if (char_stream_.Peek() != EOF) return gettok();
     }
 
     return Token(TokenTypeForSingleCharSymbol(cur_char).value(),
@@ -141,7 +133,8 @@ void Lexer::AdvanceToEndOfComment() {
   int chars_in_comment = 0;
   while (open_comments > 0) {
     char prev_char = char_stream_.Peek();
-    char cur_char = char_stream_.Pop();
+    char_stream_.Pop();
+    char cur_char = char_stream_.Peek();
 
     if (prev_char == '(' && cur_char == '*') {
       open_comments++;

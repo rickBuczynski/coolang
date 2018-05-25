@@ -8,7 +8,7 @@ class CharStream {
  public:
   CharStream(std::string input_file_name);
 
-  char Pop();
+  void Pop();
   char Peek() { return cur_char; };
 
   int CurLineNum() { return cur_line_num; };
@@ -16,7 +16,7 @@ class CharStream {
  private:
   std::ifstream infile;
   std::string cur_line;
-  int cur_line_num = 0;
+  int cur_line_num = 1;
   int index_in_line = 0;
 
   char cur_char = ' ';
