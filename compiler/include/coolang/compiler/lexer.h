@@ -15,7 +15,6 @@ class Lexer {
   Token GetNextToken();
 
   Token GetCurTok() { return CurTok; };
-  double GetNumVal() { return NumVal; };
 
  private:
   Token gettok();
@@ -26,8 +25,6 @@ class Lexer {
   /// current token the parser is looking at.  getNextToken reads another token
   /// from the lexer and updates CurTok with its results.
   Token CurTok;
-
-  double NumVal;  // Filled in if tok_number
 
   CharStream char_stream_;
 };

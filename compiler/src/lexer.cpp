@@ -128,8 +128,8 @@ void Lexer::AdvanceToEndOfComment() {
   // prevents pattern (*) from closing comment it need to be (**)
   int chars_in_comment = 0;
   while (open_comments > 0) {
-    int prev_char = char_stream_.Peek();
-    int cur_char = char_stream_.Pop();
+    char prev_char = char_stream_.Peek();
+    char cur_char = char_stream_.Pop();
 
     if (prev_char == '(' && cur_char == '*') {
       open_comments++;
