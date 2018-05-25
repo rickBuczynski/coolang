@@ -6,14 +6,14 @@
 
 namespace {
 
-std::string get_expected_output(std::string expected_output_file) {
+std::string GetExpectedOutput(std::string expected_output_file) {
   std::ifstream t(expected_output_file);
   std::stringstream buffer;
   buffer << t.rdbuf();
   return buffer.str();
 }
 
-std::string get_lexer_output(std::string input_file_name) {
+std::string GetLexerOutput(std::string input_file_name) {
   Lexer lexer(LEXER_TEST_DATA_PATH + input_file_name);
   Token tok;
 
@@ -26,15 +26,13 @@ std::string get_lexer_output(std::string input_file_name) {
   return lexer_output;
 }
 
-TEST(LexerTest, AllElseTrue) {
-  std::string lexer_output = get_lexer_output("all_else_true.cl.cool");
-  std::cout << lexer_output;
-
-  std::string expected_output = get_expected_output(LEXER_TEST_DATA_PATH
-                                  "/all_else_true.cl.cool.out");
-  std::cout << expected_output;
-
+void TestLexer(std::string lexer_input_file) {
+  std::string lexer_output = GetLexerOutput(lexer_input_file);
+  std::string expected_output =
+      GetExpectedOutput(LEXER_TEST_DATA_PATH + lexer_input_file + ".out");
   EXPECT_EQ(lexer_output, expected_output);
 }
+
+TEST(LexerTest, AllElseTrue) { TestLexer("all_else_true.cl.cool"); }
 
 }  // namespace
