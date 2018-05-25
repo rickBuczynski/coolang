@@ -49,6 +49,13 @@ Token Lexer::gettok() {
     }
   }
 
+  if (char_stream_.Peek() == '(') {
+    if (char_stream_.Pop() == '*') {
+      AdvanceToEndOfComment();
+      return gettok();
+    }
+  }
+
   // Check for end of file.  Don't eat the EOF.
   if (char_stream_.Peek() == EOF) {
     return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
@@ -56,4 +63,23 @@ Token Lexer::gettok() {
 
   // TODO decide if this should stop the lexer or keep going
   return Token(TokenType::ERROR, char_stream_.CurLineNum());
+}
+
+void Lexer::AdvanceToEndOfComment() {
+  int open_comments = 1;
+  // prevents pattern (*) from closing comment it need to be (**)
+  int chars_in_comment = 0;
+  while (open_comments > 0) {
+    int prev_char = char_stream_.Peek();
+    int cur_char = char_stream_.Pop();
+
+    if (prev_char == '(' && cur_char == '*') {
+      open_comments++;
+    } else if (prev_char == '*' && cur_char == ')' & chars_in_comment > 0) {
+      open_comments--;
+    }
+    chars_in_comment++;
+  }
+
+  char_stream_.Pop();
 }

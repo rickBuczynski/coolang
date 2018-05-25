@@ -23,6 +23,8 @@ std::string GetLexerOutput(std::string input_file_name) {
     lexer_output += tok.ToString();
     lexer_output += '\n';
 
+	std::cout << tok.ToString() << std::endl;
+
 	if (tok.token_type() == TokenType::ERROR) {
       break;
     }
@@ -37,7 +39,7 @@ void TestLexer(std::string lexer_input_file) {
   EXPECT_EQ(lexer_output, expected_output);
 }
 
-TEST(LexerTest, AllElseTrue) { TestLexer("all_else_true.cl.cool"); }
-//TEST(LexerTest, Arith) { TestLexer("arith.cool"); }
+//TEST(LexerTest, AllElseTrue) { TestLexer("all_else_true.cl.cool"); }
+TEST(LexerTest, Arith) { TestLexer("arith.cool"); }
 
 }  // namespace

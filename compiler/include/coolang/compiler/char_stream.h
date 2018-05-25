@@ -19,6 +19,7 @@ class CharStream {
   int cur_line_num = 0;
   int cur_char_of_line = 0;
 
+  // TODO why did llvm tutorial use int instead of char?
   int cur_char = ' ';
 };
 

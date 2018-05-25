@@ -18,6 +18,7 @@ class Lexer {
 
  private:
   Token gettok();
+  void AdvanceToEndOfComment();
 
   /// CurTok/getNextToken - Provide a simple token buffer.  CurTok is the
   /// current token the parser is looking at.  getNextToken reads another token
