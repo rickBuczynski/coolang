@@ -11,8 +11,8 @@ CharStream::CharStream(std::string input_file_name) : infile(input_file_name) {
   Pop();
 }
 
-int CharStream::Pop() {
-  if (cur_char_of_line >= cur_line.length()) {
+char CharStream::Pop() {
+  if (index_in_line >= cur_line.length()) {
     if (infile.eof()) {
       return cur_char = EOF;
 	}
@@ -20,9 +20,9 @@ int CharStream::Pop() {
 
     cur_line += '\n';
     cur_line_num++;
-    cur_char_of_line = 0;
+    index_in_line = 0;
   }
 
   // TODO test with empty file
-  return cur_char = cur_line[cur_char_of_line++];
+  return cur_char = cur_line[index_in_line++];
 }

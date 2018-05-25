@@ -39,7 +39,7 @@ void TestLexer(std::string lexer_input_file) {
   EXPECT_EQ(lexer_output, expected_output);
 }
 
-//TEST(LexerTest, allelsetrue) { TestLexer("all_else_true.cl.cool"); }
+TEST(LexerTest, allelsetrue) { TestLexer("all_else_true.cl.cool"); }
 //TEST(LexerTest, arith) { TestLexer("arith.cool"); }
 TEST(LexerTest, longcomment) { TestLexer("longcomment.cool"); }
 
