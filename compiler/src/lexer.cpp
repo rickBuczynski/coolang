@@ -56,6 +56,17 @@ Token Lexer::gettok() {
     }
   }
 
+  if (char_stream_.Peek() == '-') {
+    if (char_stream_.Pop() == '-') {
+      // comment until new line
+      while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n' &&
+             char_stream_.Peek() != '\r') {
+        char_stream_.Pop();
+      }
+      if (char_stream_.Peek() != EOF) return gettok();
+    }
+  }
+
   // Check for end of file.  Don't eat the EOF.
   if (char_stream_.Peek() == EOF) {
     return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
