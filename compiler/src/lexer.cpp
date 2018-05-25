@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include "coolang/compiler/lexer.h"
 #include "coolang/compiler/token.h"
 
@@ -67,6 +68,13 @@ Token Lexer::gettok() {
     }
   }
 
+  if (TokenTypeForSingleCharSymbol(char_stream_.Peek()).has_value()) {
+    char c = char_stream_.Peek();
+    char_stream_.Pop();
+    return Token(TokenTypeForSingleCharSymbol(c).value(),
+                 char_stream_.CurLineNum());
+  }
+
   // Check for end of file.  Don't eat the EOF.
   if (char_stream_.Peek() == EOF) {
     return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
@@ -74,6 +82,45 @@ Token Lexer::gettok() {
 
   // TODO decide if this should stop the lexer or keep going
   return Token(TokenType::ERROR, char_stream_.CurLineNum());
+}
+
+std::optional<TokenType> Lexer::TokenTypeForSingleCharSymbol(char c) {
+  switch (c) {
+    case '+':
+      return TokenType::PLUS;
+    case '/':
+      return TokenType::DIV;
+    case '-':
+      return TokenType::MINUS;
+    case '*':
+      return TokenType::MULT;
+    case '=':
+      return TokenType::EQ;
+    case '<':
+      return TokenType::LT;
+    case '.':
+      return TokenType::DOT;
+    case '~':
+      return TokenType::NEG;
+    case ',':
+      return TokenType::COMMA;
+    case ';':
+      return TokenType::SEMI;
+    case ':':
+      return TokenType::COLON;
+    case '(':
+      return TokenType::LPAREN;
+    case ')':
+      return TokenType::RPAREN;
+    case '@':
+      return TokenType::AT;
+    case '{':
+      return TokenType::LBRACE;
+    case '}':
+      return TokenType::RBRACE;
+    default:
+      return std::nullopt;
+  }
 }
 
 void Lexer::AdvanceToEndOfComment() {

@@ -1,11 +1,12 @@
 #ifndef COOLANG_COMPILER_LEXER_H_
 #define COOLANG_COMPILER_LEXER_H_
 
+#include <fstream>
+#include <optional>
 #include <string>
 #include <variant>
-#include <fstream>
-#include "coolang/compiler/token.h"
 #include "coolang/compiler/char_stream.h"
+#include "coolang/compiler/token.h"
 
 class Lexer {
  public:
@@ -19,13 +20,14 @@ class Lexer {
  private:
   Token gettok();
   void AdvanceToEndOfComment();
+  std::optional<TokenType> TokenTypeForSingleCharSymbol(char c);
 
   /// CurTok/getNextToken - Provide a simple token buffer.  CurTok is the
   /// current token the parser is looking at.  getNextToken reads another token
   /// from the lexer and updates CurTok with its results.
   Token CurTok;
 
-  double NumVal;              // Filled in if tok_number
+  double NumVal;  // Filled in if tok_number
 
   CharStream char_stream_;
 };
