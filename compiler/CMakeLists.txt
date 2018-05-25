@@ -3,11 +3,13 @@ project(compiler)
 set(SOURCES
   src/lexer.cpp
   src/token.cpp
+  src/char_stream.cpp
 )
 
 set(HEADERS
   include/coolang/compiler/lexer.h
   include/coolang/compiler/token.h
+  include/coolang/compiler/char_stream.h
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})

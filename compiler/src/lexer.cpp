@@ -9,84 +9,51 @@ std::string lower_case(std::string word) {
   return word;
 }
 
-Lexer::Lexer(std::string input_file_name) : infile(input_file_name) {
-  if (infile.fail()) {
-    std::cerr << "Failed to open file: " << input_file_name << std::endl;
-    std::exit(1);
-  }
-}
+Lexer::Lexer(std::string input_file_name) : char_stream_(input_file_name) {}
 
 Token Lexer::GetNextToken() { return CurTok = gettok(); }
 
 /// gettok - Return the next token from standard input.
 Token Lexer::gettok() {
   // Skip any whitespace.
-  while (isspace(LastChar)) LastChar = get_next_char_in_file();
+  while (isspace(char_stream_.Peek())) {
+    char_stream_.Pop();
+  }
 
-  if (isalpha(LastChar)) {  // identifier: [a-zA-Z][a-zA-Z0-9]*
+  if (isalpha(char_stream_.Peek())) {  // identifier: [a-zA-Z][a-zA-Z0-9]*
     std::string identifier;
-    identifier += LastChar;
+    identifier += char_stream_.Peek();
 
-    while (isalnum((LastChar = get_next_char_in_file()))) {
-      identifier += LastChar;
+    while (isalnum((char_stream_.Pop()))) {
+      identifier += char_stream_.Peek();
     }
 
     // keywords
     if (lower_case(identifier) == "class") {
-      return Token(TokenType::CLASS, cur_line_num);
+      return Token(TokenType::CLASS, char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "else") {
-      return Token(TokenType::ELSE, cur_line_num);
+      return Token(TokenType::ELSE, char_stream_.CurLineNum());
     }
 
     // bool consts are like keywords but must start with lower case
     if (lower_case(identifier) == "true" && identifier[0] == 't') {
-      return Token(TokenType::BOOL_CONST, cur_line_num, true);
+      return Token(TokenType::BOOL_CONST, char_stream_.CurLineNum(), true);
     } else if (lower_case(identifier) == "false" && identifier[0] == 'f') {
-      return Token(TokenType::BOOL_CONST, cur_line_num, false);
+      return Token(TokenType::BOOL_CONST, char_stream_.CurLineNum(), false);
     }
 
     if (isupper(identifier[0])) {
-      return Token(TokenType::TYPEID, cur_line_num, identifier);
+      return Token(TokenType::TYPEID, char_stream_.CurLineNum(), identifier);
     } else {
-      return Token(TokenType::OBJECTID, cur_line_num, identifier);
+      return Token(TokenType::OBJECTID, char_stream_.CurLineNum(), identifier);
     }
   }
 
-  if (isdigit(LastChar) || LastChar == '.') {  // Number: [0-9.]+
-    std::string NumStr;
-    do {
-      NumStr += LastChar;
-      LastChar = get_next_char_in_file();
-    } while (isdigit(LastChar) || LastChar == '.');
-
-    NumVal = strtod(NumStr.c_str(), nullptr);
-    return Token(TokenType::INT_CONST, (int)NumVal);
-  }
-
-  if (LastChar == '#') {
-    // Comment until end of line.
-    do
-      LastChar = get_next_char_in_file();
-    while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
-
-    if (LastChar != EOF) return gettok();
-  }
-
   // Check for end of file.  Don't eat the EOF.
-  if (LastChar == EOF) return Token(TokenType::END_OF_FILE, cur_line_num);
-
-  return Token(TokenType::ERROR, cur_line_num);
-}
-
-int Lexer::get_next_char_in_file() {
-  if (cur_char_of_line >= cur_line.length()) {
-    if (infile.eof()) return EOF;
-    std::getline(infile, cur_line);
-
-    cur_line += '\n';
-    cur_line_num++;
-    cur_char_of_line = 0;
+  if (char_stream_.Peek() == EOF) {
+    return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
   }
 
-  return cur_line[cur_char_of_line++];
+  // TODO decide if this should stop the lexer or keep going
+  return Token(TokenType::ERROR, char_stream_.CurLineNum());
 }

@@ -22,6 +22,10 @@ std::string GetLexerOutput(std::string input_file_name) {
   while ((tok = lexer.GetNextToken()).token_type() != TokenType::END_OF_FILE) {
     lexer_output += tok.ToString();
     lexer_output += '\n';
+
+	if (tok.token_type() == TokenType::ERROR) {
+      break;
+    }
   }
   return lexer_output;
 }
@@ -34,5 +38,6 @@ void TestLexer(std::string lexer_input_file) {
 }
 
 TEST(LexerTest, AllElseTrue) { TestLexer("all_else_true.cl.cool"); }
+//TEST(LexerTest, Arith) { TestLexer("arith.cool"); }
 
 }  // namespace
