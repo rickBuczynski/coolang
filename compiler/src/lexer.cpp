@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 #include "coolang/compiler/lexer.h"
 #include "coolang/compiler/token.h"
 
@@ -8,7 +9,12 @@ std::string lower_case(std::string word) {
   return word;
 }
 
-Lexer::Lexer(std::string input_file_name) : infile(input_file_name) {}
+Lexer::Lexer(std::string input_file_name) : infile(input_file_name) {
+  if (infile.fail()) {
+    std::cerr << "Failed to open file: " << input_file_name << std::endl;
+    std::exit(1);
+  }
+}
 
 Token Lexer::GetNextToken() { return CurTok = gettok(); }
 
