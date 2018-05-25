@@ -69,9 +69,19 @@ Token Lexer::gettok() {
   }
 
   if (TokenTypeForSingleCharSymbol(char_stream_.Peek()).has_value()) {
-    char c = char_stream_.Peek();
-    char_stream_.Pop();
-    return Token(TokenTypeForSingleCharSymbol(c).value(),
+    char cur_char = char_stream_.Peek();
+    char next_char = char_stream_.Pop();
+
+    if (cur_char == '(' && next_char == '*') {
+      AdvanceToEndOfComment();
+      return gettok();
+    } else if (cur_char == '*' && next_char == ')') {
+      // end comment token *) outside of comment, this is an error
+      char_stream_.Pop();
+      return Token(TokenType::ERROR, char_stream_.CurLineNum());
+    }
+
+    return Token(TokenTypeForSingleCharSymbol(cur_char).value(),
                  char_stream_.CurLineNum());
   }
 
@@ -80,8 +90,10 @@ Token Lexer::gettok() {
     return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
   }
 
-  // TODO decide if this should stop the lexer or keep going
-  return Token(TokenType::ERROR, char_stream_.CurLineNum());
+  // TODO make sure I should return error here
+  // Just return EOF for now to make it stop
+  // Eventually should probably be an error
+  return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
 }
 
 std::optional<TokenType> Lexer::TokenTypeForSingleCharSymbol(char c) {
