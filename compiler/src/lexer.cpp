@@ -112,6 +112,9 @@ Token Lexer::gettok() {
         char_stream_.Pop();
       }
       if (char_stream_.Peek() != EOF) return gettok();
+    } else if (cur_char == '<' && next_char == '-') {
+      char_stream_.Pop();
+      return Token(TokenType::ASSIGN, char_stream_.CurLineNum());
     }
 
     return Token(TokenTypeForSingleCharSymbol(cur_char).value(),
