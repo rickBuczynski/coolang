@@ -94,6 +94,8 @@ class Token {
             return arg == true ? "true" : "false";
           } else if constexpr (std::is_same_v<T, std::string>) {
             return arg;
+          } else if constexpr (std::is_same_v<T, std::monostate>) {
+            return "";
           }
         },
         val_);
@@ -101,7 +103,7 @@ class Token {
 
   TokenType token_type_;
   int line_num_;
-  std::variant<std::string, int, bool> val_;
+  std::variant<std::monostate, std::string, int, bool> val_;
 };
 
 #endif  // COOLANG_COMPILER_TOKEN_H_
