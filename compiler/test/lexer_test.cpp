@@ -39,6 +39,7 @@ TEST(LexerTest, allelsetrue) { TestLexer("all_else_true.cl.cool"); }
 TEST(LexerTest, arith) { TestLexer("arith.cool"); }
 TEST(LexerTest, atoi) { TestLexer("atoi.cool"); }
 TEST(LexerTest, backslash) { TestLexer("backslash.cool"); }
+TEST(LexerTest, backslash2) { TestLexer("backslash2.cool"); }
 
 TEST(LexerTest, longcomment) { TestLexer("longcomment.cool"); }
 TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }

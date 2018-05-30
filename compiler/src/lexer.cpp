@@ -145,12 +145,19 @@ Token Lexer::gettok() {
           str_const += '\f';
         } else {
           str_const += char_stream_.Peek();
-		}
+        }
         char_stream_.Pop();
 
       } else {
-        str_const += char_stream_.Peek();
-        char_stream_.Pop();
+        if (char_stream_.Peek() == '\n') {
+          char_stream_.Pop();
+          std::string err_message = "Unterminated string constant";
+          return Token(TokenType::ERROR, char_stream_.CurLineNum(),
+                       err_message);
+        } else {
+          str_const += char_stream_.Peek();
+          char_stream_.Pop();
+        }
       }
     }
     char_stream_.Pop();
