@@ -15,11 +15,12 @@ class CharStream {
 
  private:
   std::ifstream infile;
-  std::string cur_line;
-  int cur_line_num = 1;
-  int index_in_line = 0;
 
-  char cur_char = ' ';
+  int cur_line_num = 1;
+
+  // set an initial value so we don't increment cur_line_num when comparing to
+  // newline during first pop
+  char cur_char = 0;
 };
 
 #endif  // COOLANG_COMPILER_CHAR_STREAM_H_

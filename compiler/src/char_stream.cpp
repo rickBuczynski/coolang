@@ -7,28 +7,17 @@ CharStream::CharStream(std::string input_file_name) : infile(input_file_name) {
     std::cerr << "Failed to open file: " << input_file_name << std::endl;
     std::exit(1);
   }
-  std::getline(infile, cur_line);
-  cur_line += '\n';
-
-  cur_char = cur_line[index_in_line];
+  Pop();
 }
 
 void CharStream::Pop() {
-  index_in_line++;
-
-  if (index_in_line >= cur_line.length()) {
-    if (infile.eof()) {
-      cur_char = EOF;
-      return;
-	}
-    std::getline(infile, cur_line);
-    cur_line += '\n';
-
+  if (cur_char == '\n') {
     cur_line_num++;
-    index_in_line = 0;
   }
 
-  cur_char = cur_line[index_in_line];
+  infile.get(cur_char);
 
-  // TODO test with empty file
+  if (infile.eof()) {
+    cur_char = EOF;
+  }
 }
