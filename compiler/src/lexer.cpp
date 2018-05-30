@@ -105,7 +105,8 @@ Token Lexer::gettok() {
     } else if (cur_char == '*' && next_char == ')') {
       // end comment token *) outside of comment, this is an error
       char_stream_.Pop();
-      return Token(TokenType::ERROR, char_stream_.CurLineNum());
+      std::string err_message = "\"Unmatched *)\"";
+      return Token(TokenType::ERROR, char_stream_.CurLineNum(), err_message);
     } else if (cur_char == '-' && next_char == '-') {
       while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n') {
         char_stream_.Pop();
