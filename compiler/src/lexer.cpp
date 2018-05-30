@@ -66,8 +66,7 @@ Token Lexer::gettok() {
       char_stream_.Pop();
       return Token(TokenType::ERROR, char_stream_.CurLineNum());
     } else if (cur_char == '-' && next_char == '-') {
-      while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n' &&
-             char_stream_.Peek() != '\r') {
+      while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n') {
         char_stream_.Pop();
       }
       if (char_stream_.Peek() != EOF) return gettok();
