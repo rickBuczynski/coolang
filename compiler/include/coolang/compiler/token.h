@@ -76,9 +76,11 @@ class Token {
 
     std::string val_as_string = ValAsString();
 
-    if (val_as_string.length() > 0) {
+    if (token_type_ == TokenType::STR_CONST) {
+      token_as_string += " \"" + val_as_string + '"';
+    } else if (val_as_string.length() > 0) {
       token_as_string += " " + val_as_string;
-    } 
+    }
 
     return token_as_string;
   };

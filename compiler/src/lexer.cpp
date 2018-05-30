@@ -124,6 +124,19 @@ Token Lexer::gettok() {
                  char_stream_.CurLineNum());
   }
 
+  if (char_stream_.Peek() == '"') {
+    std::string str_const;
+    char_stream_.Pop();
+
+    while (char_stream_.Peek() != '"') {
+      str_const += char_stream_.Peek();
+      char_stream_.Pop();
+    }
+    char_stream_.Pop();
+
+    return Token(TokenType::STR_CONST, char_stream_.CurLineNum(), str_const);
+  }
+
   // Check for end of file.  Don't eat the EOF.
   if (char_stream_.Peek() == EOF) {
     return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
