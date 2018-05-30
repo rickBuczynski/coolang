@@ -32,12 +32,12 @@ void TestLexer(std::string lexer_input_file) {
   std::string lexer_output = GetLexerOutput(lexer_input_file);
   std::string expected_output =
       GetExpectedOutput(LEXER_TEST_DATA_PATH + lexer_input_file + ".out");
-  EXPECT_EQ(lexer_output, expected_output);
+  EXPECT_EQ(expected_output, lexer_output);
 }
 
 //TEST(LexerTest, allelsetrue) { TestLexer("all_else_true.cl.cool"); }
-TEST(LexerTest, arith) { TestLexer("arith.cool"); }
+//TEST(LexerTest, arith) { TestLexer("arith.cool"); }
 //TEST(LexerTest, longcomment) { TestLexer("longcomment.cool"); }
-//TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }
+TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }
 
 }  // namespace
