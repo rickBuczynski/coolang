@@ -170,10 +170,10 @@ Token Lexer::gettok() {
     return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
   }
 
-  // TODO make sure I should return error here
-  // Just return EOF for now to make it stop
-  // Eventually should probably be an error
-  return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
+  std::string err_message;
+  err_message += char_stream_.Peek();
+  char_stream_.Pop();
+  return Token(TokenType::ERROR, char_stream_.CurLineNum(), err_message);
 }
 
 std::optional<TokenType> Lexer::TokenTypeForSingleCharSymbol(char c) {
