@@ -67,7 +67,7 @@ Token Lexer::gettok() {
       return Token(TokenType::OF, char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "not") {
       return Token(TokenType::NOT, char_stream_.CurLineNum());
-    }        
+    }
 
     // bool consts are like keywords but must start with lower case
     if (lower_case(identifier) == "true" && identifier[0] == 't') {
@@ -81,6 +81,17 @@ Token Lexer::gettok() {
     } else {
       return Token(TokenType::OBJECTID, char_stream_.CurLineNum(), identifier);
     }
+  }
+
+  if (isdigit(char_stream_.Peek())) {
+    std::string int_digits;
+
+    while (isdigit((char_stream_.Peek()))) {
+      int_digits += char_stream_.Peek();
+      char_stream_.Pop();
+    }
+    return Token(TokenType::INT_CONST, char_stream_.CurLineNum(),
+                 std::stoi(int_digits));
   }
 
   if (TokenTypeForSingleCharSymbol(char_stream_.Peek()).has_value()) {
