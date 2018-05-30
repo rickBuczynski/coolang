@@ -41,9 +41,13 @@ TEST(LexerTest, atoi) { TestLexer("atoi.cool"); }
 TEST(LexerTest, backslash) { TestLexer("backslash.cool"); }
 TEST(LexerTest, backslash2) { TestLexer("backslash2.cool"); }
 TEST(LexerTest, badidentifiers) { TestLexer("badidentifiers.cool"); }
-
+TEST(LexerTest, badkeywords) { TestLexer("badkeywords.cool"); }
+TEST(LexerTest, book_list_cl) { TestLexer("book_list.cl.cool"); }
+TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }
+TEST(LexerTest, comment_in_string_cl) { TestLexer("comment_in_string.cl.cool"); }
+TEST(LexerTest, endcomment) { TestLexer("endcomment.cool"); }
+//TEST(LexerTest, eofstring) { TestLexer("eofstring.cool"); }
 
 TEST(LexerTest, longcomment) { TestLexer("longcomment.cool"); }
-TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }
 
 }  // namespace
