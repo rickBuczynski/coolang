@@ -118,6 +118,9 @@ Token Lexer::gettok() {
     } else if (cur_char == '<' && next_char == '=') {
       char_stream_.Pop();
       return Token(TokenType::LE, char_stream_.CurLineNum());
+    } else if (cur_char == '=' && next_char == '>') {
+      char_stream_.Pop();
+      return Token(TokenType::DARROW, char_stream_.CurLineNum());
     }
 
     return Token(TokenTypeForSingleCharSymbol(cur_char).value(),
