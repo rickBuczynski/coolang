@@ -154,6 +154,10 @@ Token Lexer::gettok() {
           std::string err_message = "Unterminated string constant";
           return Token(TokenType::ERROR, char_stream_.CurLineNum(),
                        err_message);
+        } else if (char_stream_.Peek() == EOF) {
+          std::string err_message = "EOF in string constant";
+          return Token(TokenType::ERROR, char_stream_.CurLineNum(),
+                       err_message);
         } else {
           str_const += char_stream_.Peek();
           char_stream_.Pop();

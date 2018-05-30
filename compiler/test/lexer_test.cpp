@@ -46,7 +46,7 @@ TEST(LexerTest, book_list_cl) { TestLexer("book_list.cl.cool"); }
 TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }
 TEST(LexerTest, comment_in_string_cl) { TestLexer("comment_in_string.cl.cool"); }
 TEST(LexerTest, endcomment) { TestLexer("endcomment.cool"); }
-//TEST(LexerTest, eofstring) { TestLexer("eofstring.cool"); }
+TEST(LexerTest, eofstring) { TestLexer("eofstring.cool"); }
 
 TEST(LexerTest, longcomment) { TestLexer("longcomment.cool"); }
 
