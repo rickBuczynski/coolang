@@ -35,9 +35,12 @@ void TestLexer(std::string lexer_input_file) {
   EXPECT_EQ(expected_output, lexer_output);
 }
 
-//TEST(LexerTest, allelsetrue) { TestLexer("all_else_true.cl.cool"); }
+TEST(LexerTest, allelsetrue) { TestLexer("all_else_true.cl.cool"); }
 TEST(LexerTest, arith) { TestLexer("arith.cool"); }
-//TEST(LexerTest, longcomment) { TestLexer("longcomment.cool"); }
-//TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }
+TEST(LexerTest, atoi) { TestLexer("atoi.cool"); }
+TEST(LexerTest, backslash) { TestLexer("backslash.cool"); }
+
+TEST(LexerTest, longcomment) { TestLexer("longcomment.cool"); }
+TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }
 
 }  // namespace

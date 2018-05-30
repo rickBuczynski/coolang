@@ -2,7 +2,6 @@
 #define COOLANG_COMPILER_TOKEN_H_
 
 #include <string>
-#include <variant>
 
 enum class TokenType {
   CLASS,
@@ -70,39 +69,10 @@ class Token {
 
   TokenType token_type() { return token_type_; };
 
-  std::string ToString() {
-    std::string token_as_string =
-        "#" + std::to_string(line_num_) + " " + TokenTypeToString(token_type_);
-
-    std::string val_as_string = ValAsString();
-
-    if (token_type_ == TokenType::STR_CONST ||
-        token_type_ == TokenType::ERROR) {
-      token_as_string += " \"" + val_as_string + '"';
-    } else if (val_as_string.length() > 0) {
-      token_as_string += " " + val_as_string;
-    }
-
-    return token_as_string;
-  };
+  std::string ToString();
 
  private:
-  std::string ValAsString() {
-    return std::visit(
-        [](auto&& arg) -> std::string {
-          using T = std::decay_t<decltype(arg)>;
-          if constexpr (std::is_same_v<T, int>) {
-            return std::to_string(arg);
-          } else if constexpr (std::is_same_v<T, bool>) {
-            return arg == true ? "true" : "false";
-          } else if constexpr (std::is_same_v<T, std::string>) {
-            return arg;
-          } else if constexpr (std::is_same_v<T, std::monostate>) {
-            return "";
-          }
-        },
-        val_);
-  }
+  std::string ValAsString();
 
   TokenType token_type_;
   int line_num_;

@@ -132,8 +132,26 @@ Token Lexer::gettok() {
     char_stream_.Pop();
 
     while (char_stream_.Peek() != '"') {
-      str_const += char_stream_.Peek();
-      char_stream_.Pop();
+      if (char_stream_.Peek() == '\\') {  // escape chars
+        char_stream_.Pop();
+
+        if (char_stream_.Peek() == 'b') {
+          str_const += '\b';
+        } else if (char_stream_.Peek() == 't') {
+          str_const += '\t';
+        } else if (char_stream_.Peek() == 'n') {
+          str_const += '\n';
+        } else if (char_stream_.Peek() == 'f') {
+          str_const += '\f';
+        } else {
+          str_const += char_stream_.Peek();
+		}
+        char_stream_.Pop();
+
+      } else {
+        str_const += char_stream_.Peek();
+        char_stream_.Pop();
+      }
     }
     char_stream_.Pop();
 
