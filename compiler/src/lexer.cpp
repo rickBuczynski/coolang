@@ -37,7 +37,37 @@ Token Lexer::gettok() {
       return Token(TokenType::CLASS, char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "else") {
       return Token(TokenType::ELSE, char_stream_.CurLineNum());
-    }
+    } else if (lower_case(identifier) == "fi") {
+      return Token(TokenType::FI, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "if") {
+      return Token(TokenType::IF, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "in") {
+      return Token(TokenType::IN, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "inherits") {
+      return Token(TokenType::INHERITS, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "isvoid") {
+      return Token(TokenType::ISVOID, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "let") {
+      return Token(TokenType::LET, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "loop") {
+      return Token(TokenType::LOOP, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "pool") {
+      return Token(TokenType::POOL, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "then") {
+      return Token(TokenType::THEN, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "while") {
+      return Token(TokenType::WHILE, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "case") {
+      return Token(TokenType::CASE, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "esac") {
+      return Token(TokenType::ESAC, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "new") {
+      return Token(TokenType::NEW, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "of") {
+      return Token(TokenType::OF, char_stream_.CurLineNum());
+    } else if (lower_case(identifier) == "not") {
+      return Token(TokenType::NOT, char_stream_.CurLineNum());
+    }        
 
     // bool consts are like keywords but must start with lower case
     if (lower_case(identifier) == "true" && identifier[0] == 't') {
