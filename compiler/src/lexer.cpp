@@ -21,13 +21,13 @@ Token Lexer::gettok() {
     char_stream_.Pop();
   }
 
-  if (isalpha(char_stream_.Peek())) {  // identifier: [a-zA-Z][a-zA-Z0-9]*
+  if (isalpha(char_stream_.Peek())) {
     std::string identifier;
 
     identifier += char_stream_.Peek();
     char_stream_.Pop();
 
-    while (isalnum((char_stream_.Peek()))) {
+    while (isalnum((char_stream_.Peek())) || char_stream_.Peek() == '_') {
       identifier += char_stream_.Peek();
       char_stream_.Pop();
     }
@@ -115,6 +115,9 @@ Token Lexer::gettok() {
     } else if (cur_char == '<' && next_char == '-') {
       char_stream_.Pop();
       return Token(TokenType::ASSIGN, char_stream_.CurLineNum());
+    } else if (cur_char == '<' && next_char == '=') {
+      char_stream_.Pop();
+      return Token(TokenType::LE, char_stream_.CurLineNum());
     }
 
     return Token(TokenTypeForSingleCharSymbol(cur_char).value(),
