@@ -1,104 +1,11 @@
 #include <variant>
 #include "coolang/lexer/token.h"
 
-std::string TokenTypeToString(TokenType token_type) {
-  switch (token_type) {
-    case TokenType::CLASS:
-      return ("CLASS");
-    case TokenType::ELSE:
-      return ("ELSE");
-    case TokenType::FI:
-      return ("FI");
-    case TokenType::IF:
-      return ("IF");
-    case TokenType::IN:
-      return ("IN");
-    case TokenType::INHERITS:
-      return ("INHERITS");
-    case TokenType::LET:
-      return ("LET");
-    case TokenType::LOOP:
-      return ("LOOP");
-    case TokenType::POOL:
-      return ("POOL");
-    case TokenType::THEN:
-      return ("THEN");
-    case TokenType::WHILE:
-      return ("WHILE");
-    case TokenType::ASSIGN:
-      return ("ASSIGN");
-    case TokenType::CASE:
-      return ("CASE");
-    case TokenType::ESAC:
-      return ("ESAC");
-    case TokenType::OF:
-      return ("OF");
-    case TokenType::DARROW:
-      return ("DARROW");
-    case TokenType::NEW:
-      return ("NEW");
-    case TokenType::STR_CONST:
-      return ("STR_CONST");
-    case TokenType::INT_CONST:
-      return ("INT_CONST");
-    case TokenType::BOOL_CONST:
-      return ("BOOL_CONST");
-    case TokenType::TYPEID:
-      return ("TYPEID");
-    case TokenType::OBJECTID:
-      return ("OBJECTID");
-    case TokenType::ERROR:
-      return ("ERROR");
-    // case TokenType::error:
-    //  return ("ERROR");
-    case TokenType::LE:
-      return ("LE");
-    case TokenType::NOT:
-      return ("NOT");
-    case TokenType::ISVOID:
-      return ("ISVOID");
-    case TokenType::PLUS:
-      return ("'+'");
-    case TokenType::DIV:
-      return ("'/'");
-    case TokenType::MINUS:
-      return ("'-'");
-    case TokenType::MULT:
-      return ("'*'");
-    case TokenType::EQ:
-      return ("'='");
-    case TokenType::LT:
-      return ("'<'");
-    case TokenType::DOT:
-      return ("'.'");
-    case TokenType::NEG:
-      return ("'~'");
-    case TokenType::COMMA:
-      return ("','");
-    case TokenType::SEMI:
-      return ("';'");
-    case TokenType::COLON:
-      return ("':'");
-    case TokenType::LPAREN:
-      return ("'('");
-    case TokenType::RPAREN:
-      return ("')'");
-    case TokenType::AT:
-      return ("'@'");
-    case TokenType::LBRACE:
-      return ("'{'");
-    case TokenType::RBRACE:
-      return ("'}'");
-    case TokenType::END_OF_FILE:
-      return ("EOF");
-  }
-}
-
 std::string Escaped(const std::string& str) {
   // will print excape sequences e.g. instead of a tab character will print \t
   // instead of a newline \n
   std::string escaped;
-  for (int i = 0; i < str.length(); i++) {
+  for (size_t i = 0; i < str.length(); i++) {
     if (str[i] == '\\') {
       escaped += '\\';
       escaped += '\\';
@@ -124,36 +31,108 @@ std::string Escaped(const std::string& str) {
   return escaped;
 }
 
-std::string Token::ToString() {
-  std::string token_as_string =
-      "#" + std::to_string(line_num_) + " " + TokenTypeToString(token_type_);
-
-  std::string val_as_string = ValAsString();
-
-  if (token_type_ == TokenType::STR_CONST) {
-    token_as_string += " \"" + Escaped(val_as_string) + '"';
-  } else if (token_type_ == TokenType::ERROR) {
-    token_as_string += " \"" + val_as_string + '"';
-  } else if (val_as_string.length() > 0) {
-    token_as_string += " " + val_as_string;
-  }
-
-  return token_as_string;
-};
-
-std::string Token::ValAsString() {
+std::string TokenTypeToString(TokenType token_type) {
   return std::visit(
       [](auto&& arg) -> std::string {
         using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, int>) {
-          return std::to_string(arg);
-        } else if constexpr (std::is_same_v<T, bool>) {
-          return arg == true ? "true" : "false";
-        } else if constexpr (std::is_same_v<T, std::string>) {
-          return arg;
-        } else if constexpr (std::is_same_v<T, std::monostate>) {
-          return "";
+        using namespace std::string_literals;
+        if constexpr (std::is_same_v<T, TokenTypeIntConst>) {
+          return "INT_CONST "s + std::to_string(arg.get_data());
+
+        } else if constexpr (std::is_same_v<T, TokenTypeBoolConst>) {
+          return "BOOL_CONST "s + (arg.get_data() ? "true" : "false");
+
+        } else if constexpr (std::is_same_v<T, TokenTypeStrConst>) {
+          return "STR_CONST "s + "\"" + Escaped(arg.get_data()) + "\"";
+
+        } else if constexpr (std::is_same_v<T, TokenTypeTypeId>) {
+          return "TYPEID "s + arg.get_data();
+
+        } else if constexpr (std::is_same_v<T, TokenTypeObjectId>) {
+          return "OBJECTID "s + arg.get_data();
+
+        } else if constexpr (std::is_same_v<T, TokenTypeError>) {
+          return "ERROR "s + "\"" + arg.get_data() + "\"";
+
+        } else if constexpr (std::is_same_v<T, TokenTypeClass>) {
+          return ("CLASS");
+        } else if constexpr (std::is_same_v<T, TokenTypeElse>) {
+          return ("ELSE");
+        } else if constexpr (std::is_same_v<T, TokenTypeFi>) {
+          return ("FI");
+        } else if constexpr (std::is_same_v<T, TokenTypeIf>) {
+          return ("IF");
+        } else if constexpr (std::is_same_v<T, TokenTypeIn>) {
+          return ("IN");
+        } else if constexpr (std::is_same_v<T, TokenTypeInherits>) {
+          return ("INHERITS");
+        } else if constexpr (std::is_same_v<T, TokenTypeLet>) {
+          return ("LET");
+        } else if constexpr (std::is_same_v<T, TokenTypeLoop>) {
+          return ("LOOP");
+        } else if constexpr (std::is_same_v<T, TokenTypePool>) {
+          return ("POOL");
+        } else if constexpr (std::is_same_v<T, TokenTypeThen>) {
+          return ("THEN");
+        } else if constexpr (std::is_same_v<T, TokenTypeWhile>) {
+          return ("WHILE");
+        } else if constexpr (std::is_same_v<T, TokenTypeAssign>) {
+          return ("ASSIGN");
+        } else if constexpr (std::is_same_v<T, TokenTypeCase>) {
+          return ("CASE");
+        } else if constexpr (std::is_same_v<T, TokenTypeEsac>) {
+          return ("ESAC");
+        } else if constexpr (std::is_same_v<T, TokenTypeOf>) {
+          return ("OF");
+        } else if constexpr (std::is_same_v<T, TokenTypeDarrow>) {
+          return ("DARROW");
+        } else if constexpr (std::is_same_v<T, TokenTypeNew>) {
+          return ("NEW");
+        } else if constexpr (std::is_same_v<T, TokenTypeLe>) {
+          return ("LE");
+        } else if constexpr (std::is_same_v<T, TokenTypeNot>) {
+          return ("NOT");
+        } else if constexpr (std::is_same_v<T, TokenTypeIsVoid>) {
+          return ("ISVOID");
+        } else if constexpr (std::is_same_v<T, TokenTypePlus>) {
+          return ("'+'");
+        } else if constexpr (std::is_same_v<T, TokenTypeDiv>) {
+          return ("'/'");
+        } else if constexpr (std::is_same_v<T, TokenTypeMinus>) {
+          return ("'-'");
+        } else if constexpr (std::is_same_v<T, TokenTypeMult>) {
+          return ("'*'");
+        } else if constexpr (std::is_same_v<T, TokenTypeEq>) {
+          return ("'='");
+        } else if constexpr (std::is_same_v<T, TokenTypeLt>) {
+          return ("'<'");
+        } else if constexpr (std::is_same_v<T, TokenTypeDot>) {
+          return ("'.'");
+        } else if constexpr (std::is_same_v<T, TokenTypeNeg>) {
+          return ("'~'");
+        } else if constexpr (std::is_same_v<T, TokenTypeComma>) {
+          return ("','");
+        } else if constexpr (std::is_same_v<T, TokenTypeSemi>) {
+          return ("';'");
+        } else if constexpr (std::is_same_v<T, TokenTypeColon>) {
+          return ("':'");
+        } else if constexpr (std::is_same_v<T, TokenTypeLparen>) {
+          return ("'('");
+        } else if constexpr (std::is_same_v<T, TokenTypeRparen>) {
+          return ("')'");
+        } else if constexpr (std::is_same_v<T, TokenTypeAt>) {
+          return ("'@'");
+        } else if constexpr (std::is_same_v<T, TokenTypeLbrace>) {
+          return ("'{'");
+        } else if constexpr (std::is_same_v<T, TokenTypeRbrace>) {
+          return ("'}'");
+        } else if constexpr (std::is_same_v<T, TokenTypeEndOfFile>) {
+          return ("EOF");
         }
       },
-      val_);
+      token_type);
 }
+
+std::string Token::ToString() {
+  return "#" + std::to_string(line_num_) + " " + TokenTypeToString(token_type_);
+};

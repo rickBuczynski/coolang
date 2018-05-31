@@ -12,9 +12,8 @@ class Lexer {
  public:
   Lexer(std::string input_file_name);
 
-  Token GetNextToken();
-
-  Token GetCurTok() { return CurTok; };
+  void PopToken();
+  std::optional<Token> PeekToken() { return cur_token_; };
 
  private:
   Token gettok();
@@ -24,7 +23,7 @@ class Lexer {
   /// CurTok/getNextToken - Provide a simple token buffer.  CurTok is the
   /// current token the parser is looking at.  getNextToken reads another token
   /// from the lexer and updates CurTok with its results.
-  Token CurTok;
+  std::optional<Token> cur_token_;
 
   CharStream char_stream_;
 };

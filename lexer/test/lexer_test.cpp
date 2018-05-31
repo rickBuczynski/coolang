@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <variant>
 #include "coolang/lexer/lexer.h"
 #include "coolang/lexer/token.h"
 #include "gtest/gtest.h"
@@ -15,15 +16,19 @@ std::string GetExpectedOutput(std::string expected_output_file) {
 
 std::string GetLexerOutput(std::string input_file_name) {
   Lexer lexer(LEXER_TEST_DATA_PATH + input_file_name);
-  Token tok;
+  // TODO maybe lexer should get the first token ready during constructor?
+  lexer.PopToken();
 
   std::string lexer_output = "#name \"" + input_file_name + "\"" + '\n';
 
-  while ((tok = lexer.GetNextToken()).token_type() != TokenType::END_OF_FILE) {
-    lexer_output += tok.ToString();
+  while (!std::holds_alternative<TokenTypeEndOfFile>(
+      lexer.PeekToken().value().token_type())) {
+    lexer_output += lexer.PeekToken().value().ToString();
     lexer_output += '\n';
 
-	std::cout << tok.ToString() << std::endl;
+    std::cout << lexer.PeekToken().value().ToString() << std::endl;
+
+    lexer.PopToken();
   }
   return lexer_output;
 }

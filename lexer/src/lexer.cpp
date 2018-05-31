@@ -12,7 +12,7 @@ std::string lower_case(std::string word) {
 
 Lexer::Lexer(std::string input_file_name) : char_stream_(input_file_name) {}
 
-Token Lexer::GetNextToken() { return CurTok = gettok(); }
+void Lexer::PopToken() { cur_token_.emplace(gettok()); }
 
 /// gettok - Return the next token from standard input.
 Token Lexer::gettok() {
@@ -34,52 +34,52 @@ Token Lexer::gettok() {
 
     // keywords
     if (lower_case(identifier) == "class") {
-      return Token(TokenType::CLASS, char_stream_.CurLineNum());
+      return Token(TokenTypeClass(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "else") {
-      return Token(TokenType::ELSE, char_stream_.CurLineNum());
+      return Token(TokenTypeElse(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "fi") {
-      return Token(TokenType::FI, char_stream_.CurLineNum());
+      return Token(TokenTypeFi(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "if") {
-      return Token(TokenType::IF, char_stream_.CurLineNum());
+      return Token(TokenTypeIf(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "in") {
-      return Token(TokenType::IN, char_stream_.CurLineNum());
+      return Token(TokenTypeIn(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "inherits") {
-      return Token(TokenType::INHERITS, char_stream_.CurLineNum());
+      return Token(TokenTypeInherits(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "isvoid") {
-      return Token(TokenType::ISVOID, char_stream_.CurLineNum());
+      return Token(TokenTypeIsVoid(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "let") {
-      return Token(TokenType::LET, char_stream_.CurLineNum());
+      return Token(TokenTypeLet(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "loop") {
-      return Token(TokenType::LOOP, char_stream_.CurLineNum());
+      return Token(TokenTypeLoop(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "pool") {
-      return Token(TokenType::POOL, char_stream_.CurLineNum());
+      return Token(TokenTypePool(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "then") {
-      return Token(TokenType::THEN, char_stream_.CurLineNum());
+      return Token(TokenTypeThen(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "while") {
-      return Token(TokenType::WHILE, char_stream_.CurLineNum());
+      return Token(TokenTypeWhile(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "case") {
-      return Token(TokenType::CASE, char_stream_.CurLineNum());
+      return Token(TokenTypeCase(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "esac") {
-      return Token(TokenType::ESAC, char_stream_.CurLineNum());
+      return Token(TokenTypeEsac(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "new") {
-      return Token(TokenType::NEW, char_stream_.CurLineNum());
+      return Token(TokenTypeNew(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "of") {
-      return Token(TokenType::OF, char_stream_.CurLineNum());
+      return Token(TokenTypeOf(), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "not") {
-      return Token(TokenType::NOT, char_stream_.CurLineNum());
+      return Token(TokenTypeNot(), char_stream_.CurLineNum());
     }
 
     // bool consts are like keywords but must start with lower case
     if (lower_case(identifier) == "true" && identifier[0] == 't') {
-      return Token(TokenType::BOOL_CONST, char_stream_.CurLineNum(), true);
+      return Token(TokenTypeBoolConst(true), char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "false" && identifier[0] == 'f') {
-      return Token(TokenType::BOOL_CONST, char_stream_.CurLineNum(), false);
+      return Token(TokenTypeBoolConst(false), char_stream_.CurLineNum());
     }
 
     if (isupper(identifier[0])) {
-      return Token(TokenType::TYPEID, char_stream_.CurLineNum(), identifier);
+      return Token(TokenTypeTypeId(identifier), char_stream_.CurLineNum());
     } else {
-      return Token(TokenType::OBJECTID, char_stream_.CurLineNum(), identifier);
+      return Token(TokenTypeObjectId(identifier), char_stream_.CurLineNum());
     }
   }
 
@@ -90,8 +90,8 @@ Token Lexer::gettok() {
       int_digits += char_stream_.Peek();
       char_stream_.Pop();
     }
-    return Token(TokenType::INT_CONST, char_stream_.CurLineNum(),
-                 std::stoi(int_digits));
+    return Token(TokenTypeIntConst(std::stoi(int_digits)),
+                 char_stream_.CurLineNum());
   }
 
   if (TokenTypeForSingleCharSymbol(char_stream_.Peek()).has_value()) {
@@ -106,7 +106,7 @@ Token Lexer::gettok() {
       // end comment token *) outside of comment, this is an error
       char_stream_.Pop();
       std::string err_message = "Unmatched *)";
-      return Token(TokenType::ERROR, char_stream_.CurLineNum(), err_message);
+      return Token(TokenTypeError(err_message), char_stream_.CurLineNum());
     } else if (cur_char == '-' && next_char == '-') {
       while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n') {
         char_stream_.Pop();
@@ -114,13 +114,13 @@ Token Lexer::gettok() {
       if (char_stream_.Peek() != EOF) return gettok();
     } else if (cur_char == '<' && next_char == '-') {
       char_stream_.Pop();
-      return Token(TokenType::ASSIGN, char_stream_.CurLineNum());
+      return Token(TokenTypeAssign(), char_stream_.CurLineNum());
     } else if (cur_char == '<' && next_char == '=') {
       char_stream_.Pop();
-      return Token(TokenType::LE, char_stream_.CurLineNum());
+      return Token(TokenTypeLe(), char_stream_.CurLineNum());
     } else if (cur_char == '=' && next_char == '>') {
       char_stream_.Pop();
-      return Token(TokenType::DARROW, char_stream_.CurLineNum());
+      return Token(TokenTypeDarrow(), char_stream_.CurLineNum());
     }
 
     return Token(TokenTypeForSingleCharSymbol(cur_char).value(),
@@ -152,12 +152,10 @@ Token Lexer::gettok() {
         if (char_stream_.Peek() == '\n') {
           char_stream_.Pop();
           std::string err_message = "Unterminated string constant";
-          return Token(TokenType::ERROR, char_stream_.CurLineNum(),
-                       err_message);
+          return Token(TokenTypeError(err_message), char_stream_.CurLineNum());
         } else if (char_stream_.Peek() == EOF) {
           std::string err_message = "EOF in string constant";
-          return Token(TokenType::ERROR, char_stream_.CurLineNum(),
-                       err_message);
+          return Token(TokenTypeError(err_message), char_stream_.CurLineNum());
         } else {
           str_const += char_stream_.Peek();
           char_stream_.Pop();
@@ -166,54 +164,54 @@ Token Lexer::gettok() {
     }
     char_stream_.Pop();
 
-    return Token(TokenType::STR_CONST, char_stream_.CurLineNum(), str_const);
+    return Token(TokenTypeStrConst(str_const), char_stream_.CurLineNum());
   }
 
   // Check for end of file.  Don't eat the EOF.
   if (char_stream_.Peek() == EOF) {
-    return Token(TokenType::END_OF_FILE, char_stream_.CurLineNum());
+    return Token(TokenTypeEndOfFile(), char_stream_.CurLineNum());
   }
 
   std::string err_message;
   err_message += char_stream_.Peek();
   char_stream_.Pop();
-  return Token(TokenType::ERROR, char_stream_.CurLineNum(), err_message);
+  return Token(TokenTypeError(err_message), char_stream_.CurLineNum());
 }
 
 std::optional<TokenType> Lexer::TokenTypeForSingleCharSymbol(char c) {
   switch (c) {
     case '+':
-      return TokenType::PLUS;
+      return TokenTypePlus();
     case '/':
-      return TokenType::DIV;
+      return TokenTypeDiv();
     case '-':
-      return TokenType::MINUS;
+      return TokenTypeMinus();
     case '*':
-      return TokenType::MULT;
+      return TokenTypeMult();
     case '=':
-      return TokenType::EQ;
+      return TokenTypeEq();
     case '<':
-      return TokenType::LT;
+      return TokenTypeLt();
     case '.':
-      return TokenType::DOT;
+      return TokenTypeDot();
     case '~':
-      return TokenType::NEG;
+      return TokenTypeNeg();
     case ',':
-      return TokenType::COMMA;
+      return TokenTypeComma();
     case ';':
-      return TokenType::SEMI;
+      return TokenTypeSemi();
     case ':':
-      return TokenType::COLON;
+      return TokenTypeColon();
     case '(':
-      return TokenType::LPAREN;
+      return TokenTypeLparen();
     case ')':
-      return TokenType::RPAREN;
+      return TokenTypeRparen();
     case '@':
-      return TokenType::AT;
+      return TokenTypeAt();
     case '{':
-      return TokenType::LBRACE;
+      return TokenTypeLbrace();
     case '}':
-      return TokenType::RBRACE;
+      return TokenTypeRbrace();
     default:
       return std::nullopt;
   }
@@ -230,7 +228,7 @@ void Lexer::AdvanceToEndOfComment() {
 
     if (prev_char == '(' && cur_char == '*') {
       open_comments++;
-    } else if (prev_char == '*' && cur_char == ')' & chars_in_comment > 0) {
+    } else if (prev_char == '*' && cur_char == ')' && chars_in_comment > 0) {
       open_comments--;
     }
     chars_in_comment++;
