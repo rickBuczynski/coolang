@@ -62,7 +62,7 @@ std::string TokenToString(Token token) {
           return "OBJECTID "s + arg.get_data();
 
         } else if constexpr (std::is_same_v<T, TokenError>) {
-          return "ERROR "s + "\"" + arg.get_data() + "\"";
+          return "ERROR "s + "\"" + Escaped(arg.get_data()) + "\"";
 
         } else if constexpr (std::is_same_v<T, TokenClass>) {
           return ("CLASS");
