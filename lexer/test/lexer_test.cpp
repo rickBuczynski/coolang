@@ -86,7 +86,7 @@ TEST(LexerTest, null_in_string_unescaped_newline_cl) {
   TestLexer("null_in_string_unescaped_newline.cl.cool");
 }
 TEST(LexerTest, objectid_test) { TestLexer("objectid.test.cool"); }
-// TODO TEST(LexerTest, opencomment) { TestLexer("opencomment.cool"); }
+TEST(LexerTest, opencomment) { TestLexer("opencomment.cool"); }
 TEST(LexerTest, operators) { TestLexer("operators.cool"); }
 TEST(LexerTest, palindrome) { TestLexer("palindrome.cool"); }
 TEST(LexerTest, pathologicalstrings) { TestLexer("pathologicalstrings.cool"); }

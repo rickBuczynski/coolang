@@ -17,7 +17,10 @@ class Lexer {
 
  private:
   Token gettok();
-  void AdvanceToEndOfComment();
+
+  // returns nullopt unless EOF in comment
+  std::optional<Token> AdvanceToEndOfComment();
+
   std::optional<TokenType> TokenTypeForSingleCharSymbol(char c);
 
   /// CurTok/getNextToken - Provide a simple token buffer.  CurTok is the

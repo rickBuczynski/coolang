@@ -100,8 +100,12 @@ Token Lexer::gettok() {
     char next_char = char_stream_.Peek();
 
     if (cur_char == '(' && next_char == '*') {
-      AdvanceToEndOfComment();
-      return gettok();
+      std::optional<Token> maybe_eof_token = AdvanceToEndOfComment();
+      if (maybe_eof_token.has_value()) {
+        return maybe_eof_token.value();
+      } else {
+        return gettok();
+	  }
     } else if (cur_char == '*' && next_char == ')') {
       // end comment token *) outside of comment, this is an error
       char_stream_.Pop();
@@ -220,7 +224,7 @@ std::optional<TokenType> Lexer::TokenTypeForSingleCharSymbol(char c) {
   }
 }
 
-void Lexer::AdvanceToEndOfComment() {
+std::optional<Token> Lexer::AdvanceToEndOfComment() {
   int open_comments = 1;
   // prevents pattern (*) from closing comment it need to be (**)
   int chars_in_comment = 0;
@@ -228,6 +232,11 @@ void Lexer::AdvanceToEndOfComment() {
     char prev_char = char_stream_.Peek();
     char_stream_.Pop();
     char cur_char = char_stream_.Peek();
+
+	if (char_stream_.Peek() == EOF) {
+      return Token(TokenTypeError("EOF in comment"),
+                   char_stream_.CurLineNum());
+    }
 
     if (prev_char == '(' && cur_char == '*') {
       open_comments++;
@@ -238,4 +247,5 @@ void Lexer::AdvanceToEndOfComment() {
   }
 
   char_stream_.Pop();
+  return std::nullopt;
 }
