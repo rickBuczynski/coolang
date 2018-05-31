@@ -1,3 +1,5 @@
+#include <iomanip>
+#include <sstream>
 #include <variant>
 #include "coolang/lexer/token.h"
 
@@ -24,6 +26,12 @@ std::string Escaped(const std::string& str) {
     } else if (str[i] == '"') {
       escaped += '\\';
       escaped += '"';
+    } else if (iscntrl(str[i])) {
+      std::ostringstream stringStream;
+      stringStream << std::setfill('0') << std::setw(3) << std::oct
+                   << (int)str[i];
+      escaped += '\\';
+      escaped += stringStream.str();
     } else {
       escaped += str[i];
     }
