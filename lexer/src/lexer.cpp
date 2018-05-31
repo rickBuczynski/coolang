@@ -100,9 +100,9 @@ Token Lexer::gettok() {
     char next_char = char_stream_.Peek();
 
     if (cur_char == '(' && next_char == '*') {
-      std::optional<TokenError> maybe_eof_token = AdvanceToEndOfComment();
-      if (maybe_eof_token.has_value()) {
-        return maybe_eof_token.value();
+      std::optional<TokenError> maybe_error_token = AdvanceToEndOfComment();
+      if (maybe_error_token.has_value()) {
+        return maybe_error_token.value();
       } else {
         return gettok();
       }
