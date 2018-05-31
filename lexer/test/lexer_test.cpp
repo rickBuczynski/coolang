@@ -40,6 +40,7 @@ void TestLexer(std::string lexer_input_file) {
   EXPECT_EQ(expected_output, lexer_output);
 }
 
+// clang-format off
 TEST(LexerTest, allelsetrue) { TestLexer("all_else_true.cl.cool"); }
 TEST(LexerTest, arith) { TestLexer("arith.cool"); }
 TEST(LexerTest, atoi) { TestLexer("atoi.cool"); }
@@ -52,7 +53,8 @@ TEST(LexerTest, bothcomments) { TestLexer("bothcomments.cool"); }
 TEST(LexerTest, comment_in_string_cl) { TestLexer("comment_in_string.cl.cool"); }
 TEST(LexerTest, endcomment) { TestLexer("endcomment.cool"); }
 TEST(LexerTest, eofstring) { TestLexer("eofstring.cool"); }
-
-TEST(LexerTest, longcomment) { TestLexer("longcomment.cool"); }
+TEST(LexerTest, escaped_chars_in_comment_cl) { TestLexer("escaped_chars_in_comment.cl.cool"); }
+TEST(LexerTest, escapedeof) { TestLexer("escapedeof.cool"); }
+// clang-format on
 
 }  // namespace

@@ -143,6 +143,9 @@ Token Lexer::gettok() {
           str_const += '\n';
         } else if (char_stream_.Peek() == 'f') {
           str_const += '\f';
+        } else if (char_stream_.Peek() == EOF) {
+          return Token(TokenTypeError("EOF in string constant"),
+                       char_stream_.CurLineNum());
         } else {
           str_const += char_stream_.Peek();
         }
@@ -151,11 +154,11 @@ Token Lexer::gettok() {
       } else {
         if (char_stream_.Peek() == '\n') {
           char_stream_.Pop();
-          std::string err_message = "Unterminated string constant";
-          return Token(TokenTypeError(err_message), char_stream_.CurLineNum());
+          return Token(TokenTypeError("Unterminated string constant"),
+                       char_stream_.CurLineNum());
         } else if (char_stream_.Peek() == EOF) {
-          std::string err_message = "EOF in string constant";
-          return Token(TokenTypeError(err_message), char_stream_.CurLineNum());
+          return Token(TokenTypeError("EOF in string constant"),
+                       char_stream_.CurLineNum());
         } else {
           str_const += char_stream_.Peek();
           char_stream_.Pop();
