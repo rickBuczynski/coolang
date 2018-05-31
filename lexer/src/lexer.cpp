@@ -147,6 +147,13 @@ Token Lexer::gettok() {
           str_const += '\n';
         } else if (char_stream_.Peek() == 'f') {
           str_const += '\f';
+        } else if (char_stream_.Peek() == 0) {
+          while (char_stream_.Peek() != '"') {
+            char_stream_.Pop();
+          }
+          char_stream_.Pop();
+          return TokenError("String contains escaped null character.",
+                            char_stream_.CurLineNum());
         } else if (char_stream_.Peek() == EOF) {
           return TokenError("EOF in string constant",
                             char_stream_.CurLineNum());
