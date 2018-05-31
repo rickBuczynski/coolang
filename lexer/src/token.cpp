@@ -1,5 +1,5 @@
 #include <variant>
-#include "coolang/compiler/token.h"
+#include "coolang/lexer/token.h"
 
 std::string TokenTypeToString(TokenType token_type) {
   switch (token_type) {

@@ -1,5 +1,5 @@
-#ifndef COOLANG_COMPILER_CHAR_STREAM_H_
-#define COOLANG_COMPILER_CHAR_STREAM_H_
+#ifndef COOLANG_LEXER_CHAR_STREAM_H_
+#define COOLANG_LEXER_CHAR_STREAM_H_
 
 #include <fstream>
 #include <string>
@@ -23,4 +23,4 @@ class CharStream {
   char cur_char = 0;
 };
 
-#endif  // COOLANG_COMPILER_CHAR_STREAM_H_
+#endif  // COOLANG_LEXER_CHAR_STREAM_H_

@@ -1,5 +1,5 @@
-#ifndef COOLANG_COMPILER_TOKEN_H_
-#define COOLANG_COMPILER_TOKEN_H_
+#ifndef COOLANG_LEXER_TOKEN_H_
+#define COOLANG_LEXER_TOKEN_H_
 
 #include <string>
 
@@ -79,4 +79,4 @@ class Token {
   std::variant<std::monostate, std::string, int, bool> val_;
 };
 
-#endif  // COOLANG_COMPILER_TOKEN_H_
+#endif  // COOLANG_LEXER_TOKEN_H_

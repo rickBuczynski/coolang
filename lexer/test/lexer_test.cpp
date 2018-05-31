@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
-#include "coolang/compiler/lexer.h"
-#include "coolang/compiler/token.h"
+#include "coolang/lexer/lexer.h"
+#include "coolang/lexer/token.h"
 #include "gtest/gtest.h"
 
 namespace {

@@ -1,6 +1,6 @@
 #include <fstream>
 #include <iostream>
-#include "coolang/compiler/char_stream.h"
+#include "coolang/lexer/char_stream.h"
 
 CharStream::CharStream(std::string input_file_name) : infile(input_file_name) {
   if (infile.fail()) {

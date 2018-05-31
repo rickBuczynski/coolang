@@ -13,8 +13,8 @@ if(MSVC)
 endif()
 
 add_subdirectory(3rd_party/googletest)
-add_subdirectory(compiler)
+add_subdirectory(lexer)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
-target_link_libraries(${PROJECT_NAME} compiler)
+target_link_libraries(${PROJECT_NAME} lexer)

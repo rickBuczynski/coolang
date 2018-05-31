@@ -1,12 +1,12 @@
-#ifndef COOLANG_COMPILER_LEXER_H_
-#define COOLANG_COMPILER_LEXER_H_
+#ifndef COOLANG_LEXER_LEXER_H_
+#define COOLANG_LEXER_LEXER_H_
 
 #include <fstream>
 #include <optional>
 #include <string>
 #include <variant>
-#include "coolang/compiler/char_stream.h"
-#include "coolang/compiler/token.h"
+#include "coolang/lexer/char_stream.h"
+#include "coolang/lexer/token.h"
 
 class Lexer {
  public:
@@ -29,4 +29,4 @@ class Lexer {
   CharStream char_stream_;
 };
 
-#endif  // COOLANG_COMPILER_LEXER_H_
+#endif  // COOLANG_LEXER_LEXER_H_

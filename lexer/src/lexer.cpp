@@ -2,8 +2,8 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
-#include "coolang/compiler/lexer.h"
-#include "coolang/compiler/token.h"
+#include "coolang/lexer/lexer.h"
+#include "coolang/lexer/token.h"
 
 std::string lower_case(std::string word) {
   std::transform(word.begin(), word.end(), word.begin(), tolower);
