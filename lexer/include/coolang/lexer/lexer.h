@@ -19,9 +19,9 @@ class Lexer {
   Token gettok();
 
   // returns nullopt unless EOF in comment
-  std::optional<Token> AdvanceToEndOfComment();
+  std::optional<TokenError> AdvanceToEndOfComment();
 
-  std::optional<TokenType> TokenTypeForSingleCharSymbol(char c);
+  std::optional<Token> TokenForSingleCharSymbol(char c, int line_num);
 
   /// CurTok/getNextToken - Provide a simple token buffer.  CurTok is the
   /// current token the parser is looking at.  getNextToken reads another token

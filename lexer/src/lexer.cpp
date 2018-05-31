@@ -34,52 +34,52 @@ Token Lexer::gettok() {
 
     // keywords
     if (lower_case(identifier) == "class") {
-      return Token(TokenTypeClass(), char_stream_.CurLineNum());
+      return TokenClass(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "else") {
-      return Token(TokenTypeElse(), char_stream_.CurLineNum());
+      return TokenElse(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "fi") {
-      return Token(TokenTypeFi(), char_stream_.CurLineNum());
+      return TokenFi(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "if") {
-      return Token(TokenTypeIf(), char_stream_.CurLineNum());
+      return TokenIf(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "in") {
-      return Token(TokenTypeIn(), char_stream_.CurLineNum());
+      return TokenIn(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "inherits") {
-      return Token(TokenTypeInherits(), char_stream_.CurLineNum());
+      return TokenInherits(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "isvoid") {
-      return Token(TokenTypeIsVoid(), char_stream_.CurLineNum());
+      return TokenIsVoid(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "let") {
-      return Token(TokenTypeLet(), char_stream_.CurLineNum());
+      return TokenLet(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "loop") {
-      return Token(TokenTypeLoop(), char_stream_.CurLineNum());
+      return TokenLoop(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "pool") {
-      return Token(TokenTypePool(), char_stream_.CurLineNum());
+      return TokenPool(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "then") {
-      return Token(TokenTypeThen(), char_stream_.CurLineNum());
+      return TokenThen(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "while") {
-      return Token(TokenTypeWhile(), char_stream_.CurLineNum());
+      return TokenWhile(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "case") {
-      return Token(TokenTypeCase(), char_stream_.CurLineNum());
+      return TokenCase(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "esac") {
-      return Token(TokenTypeEsac(), char_stream_.CurLineNum());
+      return TokenEsac(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "new") {
-      return Token(TokenTypeNew(), char_stream_.CurLineNum());
+      return TokenNew(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "of") {
-      return Token(TokenTypeOf(), char_stream_.CurLineNum());
+      return TokenOf(char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "not") {
-      return Token(TokenTypeNot(), char_stream_.CurLineNum());
+      return TokenNot(char_stream_.CurLineNum());
     }
 
     // bool consts are like keywords but must start with lower case
     if (lower_case(identifier) == "true" && identifier[0] == 't') {
-      return Token(TokenTypeBoolConst(true), char_stream_.CurLineNum());
+      return TokenBoolConst(true, char_stream_.CurLineNum());
     } else if (lower_case(identifier) == "false" && identifier[0] == 'f') {
-      return Token(TokenTypeBoolConst(false), char_stream_.CurLineNum());
+      return TokenBoolConst(false, char_stream_.CurLineNum());
     }
 
     if (isupper(identifier[0])) {
-      return Token(TokenTypeTypeId(identifier), char_stream_.CurLineNum());
+      return TokenTypeId(identifier, char_stream_.CurLineNum());
     } else {
-      return Token(TokenTypeObjectId(identifier), char_stream_.CurLineNum());
+      return TokenObjectId(identifier, char_stream_.CurLineNum());
     }
   }
 
@@ -90,27 +90,27 @@ Token Lexer::gettok() {
       int_digits += char_stream_.Peek();
       char_stream_.Pop();
     }
-    return Token(TokenTypeIntConst(std::stoi(int_digits)),
-                 char_stream_.CurLineNum());
+    return TokenIntConst(std::stoi(int_digits), char_stream_.CurLineNum());
   }
 
-  if (TokenTypeForSingleCharSymbol(char_stream_.Peek()).has_value()) {
+  if (TokenForSingleCharSymbol(char_stream_.Peek(), char_stream_.CurLineNum())
+          .has_value()) {
     char cur_char = char_stream_.Peek();
     char_stream_.Pop();
     char next_char = char_stream_.Peek();
 
     if (cur_char == '(' && next_char == '*') {
-      std::optional<Token> maybe_eof_token = AdvanceToEndOfComment();
+      std::optional<TokenError> maybe_eof_token = AdvanceToEndOfComment();
       if (maybe_eof_token.has_value()) {
         return maybe_eof_token.value();
       } else {
         return gettok();
-	  }
+      }
     } else if (cur_char == '*' && next_char == ')') {
       // end comment token *) outside of comment, this is an error
       char_stream_.Pop();
       std::string err_message = "Unmatched *)";
-      return Token(TokenTypeError(err_message), char_stream_.CurLineNum());
+      return TokenError(err_message, char_stream_.CurLineNum());
     } else if (cur_char == '-' && next_char == '-') {
       while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n') {
         char_stream_.Pop();
@@ -118,17 +118,17 @@ Token Lexer::gettok() {
       if (char_stream_.Peek() != EOF) return gettok();
     } else if (cur_char == '<' && next_char == '-') {
       char_stream_.Pop();
-      return Token(TokenTypeAssign(), char_stream_.CurLineNum());
+      return TokenAssign(char_stream_.CurLineNum());
     } else if (cur_char == '<' && next_char == '=') {
       char_stream_.Pop();
-      return Token(TokenTypeLe(), char_stream_.CurLineNum());
+      return TokenLe(char_stream_.CurLineNum());
     } else if (cur_char == '=' && next_char == '>') {
       char_stream_.Pop();
-      return Token(TokenTypeDarrow(), char_stream_.CurLineNum());
+      return TokenDarrow(char_stream_.CurLineNum());
     }
 
-    return Token(TokenTypeForSingleCharSymbol(cur_char).value(),
-                 char_stream_.CurLineNum());
+    return TokenForSingleCharSymbol(cur_char, char_stream_.CurLineNum())
+        .value();
   }
 
   if (char_stream_.Peek() == '"') {
@@ -148,8 +148,8 @@ Token Lexer::gettok() {
         } else if (char_stream_.Peek() == 'f') {
           str_const += '\f';
         } else if (char_stream_.Peek() == EOF) {
-          return Token(TokenTypeError("EOF in string constant"),
-                       char_stream_.CurLineNum());
+          return TokenError("EOF in string constant",
+                            char_stream_.CurLineNum());
         } else {
           str_const += char_stream_.Peek();
         }
@@ -158,11 +158,11 @@ Token Lexer::gettok() {
       } else {
         if (char_stream_.Peek() == '\n') {
           char_stream_.Pop();
-          return Token(TokenTypeError("Unterminated string constant"),
-                       char_stream_.CurLineNum());
+          return TokenError("Unterminated string constant",
+                            char_stream_.CurLineNum());
         } else if (char_stream_.Peek() == EOF) {
-          return Token(TokenTypeError("EOF in string constant"),
-                       char_stream_.CurLineNum());
+          return TokenError("EOF in string constant",
+                            char_stream_.CurLineNum());
         } else {
           str_const += char_stream_.Peek();
           char_stream_.Pop();
@@ -171,60 +171,60 @@ Token Lexer::gettok() {
     }
     char_stream_.Pop();
 
-    return Token(TokenTypeStrConst(str_const), char_stream_.CurLineNum());
+    return TokenStrConst(str_const, char_stream_.CurLineNum());
   }
 
   // Check for end of file.  Don't eat the EOF.
   if (char_stream_.Peek() == EOF) {
-    return Token(TokenTypeEndOfFile(), char_stream_.CurLineNum());
+    return TokenEndOfFile(char_stream_.CurLineNum());
   }
 
   std::string err_message;
   err_message += char_stream_.Peek();
   char_stream_.Pop();
-  return Token(TokenTypeError(err_message), char_stream_.CurLineNum());
+  return TokenError(err_message, char_stream_.CurLineNum());
 }
 
-std::optional<TokenType> Lexer::TokenTypeForSingleCharSymbol(char c) {
+std::optional<Token> Lexer::TokenForSingleCharSymbol(char c, int line_num) {
   switch (c) {
     case '+':
-      return TokenTypePlus();
+      return TokenPlus(line_num);
     case '/':
-      return TokenTypeDiv();
+      return TokenDiv(line_num);
     case '-':
-      return TokenTypeMinus();
+      return TokenMinus(line_num);
     case '*':
-      return TokenTypeMult();
+      return TokenMult(line_num);
     case '=':
-      return TokenTypeEq();
+      return TokenEq(line_num);
     case '<':
-      return TokenTypeLt();
+      return TokenLt(line_num);
     case '.':
-      return TokenTypeDot();
+      return TokenDot(line_num);
     case '~':
-      return TokenTypeNeg();
+      return TokenNeg(line_num);
     case ',':
-      return TokenTypeComma();
+      return TokenComma(line_num);
     case ';':
-      return TokenTypeSemi();
+      return TokenSemi(line_num);
     case ':':
-      return TokenTypeColon();
+      return TokenColon(line_num);
     case '(':
-      return TokenTypeLparen();
+      return TokenLparen(line_num);
     case ')':
-      return TokenTypeRparen();
+      return TokenRparen(line_num);
     case '@':
-      return TokenTypeAt();
+      return TokenAt(line_num);
     case '{':
-      return TokenTypeLbrace();
+      return TokenLbrace(line_num);
     case '}':
-      return TokenTypeRbrace();
+      return TokenRbrace(line_num);
     default:
       return std::nullopt;
   }
 }
 
-std::optional<Token> Lexer::AdvanceToEndOfComment() {
+std::optional<TokenError> Lexer::AdvanceToEndOfComment() {
   int open_comments = 1;
   // prevents pattern (*) from closing comment it need to be (**)
   int chars_in_comment = 0;
@@ -233,9 +233,8 @@ std::optional<Token> Lexer::AdvanceToEndOfComment() {
     char_stream_.Pop();
     char cur_char = char_stream_.Peek();
 
-	if (char_stream_.Peek() == EOF) {
-      return Token(TokenTypeError("EOF in comment"),
-                   char_stream_.CurLineNum());
+    if (char_stream_.Peek() == EOF) {
+      return TokenError("EOF in comment", char_stream_.CurLineNum());
     }
 
     if (prev_char == '(' && cur_char == '*') {
