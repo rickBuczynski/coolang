@@ -90,7 +90,7 @@ Token Lexer::gettok() {
       int_digits += char_stream_.Peek();
       char_stream_.Pop();
     }
-    return TokenIntConst(std::stoi(int_digits), char_stream_.CurLineNum());
+    return TokenIntConst(int_digits, char_stream_.CurLineNum());
   }
 
   if (TokenForSingleCharSymbol(char_stream_.Peek(), char_stream_.CurLineNum())

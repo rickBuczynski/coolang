@@ -23,7 +23,9 @@ class TokenWith : public TokenBase {
   T data_;
 };
 
-class TokenIntConst : public TokenWith<int> {
+// store int token as string to avoid int overflow
+// will convert to 32bit int and report overflow errors later
+class TokenIntConst : public TokenWith<std::string> {
   using TokenWith::TokenWith;
 };
 

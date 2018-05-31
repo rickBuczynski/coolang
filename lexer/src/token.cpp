@@ -47,7 +47,7 @@ std::string TokenToString(Token token) {
         using T = std::decay_t<decltype(arg)>;
         using namespace std::string_literals;
         if constexpr (std::is_same_v<T, TokenIntConst>) {
-          return "INT_CONST "s + std::to_string(arg.get_data());
+          return "INT_CONST "s + arg.get_data();
 
         } else if constexpr (std::is_same_v<T, TokenBoolConst>) {
           return "BOOL_CONST "s + (arg.get_data() ? "true" : "false");
