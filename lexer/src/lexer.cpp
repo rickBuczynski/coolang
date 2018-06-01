@@ -178,7 +178,11 @@ Token Lexer::gettok() {
     }
     char_stream_.Pop();
 
-    return TokenStrConst(str_const, char_stream_.CurLineNum());
+    if (str_const.length() > TokenStrConst::MAX_STR_CONST_LEN) {
+      return TokenError("String constant too long", char_stream_.CurLineNum());
+    } else {
+      return TokenStrConst(str_const, char_stream_.CurLineNum());
+    }
   }
 
   // Check for end of file.  Don't eat the EOF.

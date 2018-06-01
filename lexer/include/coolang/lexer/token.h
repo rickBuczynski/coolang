@@ -35,6 +35,9 @@ class TokenBoolConst : public TokenWith<bool> {
 
 class TokenStrConst : public TokenWith<std::string> {
   using TokenWith::TokenWith;
+
+ public:
+  static constexpr int MAX_STR_CONST_LEN = 1024;
 };
 class TokenTypeId : public TokenWith<std::string> {
   using TokenWith::TokenWith;
