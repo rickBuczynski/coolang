@@ -218,9 +218,6 @@ Token Lexer::gettok() {
   return TokenError(err_message, char_stream_.CurLineNum());
 }
 
-// TODO test EOF in str after other error like null in str or \n in str
-// TODO test escaped newline after null
-
 std::optional<Token> Lexer::TokenForSingleCharSymbol(char c, int line_num) {
   switch (c) {
     case '+':

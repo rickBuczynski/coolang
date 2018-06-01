@@ -24,6 +24,7 @@ std::string GetLexerOutput(std::string input_file_name) {
   while (!std::holds_alternative<TokenEndOfFile>(lexer.PeekToken().value())) {
     lexer_output += TokenToString(lexer.PeekToken().value());
     lexer_output += '\n';
+    //std::cout << TokenToString(lexer.PeekToken().value()) << std::endl;
     lexer.PopToken();
   }
   return lexer_output;
@@ -77,6 +78,12 @@ TEST(LexerTest, null_in_code_cl) { TestLexer("null_in_code.cl.cool"); }
 TEST(LexerTest, null_in_string_cl) { TestLexer("null_in_string.cl.cool"); }
 TEST(LexerTest, null_in_string_followed_by_tokens_cl) {
   TestLexer("null_in_string_followed_by_tokens.cl.cool");
+}
+TEST(LexerTest, null_in_string_then_escaped_newline) {
+  TestLexer("null_in_string_then_escaped_newline.cool");
+}
+TEST(LexerTest, null_in_string_then_eof) {
+  TestLexer("null_in_string_then_eof.cool");
 }
 TEST(LexerTest, null_in_string_unescaped_newline_cl) {
   TestLexer("null_in_string_unescaped_newline.cl.cool");

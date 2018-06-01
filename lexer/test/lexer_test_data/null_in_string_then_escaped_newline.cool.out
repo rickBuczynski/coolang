@@ -1,0 +1,3 @@
+#name "null_in_string_then_escaped_newline.cool"
+#1 ERROR "String contains null character."
+#3 OBJECTID after
