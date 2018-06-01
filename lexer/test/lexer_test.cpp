@@ -16,8 +16,6 @@ std::string GetExpectedOutput(std::string expected_output_file) {
 
 std::string GetLexerOutput(std::string input_file_name) {
   Lexer lexer(LEXER_TEST_DATA_PATH + input_file_name);
-  // TODO maybe lexer should get the first token ready during constructor?
-  lexer.PopToken();
 
   std::string lexer_output = "#name \"" + input_file_name + "\"" + '\n';
 
