@@ -148,10 +148,10 @@ Token Lexer::gettok() {
         } else if (char_stream_.Peek() == 'f') {
           str_const += '\f';
         } else if (char_stream_.Peek() == 0) {
-          TokenError token_error = TokenError("String contains null character.",
-                                              char_stream_.CurLineNum());
+          TokenError err = TokenError("String contains escaped null character.",
+                                      char_stream_.CurLineNum());
           AdvancePastEndOfString();
-          return token_error;
+          return err;
         } else if (char_stream_.Peek() == EOF) {
           return TokenError("EOF in string constant",
                             char_stream_.CurLineNum());
@@ -166,10 +166,10 @@ Token Lexer::gettok() {
           return TokenError("Unterminated string constant",
                             char_stream_.CurLineNum());
         } else if (char_stream_.Peek() == 0) {
-          TokenError token_error = TokenError("String contains null character.",
-                                              char_stream_.CurLineNum());
+          TokenError err = TokenError("String contains null character.",
+                                      char_stream_.CurLineNum());
           AdvancePastEndOfString();
-          return token_error;
+          return err;
         } else if (char_stream_.Peek() == EOF) {
           return TokenError("EOF in string constant",
                             char_stream_.CurLineNum());
