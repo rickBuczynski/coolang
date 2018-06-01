@@ -11,12 +11,13 @@ std::string lower_case(std::string word) {
   return word;
 }
 
-Lexer::Lexer(std::string input_file_name) : char_stream_(input_file_name) {}
+Lexer::Lexer(std::string input_file_name)
+    : char_stream_(input_file_name), cur_token_(GetNextToken()) {}
 
-void Lexer::PopToken() { cur_token_.emplace(gettok()); }
+void Lexer::PopToken() { cur_token_ = GetNextToken(); }
 
 /// gettok - Return the next token from standard input.
-Token Lexer::gettok() {
+Token Lexer::GetNextToken() {
   // Skip any whitespace.
   while (isspace(char_stream_.Peek())) {
     char_stream_.Pop();
@@ -105,7 +106,7 @@ Token Lexer::gettok() {
       if (maybe_error_token.has_value()) {
         return maybe_error_token.value();
       } else {
-        return gettok();
+        return GetNextToken();
       }
     } else if (cur_char == '*' && next_char == ')') {
       // end comment token *) outside of comment, this is an error
@@ -119,7 +120,7 @@ Token Lexer::gettok() {
       if (char_stream_.Peek() == EOF) {
         return TokenEndOfFile(char_stream_.CurLineNum());
       } else {
-        return gettok();
+        return GetNextToken();
       }
     } else if (cur_char == '<' && next_char == '-') {
       char_stream_.Pop();

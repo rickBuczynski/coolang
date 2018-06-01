@@ -16,19 +16,17 @@ class Lexer {
   std::optional<Token> PeekToken() { return cur_token_; };
 
  private:
-  Token gettok();
+  Token GetNextToken();
 
   // returns nullopt unless EOF in comment
   std::optional<TokenError> AdvancePastEndOfComment();
 
   std::optional<Token> TokenForSingleCharSymbol(char c, int line_num);
 
-  /// CurTok/getNextToken - Provide a simple token buffer.  CurTok is the
-  /// current token the parser is looking at.  getNextToken reads another token
-  /// from the lexer and updates CurTok with its results.
-  std::optional<Token> cur_token_;
-
   CharStream char_stream_;
+  // cur_token_ must be after char_stream_ since cur_token_ uses char_stream_
+  // for initialization
+  Token cur_token_;
 };
 
 #endif  // COOLANG_LEXER_LEXER_H_
