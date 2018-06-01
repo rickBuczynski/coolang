@@ -100,7 +100,7 @@ Token Lexer::gettok() {
     char next_char = char_stream_.Peek();
 
     if (cur_char == '(' && next_char == '*') {
-      std::optional<TokenError> maybe_error_token = AdvanceToEndOfComment();
+      std::optional<TokenError> maybe_error_token = AdvancePastEndOfComment();
       if (maybe_error_token.has_value()) {
         return maybe_error_token.value();
       } else {
@@ -148,10 +148,7 @@ Token Lexer::gettok() {
         } else if (char_stream_.Peek() == 'f') {
           str_const += '\f';
         } else if (char_stream_.Peek() == 0) {
-          while (char_stream_.Peek() != '"') {
-            char_stream_.Pop();
-          }
-          char_stream_.Pop();
+          AdvancePastEndOfString();
           return TokenError("String contains escaped null character.",
                             char_stream_.CurLineNum());
         } else if (char_stream_.Peek() == EOF) {
@@ -164,8 +161,13 @@ Token Lexer::gettok() {
 
       } else {
         if (char_stream_.Peek() == '\n') {
+          // TODO should this be AdvancePastEndOfString instead of pop?
           char_stream_.Pop();
           return TokenError("Unterminated string constant",
+                            char_stream_.CurLineNum());
+        } else if (char_stream_.Peek() == 0) {
+          AdvancePastEndOfString();
+          return TokenError("String contains null character.",
                             char_stream_.CurLineNum());
         } else if (char_stream_.Peek() == EOF) {
           return TokenError("EOF in string constant",
@@ -194,6 +196,14 @@ Token Lexer::gettok() {
   err_message += char_stream_.Peek();
   char_stream_.Pop();
   return TokenError(err_message, char_stream_.CurLineNum());
+}
+
+void Lexer::AdvancePastEndOfString() {
+  // TODO test EOF in str after other error like null in str or \n in str
+  while (char_stream_.Peek() != '"') {
+    char_stream_.Pop();
+  }
+  char_stream_.Pop();
 }
 
 std::optional<Token> Lexer::TokenForSingleCharSymbol(char c, int line_num) {
@@ -235,7 +245,7 @@ std::optional<Token> Lexer::TokenForSingleCharSymbol(char c, int line_num) {
   }
 }
 
-std::optional<TokenError> Lexer::AdvanceToEndOfComment() {
+std::optional<TokenError> Lexer::AdvancePastEndOfComment() {
   int open_comments = 1;
   // prevents pattern (*) from closing comment it need to be (**)
   int chars_in_comment = 0;

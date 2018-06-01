@@ -19,7 +19,11 @@ class Lexer {
   Token gettok();
 
   // returns nullopt unless EOF in comment
-  std::optional<TokenError> AdvanceToEndOfComment();
+  std::optional<TokenError> AdvancePastEndOfComment();
+  
+  // must be called while lexer is already inside a string
+  // advances to the next char after end "
+  void AdvancePastEndOfString();
 
   std::optional<Token> TokenForSingleCharSymbol(char c, int line_num);
 
