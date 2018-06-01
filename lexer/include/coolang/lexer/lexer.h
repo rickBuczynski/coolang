@@ -13,7 +13,7 @@ class Lexer {
   Lexer(std::string input_file_name);
 
   void PopToken();
-  std::optional<Token> PeekToken() { return cur_token_; };
+  Token PeekToken() { return cur_token_; };
 
  private:
   Token GetNextToken();

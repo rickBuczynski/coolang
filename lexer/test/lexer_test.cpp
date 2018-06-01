@@ -19,8 +19,8 @@ std::string GetLexerOutput(std::string input_file_name) {
 
   std::string lexer_output = "#name \"" + input_file_name + "\"" + '\n';
 
-  while (!std::holds_alternative<TokenEndOfFile>(lexer.PeekToken().value())) {
-    lexer_output += TokenToString(lexer.PeekToken().value());
+  while (!std::holds_alternative<TokenEndOfFile>(lexer.PeekToken())) {
+    lexer_output += TokenToString(lexer.PeekToken());
     lexer_output += '\n';
     //std::cout << TokenToString(lexer.PeekToken().value()) << std::endl;
     lexer.PopToken();

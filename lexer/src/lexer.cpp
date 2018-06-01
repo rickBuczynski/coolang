@@ -14,7 +14,12 @@ std::string lower_case(std::string word) {
 Lexer::Lexer(std::string input_file_name)
     : char_stream_(input_file_name), cur_token_(GetNextToken()) {}
 
-void Lexer::PopToken() { cur_token_ = GetNextToken(); }
+void Lexer::PopToken() {
+  // better to just use cur_token_ = GetNextToken(); but as of visual
+  // studio 15.7.1 there is an intellisense bug where this is an error saying
+  // operator= is deleted even though it builds with no errors
+  cur_token_.swap(GetNextToken());
+}
 
 /// gettok - Return the next token from standard input.
 Token Lexer::GetNextToken() {
