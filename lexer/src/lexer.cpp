@@ -116,7 +116,11 @@ Token Lexer::gettok() {
       while (char_stream_.Peek() != EOF && char_stream_.Peek() != '\n') {
         char_stream_.Pop();
       }
-      if (char_stream_.Peek() != EOF) return gettok();
+      if (char_stream_.Peek() == EOF) {
+        return TokenEndOfFile(char_stream_.CurLineNum());
+      } else {
+        return gettok();
+      }
     } else if (cur_char == '<' && next_char == '-') {
       char_stream_.Pop();
       return TokenAssign(char_stream_.CurLineNum());
