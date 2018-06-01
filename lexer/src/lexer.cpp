@@ -148,9 +148,10 @@ Token Lexer::gettok() {
         } else if (char_stream_.Peek() == 'f') {
           str_const += '\f';
         } else if (char_stream_.Peek() == 0) {
+          TokenError token_error = TokenError("String contains null character.",
+                                              char_stream_.CurLineNum());
           AdvancePastEndOfString();
-          return TokenError("String contains escaped null character.",
-                            char_stream_.CurLineNum());
+          return token_error;
         } else if (char_stream_.Peek() == EOF) {
           return TokenError("EOF in string constant",
                             char_stream_.CurLineNum());
@@ -161,14 +162,14 @@ Token Lexer::gettok() {
 
       } else {
         if (char_stream_.Peek() == '\n') {
-          // TODO should this be AdvancePastEndOfString instead of pop?
           char_stream_.Pop();
           return TokenError("Unterminated string constant",
                             char_stream_.CurLineNum());
         } else if (char_stream_.Peek() == 0) {
+          TokenError token_error = TokenError("String contains null character.",
+                                              char_stream_.CurLineNum());
           AdvancePastEndOfString();
-          return TokenError("String contains null character.",
-                            char_stream_.CurLineNum());
+          return token_error;
         } else if (char_stream_.Peek() == EOF) {
           return TokenError("EOF in string constant",
                             char_stream_.CurLineNum());
@@ -200,7 +201,8 @@ Token Lexer::gettok() {
 
 void Lexer::AdvancePastEndOfString() {
   // TODO test EOF in str after other error like null in str or \n in str
-  while (char_stream_.Peek() != '"') {
+  // TODO test escaped newline after null
+  while (char_stream_.Peek() != '"' && char_stream_.Peek() != '\n') {
     char_stream_.Pop();
   }
   char_stream_.Pop();
