@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <vector>
 #include "coolang/lexer/lexer.h"
 #include "coolang/lexer/token.h"
 
@@ -135,6 +136,8 @@ Token Lexer::gettok() {
     std::string str_const;
     char_stream_.Pop();
 
+    std::vector<TokenError> errors_in_str;
+    bool broke_before_end_quote = false;
     while (char_stream_.Peek() != '"') {
       if (char_stream_.Peek() == '\\') {  // escape chars
         char_stream_.Pop();
@@ -148,13 +151,15 @@ Token Lexer::gettok() {
         } else if (char_stream_.Peek() == 'f') {
           str_const += '\f';
         } else if (char_stream_.Peek() == 0) {
-          TokenError err = TokenError("String contains escaped null character.",
-                                      char_stream_.CurLineNum());
-          AdvancePastEndOfString();
-          return err;
+          TokenError err("String contains escaped null character.",
+                         char_stream_.CurLineNum());
+          errors_in_str.push_back(err);
+          char_stream_.Pop();
         } else if (char_stream_.Peek() == EOF) {
-          return TokenError("EOF in string constant",
-                            char_stream_.CurLineNum());
+          TokenError err("EOF in string constant", char_stream_.CurLineNum());
+          errors_in_str.push_back(err);
+          broke_before_end_quote = true;
+          break;
         } else {
           str_const += char_stream_.Peek();
         }
@@ -163,26 +168,36 @@ Token Lexer::gettok() {
       } else {
         if (char_stream_.Peek() == '\n') {
           char_stream_.Pop();
-          return TokenError("Unterminated string constant",
-                            char_stream_.CurLineNum());
+          TokenError err("Unterminated string constant",
+                         char_stream_.CurLineNum());
+          errors_in_str.push_back(err);
+          broke_before_end_quote = true;
+          break;
         } else if (char_stream_.Peek() == 0) {
-          TokenError err = TokenError("String contains null character.",
-                                      char_stream_.CurLineNum());
-          AdvancePastEndOfString();
-          return err;
+          TokenError err("String contains null character.",
+                         char_stream_.CurLineNum());
+          errors_in_str.push_back(err);
+          char_stream_.Pop();
         } else if (char_stream_.Peek() == EOF) {
-          return TokenError("EOF in string constant",
-                            char_stream_.CurLineNum());
+          TokenError err("EOF in string constant", char_stream_.CurLineNum());
+          errors_in_str.push_back(err);
+          broke_before_end_quote = true;
+          break;
         } else {
           str_const += char_stream_.Peek();
           char_stream_.Pop();
         }
       }
     }
-    char_stream_.Pop();
+    if (!broke_before_end_quote) {
+      // if we didn't break early due to EOF or \n need to pop end "
+      char_stream_.Pop();
+    }
 
     if (str_const.length() > TokenStrConst::MAX_STR_CONST_LEN) {
       return TokenError("String constant too long", char_stream_.CurLineNum());
+    } else if (errors_in_str.size() > 0) {
+      return errors_in_str[0];
     } else {
       return TokenStrConst(str_const, char_stream_.CurLineNum());
     }
@@ -199,14 +214,8 @@ Token Lexer::gettok() {
   return TokenError(err_message, char_stream_.CurLineNum());
 }
 
-void Lexer::AdvancePastEndOfString() {
-  // TODO test EOF in str after other error like null in str or \n in str
-  // TODO test escaped newline after null
-  while (char_stream_.Peek() != '"' && char_stream_.Peek() != '\n') {
-    char_stream_.Pop();
-  }
-  char_stream_.Pop();
-}
+// TODO test EOF in str after other error like null in str or \n in str
+// TODO test escaped newline after null
 
 std::optional<Token> Lexer::TokenForSingleCharSymbol(char c, int line_num) {
   switch (c) {
