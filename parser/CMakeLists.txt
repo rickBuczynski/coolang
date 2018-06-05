@@ -6,6 +6,7 @@ set(SOURCES
 
 set(HEADERS
   include/coolang/parser/parser.h
+  include/coolang/parser/ast.h
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})

@@ -14,6 +14,9 @@ std::string GetExpectedOutput(std::string expected_output_file) {
 std::string GetParserOutput(std::string input_file_name) {
   Parser parser(
       std::make_unique<Lexer>(PARSER_TEST_DATA_PATH + input_file_name));
+
+  coolang::ast::Program program = parser.ParseProgram();
+
   return "hello";
 }
 
