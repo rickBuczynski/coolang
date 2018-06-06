@@ -29,7 +29,7 @@ std::string Escaped(const std::string& str) {
     } else if (iscntrl(str[i])) {
       std::ostringstream stringStream;
       stringStream << std::setfill('0') << std::setw(3) << std::oct
-                   << (int)str[i];
+                   << static_cast<int>(str[i]);
       escaped += '\\';
       escaped += stringStream.str();
     } else {
@@ -39,10 +39,14 @@ std::string Escaped(const std::string& str) {
   return escaped;
 }
 
-std::string TokenToString(Token token) {
-  int line_num = std::visit([](auto&& e) { return e.get_line_num(); }, token);
+int GetLineNum(Token token) {
+  return std::visit([](auto&& e) { return e.get_line_num(); }, token);
+}
 
-  std::string token_type_specific_str = std::visit(
+std::string TokenToString(Token token) {
+  const int line_num = GetLineNum(token);
+
+  const std::string token_type_specific_str = std::visit(
       [](auto&& arg) -> std::string {
         using T = std::decay_t<decltype(arg)>;
         using namespace std::string_literals;
@@ -65,79 +69,79 @@ std::string TokenToString(Token token) {
           return "ERROR "s + "\"" + Escaped(arg.get_data()) + "\"";
 
         } else if constexpr (std::is_same_v<T, TokenClass>) {
-          return ("CLASS");
+          return "CLASS";
         } else if constexpr (std::is_same_v<T, TokenElse>) {
-          return ("ELSE");
+          return "ELSE";
         } else if constexpr (std::is_same_v<T, TokenFi>) {
-          return ("FI");
+          return "FI";
         } else if constexpr (std::is_same_v<T, TokenIf>) {
-          return ("IF");
+          return "IF";
         } else if constexpr (std::is_same_v<T, TokenIn>) {
-          return ("IN");
+          return "IN";
         } else if constexpr (std::is_same_v<T, TokenInherits>) {
-          return ("INHERITS");
+          return "INHERITS";
         } else if constexpr (std::is_same_v<T, TokenLet>) {
-          return ("LET");
+          return "LET";
         } else if constexpr (std::is_same_v<T, TokenLoop>) {
-          return ("LOOP");
+          return "LOOP";
         } else if constexpr (std::is_same_v<T, TokenPool>) {
-          return ("POOL");
+          return "POOL";
         } else if constexpr (std::is_same_v<T, TokenThen>) {
-          return ("THEN");
+          return "THEN";
         } else if constexpr (std::is_same_v<T, TokenWhile>) {
-          return ("WHILE");
+          return "WHILE";
         } else if constexpr (std::is_same_v<T, TokenAssign>) {
-          return ("ASSIGN");
+          return "ASSIGN";
         } else if constexpr (std::is_same_v<T, TokenCase>) {
-          return ("CASE");
+          return "CASE";
         } else if constexpr (std::is_same_v<T, TokenEsac>) {
-          return ("ESAC");
+          return "ESAC";
         } else if constexpr (std::is_same_v<T, TokenOf>) {
-          return ("OF");
+          return "OF";
         } else if constexpr (std::is_same_v<T, TokenDarrow>) {
-          return ("DARROW");
+          return "DARROW";
         } else if constexpr (std::is_same_v<T, TokenNew>) {
-          return ("NEW");
+          return "NEW";
         } else if constexpr (std::is_same_v<T, TokenLe>) {
-          return ("LE");
+          return "LE";
         } else if constexpr (std::is_same_v<T, TokenNot>) {
-          return ("NOT");
+          return "NOT";
         } else if constexpr (std::is_same_v<T, TokenIsVoid>) {
-          return ("ISVOID");
+          return "ISVOID";
         } else if constexpr (std::is_same_v<T, TokenPlus>) {
-          return ("'+'");
+          return "'+'";
         } else if constexpr (std::is_same_v<T, TokenDiv>) {
-          return ("'/'");
+          return "'/'";
         } else if constexpr (std::is_same_v<T, TokenMinus>) {
-          return ("'-'");
+          return "'-'";
         } else if constexpr (std::is_same_v<T, TokenMult>) {
-          return ("'*'");
+          return "'*'";
         } else if constexpr (std::is_same_v<T, TokenEq>) {
-          return ("'='");
+          return "'='";
         } else if constexpr (std::is_same_v<T, TokenLt>) {
-          return ("'<'");
+          return "'<'";
         } else if constexpr (std::is_same_v<T, TokenDot>) {
-          return ("'.'");
+          return "'.'";
         } else if constexpr (std::is_same_v<T, TokenNeg>) {
-          return ("'~'");
+          return "'~'";
         } else if constexpr (std::is_same_v<T, TokenComma>) {
-          return ("','");
+          return "','";
         } else if constexpr (std::is_same_v<T, TokenSemi>) {
-          return ("';'");
+          return "';'";
         } else if constexpr (std::is_same_v<T, TokenColon>) {
-          return ("':'");
+          return "':'";
         } else if constexpr (std::is_same_v<T, TokenLparen>) {
-          return ("'('");
+          return "'('";
         } else if constexpr (std::is_same_v<T, TokenRparen>) {
-          return ("')'");
+          return "')'";
         } else if constexpr (std::is_same_v<T, TokenAt>) {
-          return ("'@'");
+          return "'@'";
         } else if constexpr (std::is_same_v<T, TokenLbrace>) {
-          return ("'{'");
+          return "'{'";
         } else if constexpr (std::is_same_v<T, TokenRbrace>) {
-          return ("'}'");
+          return "'}'";
         } else if constexpr (std::is_same_v<T, TokenEndOfFile>) {
-          return ("EOF");
+          return "EOF";
         }
       },
       token);

@@ -7,14 +7,14 @@
 class Parser {
  public:
   Parser(std::unique_ptr<Lexer> lexer) : lexer_(std::move(lexer)){};
-  coolang::ast::Program Parser::ParseProgram();
+  coolang::ast::Program Parser::ParseProgram() const;
 
  private:
-  coolang::ast::CoolClass ParseClass();
-  coolang::ast::Feature ParseFeature();
-  coolang::ast::MethodFeature ParseMethodFeature();
-  coolang::ast::AttributeFeature ParseAttributeFeature();
-  coolang::ast::Formal ParseFormal();
+  coolang::ast::CoolClass ParseClass() const;
+  coolang::ast::Feature ParseFeature() const;
+  coolang::ast::MethodFeature ParseMethodFeature() const;
+  coolang::ast::AttributeFeature ParseAttributeFeature() const;
+  coolang::ast::Formal ParseFormal() const;
 
   std::unique_ptr<Lexer> lexer_;
 };

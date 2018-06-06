@@ -213,6 +213,7 @@ using Token = std::variant<
 >;
 // clang-format on
 
+int GetLineNum(Token token);
 std::string TokenToString(Token token);
 
 #endif  // COOLANG_LEXER_TOKEN_H_

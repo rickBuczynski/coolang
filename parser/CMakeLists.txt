@@ -2,6 +2,7 @@ project(parser)
 
 set(SOURCES
   src/parser.cpp
+  src/ast.cpp
 )
 
 set(HEADERS
