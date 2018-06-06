@@ -79,19 +79,17 @@ AttributeFeature Parser::ParseAttributeFeature() const {
 }
 
 Formal Parser::ParseFormal() const {
-  bool error_at_object_id = !lexer_->PeekTokenTypeIs<TokenObjectId>();
-  TokenObjectId object_id = std::get<TokenObjectId>(lexer_->PeekToken());
-  const int start_line = GetLineNum(lexer_->PeekToken());
+  const auto object_id_peek = lexer_->PeekExpecting<TokenObjectId>();
   lexer_->PopToken();
 
-  bool error_at_colon = !lexer_->PeekTokenTypeIs<TokenColon>();
+  const auto colon_peek = lexer_->PeekExpecting<TokenColon>();
   lexer_->PopToken();
 
-  bool error_at_type_id = !lexer_->PeekTokenTypeIs<TokenTypeId>();
-  TokenTypeId type_id = std::get<TokenTypeId>(lexer_->PeekToken());
-  const int end_line = GetLineNum(lexer_->PeekToken());
+  const auto type_id_peek = lexer_->PeekExpecting<TokenTypeId>();
   lexer_->PopToken();
 
-  return Formal(object_id.get_data(), type_id.get_data(),
-                LineRange(start_line, end_line));
+  return Formal(
+      object_id_peek.GetExpectedToken().get_data(),
+      type_id_peek.GetExpectedToken().get_data(),
+      LineRange(object_id_peek.GetLineNum(), type_id_peek.GetLineNum()));
 }
