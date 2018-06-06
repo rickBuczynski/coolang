@@ -74,7 +74,11 @@ class CoolClass {
 
   std::string ToString() const;
 
- private:
+  std::string InheritsTypeAsString() const {
+    return inherits_type_.value_or("Object");
+  }
+
+private:
   const std::string type_;
   const std::optional<std::string> inherits_type_;
   const std::vector<Feature> features_;

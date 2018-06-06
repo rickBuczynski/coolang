@@ -18,7 +18,7 @@ std::string GetParserOutput(std::string input_file_name) {
   coolang::ast::Program program = parser.ParseProgram();
   std::cout << program.ToString();
 
-  return "hello";
+  return program.ToString();
 }
 
 void TestParser(std::string input_file) {
