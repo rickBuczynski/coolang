@@ -12,13 +12,19 @@ using coolang::ast::Program;
 
 Program Parser::ParseProgram() const {
   std::vector<CoolClass> classes;
+
+  int end_line = 1;
   while (!lexer_->PeekTokenTypeIs<TokenEndOfFile>()) {
     classes.push_back(ParseClass());
+
+    bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
+    end_line = GetLineNum(lexer_->PeekToken());
+    lexer_->PopToken();
   }
 
-  const int end_line = !classes.empty()
-                           ? classes.back().GetLineRange().end_line_num
-                           : GetLineNum(lexer_->PeekToken());
+  if (classes.empty()) {
+    end_line = GetLineNum(lexer_->PeekToken());
+  }
 
   return Program(classes, LineRange(1, end_line));
 }
@@ -38,12 +44,13 @@ CoolClass Parser::ParseClass() const {
   std::vector<Feature> features;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
     features.push_back(ParseFeature());
+
+    bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
+    const int end_line = GetLineNum(lexer_->PeekToken());
+    lexer_->PopToken();
   }
 
   bool error_at_rbrace = !lexer_->PeekTokenTypeIs<TokenRbrace>();
-  lexer_->PopToken();
-
-  bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
   const int end_line = GetLineNum(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -82,10 +89,6 @@ Formal Parser::ParseFormal() const {
 
   bool error_at_type_id = !lexer_->PeekTokenTypeIs<TokenTypeId>();
   TokenTypeId type_id = std::get<TokenTypeId>(lexer_->PeekToken());
-  lexer_->PopToken();
-
-  // TODO this is part of the class production not formal
-  bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
   const int end_line = GetLineNum(lexer_->PeekToken());
   lexer_->PopToken();
 
