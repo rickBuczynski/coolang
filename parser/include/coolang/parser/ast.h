@@ -29,6 +29,8 @@ class Formal {
   Formal(std::string id, std::string type, LineRange line_range)
       : id_(std::move(id)), type_(std::move(type)), line_range_(line_range) {}
 
+  std::string GetId() const { return id_; }
+  std::string GetType() const { return type_; }
   LineRange GetLineRange() const { return line_range_; }
 
   std::string ToString() const;
@@ -41,25 +43,35 @@ class Formal {
 
 class MethodFeature {
   // TODO
+ public:
+  std::string ToString() const;
 };
 
 class AttributeFeature {
  public:
-  AttributeFeature(Formal formal, std::optional<Expr> initialization_expr,
+  AttributeFeature(std::string id, std::string type,
+                   std::optional<Expr> initialization_expr,
                    LineRange line_range)
-      : formal_(std::move(formal)),
+      : id_(std::move(id)),
+        type_(std::move(type)),
         initialization_expr_(initialization_expr),
         line_range_(line_range) {}
 
   std::string ToString() const;
 
  private:
-  const Formal formal_;
+  const std::string id_;
+  const std::string type_;
   const std::optional<Expr> initialization_expr_;
   const LineRange line_range_;
 };
 
 using Feature = std::variant<MethodFeature, AttributeFeature>;
+
+inline std::string FeatureToString(Feature feature) {
+  return std::visit([](auto&& arg) -> std::string { return arg.ToString(); },
+                    feature);
+}
 
 class CoolClass {
  public:
@@ -78,7 +90,7 @@ class CoolClass {
     return inherits_type_.value_or("Object");
   }
 
-private:
+ private:
   const std::string type_;
   const std::optional<std::string> inherits_type_;
   const std::vector<Feature> features_;

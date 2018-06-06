@@ -66,7 +66,7 @@ AttributeFeature Parser::ParseAttributeFeature() const {
   Formal f = ParseFormal();
   // TODO parse init expr if present
   // need to change line range if theres an init expr
-  return AttributeFeature(f, std::nullopt, f.GetLineRange());
+  return AttributeFeature(f.GetId(), f.GetType(), std::nullopt, f.GetLineRange());
 }
 
 Formal Parser::ParseFormal() const {
@@ -82,6 +82,7 @@ Formal Parser::ParseFormal() const {
   TokenTypeId type_id = std::get<TokenTypeId>(lexer_->PeekToken());
   lexer_->PopToken();
 
+  // TODO this is part of the class production not formal
   bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
   const int end_line = GetLineNum(lexer_->PeekToken());
   lexer_->PopToken();
