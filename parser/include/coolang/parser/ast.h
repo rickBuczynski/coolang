@@ -76,11 +76,13 @@ inline std::string FeatureToString(Feature feature) {
 class CoolClass {
  public:
   CoolClass(std::string type, std::optional<std::string> inherits_type,
-            std::vector<Feature> features, LineRange line_range)
+            std::vector<Feature> features, LineRange line_range,
+            std::string containing_file_name)
       : type_(std::move(type)),
         inherits_type_(std::move(inherits_type)),
         features_(std::move(features)),
-        line_range_(line_range) {}
+        line_range_(line_range),
+        containing_file_name_(std::move(containing_file_name)) {}
 
   LineRange GetLineRange() const { return line_range_; }
 
@@ -95,6 +97,8 @@ class CoolClass {
   const std::optional<std::string> inherits_type_;
   const std::vector<Feature> features_;
   const LineRange line_range_;
+
+  const std::string containing_file_name_;
 };
 
 class Program {

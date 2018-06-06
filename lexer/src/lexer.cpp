@@ -11,8 +11,10 @@ std::string lower_case(std::string word) {
   return word;
 }
 
-Lexer::Lexer(std::string input_file_name)
-    : char_stream_(input_file_name), cur_token_(GetNextToken()) {}
+Lexer::Lexer(const std::string& input_file_path)
+    : char_stream_(input_file_path),
+      cur_token_(GetNextToken()),
+      input_file_(input_file_path) {}
 
 void Lexer::PopToken() {
   // better to just use cur_token_ = GetNextToken(); but as of visual

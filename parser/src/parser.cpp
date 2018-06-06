@@ -48,7 +48,8 @@ CoolClass Parser::ParseClass() const {
   lexer_->PopToken();
 
   return CoolClass(type_id.get_data(), std::nullopt, features,
-                   LineRange(start_line, end_line));
+                   LineRange(start_line, end_line),
+                   lexer_->GetInputFile().filename().string());
 }
 
 Feature Parser::ParseFeature() const {
@@ -66,7 +67,8 @@ AttributeFeature Parser::ParseAttributeFeature() const {
   Formal f = ParseFormal();
   // TODO parse init expr if present
   // need to change line range if theres an init expr
-  return AttributeFeature(f.GetId(), f.GetType(), std::nullopt, f.GetLineRange());
+  return AttributeFeature(f.GetId(), f.GetType(), std::nullopt,
+                          f.GetLineRange());
 }
 
 Formal Parser::ParseFormal() const {

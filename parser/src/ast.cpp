@@ -41,7 +41,7 @@ std::string coolang::ast::CoolClass::ToString() const {
 
   str += Indentation(2) + type_ + '\n';
   str += Indentation(2) + InheritsTypeAsString() + '\n';
-  str += Indentation(2) + "TODO program name goes here" + '\n';
+  str += Indentation(2) + '"' + containing_file_name_ + '"' + '\n';
 
   for (const auto& feature : features_) {
     str += FeatureToString(feature);
