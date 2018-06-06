@@ -17,31 +17,6 @@ class Lexer {
   void PopToken();
   Token PeekToken() const { return cur_token_; };
 
-  template <class ExpectedToken>
-  class PeekExpectingResult {
-   public:
-    PeekExpectingResult(Token token, int line_num)
-        : token_(std::move(token)),
-          line_num_(line_num),
-          token_was_expected_(std::holds_alternative<ExpectedToken>(token)) {}
-
-    Token GetToken() const { return token_; }
-    int GetLineNum() const { return line_num_; }
-    bool IsTokenWasExpected() const { return token_was_expected_; }
-
-    ExpectedToken GetExpectedToken() const {
-      return std::get<ExpectedToken>(token_);
-    }
-
-   private:
-    const Token token_;
-    const int line_num_;
-    const bool token_was_expected_;
-  };
-
-  template <class ExpectedToken>
-  PeekExpectingResult<ExpectedToken> PeekExpecting() const;
-
   template <class T>
   bool PeekTokenTypeIs() const {
     return std::holds_alternative<T>(PeekToken());
@@ -62,11 +37,5 @@ class Lexer {
 
   std::filesystem::path input_file_;
 };
-
-template <class ExpectedToken>
-Lexer::PeekExpectingResult<ExpectedToken> Lexer::PeekExpecting() const {
-  const int line_num = GetLineNum(PeekToken());
-  return PeekExpectingResult<ExpectedToken>(PeekToken(), line_num);
-}
 
 #endif  // COOLANG_LEXER_LEXER_H_
