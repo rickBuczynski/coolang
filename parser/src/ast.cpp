@@ -20,6 +20,16 @@ std::string coolang::ast::AttributeFeature::ToString() const {
   str += Indentation(3) + id_ + '\n';
   str += Indentation(3) + type_ + '\n';
 
+  if (initialization_expr_.has_value()) {
+    // TODO
+  } else {
+    str += Indentation(3) + line_range_.ToString() + '\n';
+    str += Indentation(3) + "_no_expr" + '\n';
+    str += Indentation(3) + ": _no_type" + '\n';
+  }
+
+  str += Indentation(2) + ')' + '\n';
+
   return str;
 }
 
