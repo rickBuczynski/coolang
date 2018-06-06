@@ -25,11 +25,18 @@ CoolClass Parser::ParseClass() {
   lexer_->PopToken();
 
   bool error_at_lbrace = !lexer_->PeekTokenTypeIs<TokenLbrace>();
+  lexer_->PopToken();
 
   std::vector<Feature> features;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
     features.push_back(ParseFeature());
   }
+
+  bool error_at_rbrace = !lexer_->PeekTokenTypeIs<TokenRbrace>();
+  lexer_->PopToken();
+
+  bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
+  lexer_->PopToken();
 
   return CoolClass(type_id.get_data(), features);
 }
@@ -61,6 +68,9 @@ Formal Parser::ParseFormal() {
 
   bool error_at_type_id = !lexer_->PeekTokenTypeIs<TokenTypeId>();
   TokenTypeId type_id = std::get<TokenTypeId>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
   lexer_->PopToken();
 
   return Formal(object_id.get_data(), type_id.get_data());
