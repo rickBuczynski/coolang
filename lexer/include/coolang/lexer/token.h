@@ -214,6 +214,8 @@ using Token = std::variant<
 // clang-format on
 
 int GetLineNum(Token token);
-std::string TokenToString(Token token);
+std::string TokenToString(const Token& token);
+std::string TokenTypeSpecificStr(Token token,
+                                 const std::string& separator = " ");
 
 #endif  // COOLANG_LEXER_TOKEN_H_

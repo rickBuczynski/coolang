@@ -1,4 +1,5 @@
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <variant>
 #include "coolang/lexer/token.h"
@@ -43,30 +44,35 @@ int GetLineNum(Token token) {
   return std::visit([](auto&& e) { return e.get_line_num(); }, token);
 }
 
-std::string TokenToString(Token token) {
+std::string TokenToString(const Token& token) {
   const int line_num = GetLineNum(token);
+  return "#" + std::to_string(line_num) + " " + TokenTypeSpecificStr(token);
+}
 
-  const std::string token_type_specific_str = std::visit(
-      [](auto&& arg) -> std::string {
+std::string TokenTypeSpecificStr(Token token, const std::string& separator) {
+  return std::visit(
+      [separator](auto&& arg) -> std::string {
         using T = std::decay_t<decltype(arg)>;
         using namespace std::string_literals;
         if constexpr (std::is_same_v<T, TokenIntConst>) {
-          return "INT_CONST "s + arg.get_data();
+          return "INT_CONST"s + separator + arg.get_data();
 
         } else if constexpr (std::is_same_v<T, TokenBoolConst>) {
-          return "BOOL_CONST "s + (arg.get_data() ? "true" : "false");
+          return "BOOL_CONST"s + separator +
+                 (arg.get_data() ? "true" : "false");
 
         } else if constexpr (std::is_same_v<T, TokenStrConst>) {
-          return "STR_CONST "s + "\"" + Escaped(arg.get_data()) + "\"";
+          return "STR_CONST"s + separator + "\"" + Escaped(arg.get_data()) +
+                 "\"";
 
         } else if constexpr (std::is_same_v<T, TokenTypeId>) {
-          return "TYPEID "s + arg.get_data();
+          return "TYPEID"s + separator + arg.get_data();
 
         } else if constexpr (std::is_same_v<T, TokenObjectId>) {
-          return "OBJECTID "s + arg.get_data();
+          return "OBJECTID"s + separator + arg.get_data();
 
         } else if constexpr (std::is_same_v<T, TokenError>) {
-          return "ERROR "s + "\"" + Escaped(arg.get_data()) + "\"";
+          return "ERROR"s + separator + "\"" + Escaped(arg.get_data()) + "\"";
 
         } else if constexpr (std::is_same_v<T, TokenClass>) {
           return "CLASS";
@@ -145,6 +151,4 @@ std::string TokenToString(Token token) {
         }
       },
       token);
-
-  return "#" + std::to_string(line_num) + " " + token_type_specific_str;
 }

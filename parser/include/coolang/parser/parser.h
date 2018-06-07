@@ -12,8 +12,12 @@ class ParseError {
         file_name_(std::move(file_name)) {}
 
   std::string ToString() const {
-    return "error: " + file_name_ + " " + TokenToString(unexpected_token_) +
-           '\n';
+    using namespace std::string_literals;
+    return ""s + '"' + file_name_ + '"' + ", line " +
+           std::to_string(GetLineNum(unexpected_token_)) +
+           ": syntax error at or near " +
+           TokenTypeSpecificStr(unexpected_token_) + '\n' +
+           "Compilation halted due to lex and parse errors\n";
   }
 
  private:
