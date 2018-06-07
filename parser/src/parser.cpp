@@ -10,53 +10,75 @@ using coolang::ast::LineRange;
 using coolang::ast::MethodFeature;
 using coolang::ast::Program;
 
-Program Parser::ParseProgram() const {
-  std::vector<CoolClass> classes;
+class UnexpectedTokenExcpetion : public std::exception {
+ public:
+  explicit UnexpectedTokenExcpetion(Token unexpected_token)
+      : unexpected_token_(std::move(unexpected_token)) {}
 
-  int end_line = 1;
-  while (!lexer_->PeekTokenTypeIs<TokenEndOfFile>()) {
-    classes.push_back(ParseClass());
+  Token GetUnexpectedToken() const { return unexpected_token_; }
 
-    bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
-    end_line = GetLineNum(lexer_->PeekToken());
-    lexer_->PopToken();
+ private:
+  const Token unexpected_token_;
+};
+
+template <class T>
+T ExpectToken(Token token) {
+  try {
+    return std::get<T>(token);
+  } catch (std::bad_variant_access&) {
+    throw UnexpectedTokenExcpetion(token);
   }
+}
 
-  if (classes.empty()) {
-    end_line = GetLineNum(lexer_->PeekToken());
+std::variant<Program, ParseError> Parser::ParseProgram() const {
+  try {
+    std::vector<CoolClass> classes;
+    int end_line = 1;
+
+    while (!lexer_->PeekTokenTypeIs<TokenEndOfFile>()) {
+      classes.push_back(ParseClass());
+
+      bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
+      end_line = GetLineNum(lexer_->PeekToken());
+      lexer_->PopToken();
+    }
+
+    if (classes.empty()) {
+      end_line = GetLineNum(lexer_->PeekToken());
+    }
+
+    return Program(classes, LineRange(1, end_line));
+  } catch (const UnexpectedTokenExcpetion& e) {
+    return ParseError(e.GetUnexpectedToken(),
+                      lexer_->GetInputFile().filename().string());
   }
-
-  return Program(classes, LineRange(1, end_line));
 }
 
 CoolClass Parser::ParseClass() const {
-  bool error_at_class_token = !lexer_->PeekTokenTypeIs<TokenClass>();
-  const int start_line = GetLineNum(lexer_->PeekToken());
+  auto class_token = ExpectToken<TokenClass>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  bool error_at_type_id = !lexer_->PeekTokenTypeIs<TokenTypeId>();
-  TokenTypeId type_id = std::get<TokenTypeId>(lexer_->PeekToken());
+  auto type_id_token = ExpectToken<TokenTypeId>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  bool error_at_lbrace = !lexer_->PeekTokenTypeIs<TokenLbrace>();
+  auto lbrace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
   std::vector<Feature> features;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
     features.push_back(ParseFeature());
 
-    bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
-    const int end_line = GetLineNum(lexer_->PeekToken());
+    auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
     lexer_->PopToken();
   }
 
-  bool error_at_rbrace = !lexer_->PeekTokenTypeIs<TokenRbrace>();
-  const int end_line = GetLineNum(lexer_->PeekToken());
+  auto rbrace_token = ExpectToken<TokenRbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  return CoolClass(type_id.get_data(), std::nullopt, features,
-                   LineRange(start_line, end_line),
-                   lexer_->GetInputFile().filename().string());
+  return CoolClass(
+      type_id_token.get_data(), std::nullopt, features,
+      LineRange(class_token.get_line_num(), rbrace_token.get_line_num()),
+      lexer_->GetInputFile().filename().string());
 }
 
 Feature Parser::ParseFeature() const {
@@ -79,17 +101,16 @@ AttributeFeature Parser::ParseAttributeFeature() const {
 }
 
 Formal Parser::ParseFormal() const {
-  TokenObjectId object_id_token = std::get<TokenObjectId>(lexer_->PeekToken());
+  auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  TokenColon colon_token = std::get<TokenColon>(lexer_->PeekToken());
+  auto colon_token = ExpectToken<TokenColon>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  TokenTypeId type_id_token = std::get<TokenTypeId>(lexer_->PeekToken());
+  auto type_id_token = ExpectToken<TokenTypeId>(lexer_->PeekToken());
   lexer_->PopToken();
 
   return Formal(
-      object_id_token.get_data(),
-      type_id_token.get_data(),
+      object_id_token.get_data(), type_id_token.get_data(),
       LineRange(GetLineNum(object_id_token), GetLineNum(type_id_token)));
 }

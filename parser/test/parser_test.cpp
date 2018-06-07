@@ -15,10 +15,13 @@ std::string GetParserOutput(std::string input_file_name) {
   Parser parser(
       std::make_unique<Lexer>(PARSER_TEST_DATA_PATH + input_file_name));
 
-  coolang::ast::Program program = parser.ParseProgram();
-  std::cout << program.ToString();
+  std::variant<coolang::ast::Program, ParseError> program_or_error =
+      parser.ParseProgram();
 
-  return program.ToString();
+  std::string parse_output = std::visit([](auto&& e) { return e.ToString(); }, program_or_error);
+  std::cout << parse_output;
+
+  return parse_output;
 }
 
 void TestParser(std::string input_file) {
@@ -29,5 +32,6 @@ void TestParser(std::string input_file) {
 }
 
 TEST(ParserTest, classonefield) { TestParser("classonefield.test"); }
+TEST(ParserTest, classnoname) { TestParser("classnoname.test"); }
 
 }  // namespace
