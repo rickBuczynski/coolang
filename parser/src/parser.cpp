@@ -33,21 +33,21 @@ T ExpectToken(Token token) {
 std::variant<Program, ParseError> Parser::ParseProgram() const {
   try {
     std::vector<CoolClass> classes;
-    int end_line = 1;
 
     while (!lexer_->PeekTokenTypeIs<TokenEndOfFile>()) {
       classes.push_back(ParseClass());
 
-      bool error_at_semicolon = !lexer_->PeekTokenTypeIs<TokenSemi>();
-      end_line = GetLineNum(lexer_->PeekToken());
+      auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
       lexer_->PopToken();
     }
 
-    if (classes.empty()) {
-      end_line = GetLineNum(lexer_->PeekToken());
-    }
+    auto eof_token = ExpectToken<TokenEndOfFile>(lexer_->PeekToken());
 
-    return Program(classes, LineRange(1, end_line));
+    const int program_end_line =
+        classes.empty() ? eof_token.get_line_num()
+                        : classes.back().GetLineRange().end_line_num;
+
+    return Program(classes, LineRange(1, program_end_line));
   } catch (const UnexpectedTokenExcpetion& e) {
     return ParseError(e.GetUnexpectedToken(),
                       lexer_->GetInputFile().filename().string());
