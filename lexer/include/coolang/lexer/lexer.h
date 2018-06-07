@@ -16,6 +16,7 @@ class Lexer {
 
   void PopToken();
   Token PeekToken() const { return cur_token_; };
+  Token LookAheadToken();
 
   template <class T>
   bool PeekTokenTypeIs() const {
@@ -36,6 +37,8 @@ class Lexer {
   Token cur_token_;
 
   std::filesystem::path input_file_;
+
+  std::optional<Token> look_ahead_token_;
 };
 
 #endif  // COOLANG_LEXER_LEXER_H_

@@ -17,10 +17,21 @@ Lexer::Lexer(const std::string& input_file_path)
       input_file_(input_file_path) {}
 
 void Lexer::PopToken() {
-  // better to just use cur_token_ = GetNextToken(); but as of visual
-  // studio 15.7.1 there is an intellisense bug where this is an error saying
-  // operator= is deleted even though it builds with no errors
-  cur_token_.swap(GetNextToken());
+  // as of visual studio 15.7.1 there is an intellisense bug where this is an
+  // error saying operator= is deleted even though it builds with no errors
+  if (look_ahead_token_.has_value()) {
+    cur_token_ = look_ahead_token_.value();
+  } else {
+    cur_token_ = GetNextToken();
+  }
+  look_ahead_token_.reset();
+}
+
+Token Lexer::LookAheadToken() {
+  if (!look_ahead_token_.has_value()) {
+    look_ahead_token_ = GetNextToken();
+  } 
+  return look_ahead_token_.value();
 }
 
 /// gettok - Return the next token from standard input.
