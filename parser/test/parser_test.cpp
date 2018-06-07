@@ -33,5 +33,6 @@ void TestParser(std::string input_file) {
 
 TEST(ParserTest, classonefield) { TestParser("classonefield.test"); }
 TEST(ParserTest, classnoname) { TestParser("classnoname.test"); }
+TEST(ParserTest, classtwofields) { TestParser("classtwofields.test"); }
 
 }  // namespace

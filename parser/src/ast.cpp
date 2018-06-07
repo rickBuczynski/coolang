@@ -13,7 +13,6 @@ std::string coolang::ast::MethodFeature::ToString() const { return ""; }
 std::string coolang::ast::AttributeFeature::ToString() const {
   std::string str;
 
-  str += Indentation(2) + '(' + '\n';
   str += Indentation(2) + line_range_.ToString() + '\n';
   str += Indentation(2) + "_attr" + '\n';
 
@@ -27,9 +26,6 @@ std::string coolang::ast::AttributeFeature::ToString() const {
     str += Indentation(3) + "_no_expr" + '\n';
     str += Indentation(3) + ": _no_type" + '\n';
   }
-
-  str += Indentation(2) + ')' + '\n';
-
   return str;
 }
 
@@ -42,10 +38,13 @@ std::string coolang::ast::CoolClass::ToString() const {
   str += Indentation(2) + type_ + '\n';
   str += Indentation(2) + InheritsTypeAsString() + '\n';
   str += Indentation(2) + '"' + containing_file_name_ + '"' + '\n';
+  str += Indentation(2) + '(' + '\n';
 
   for (const auto& feature : features_) {
     str += FeatureToString(feature);
   }
+
+  str += Indentation(2) + ')' + '\n';
 
   return str;
 }
