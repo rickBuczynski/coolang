@@ -18,7 +18,8 @@ std::string GetParserOutput(std::string input_file_name) {
   std::variant<coolang::ast::Program, ParseError> program_or_error =
       parser.ParseProgram();
 
-  std::string parse_output = std::visit([](auto&& e) { return e.ToString(); }, program_or_error);
+  std::string parse_output =
+      std::visit([](auto&& e) { return e.ToString(); }, program_or_error);
   std::cout << parse_output;
 
   return parse_output;
@@ -34,5 +35,6 @@ void TestParser(std::string input_file) {
 TEST(ParserTest, classonefield) { TestParser("classonefield.test"); }
 TEST(ParserTest, classnoname) { TestParser("classnoname.test"); }
 TEST(ParserTest, classtwofields) { TestParser("classtwofields.test"); }
+TEST(ParserTest, assignment) { TestParser("assignment.test"); }
 
 }  // namespace

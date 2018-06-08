@@ -16,12 +16,34 @@ class LineRange {
 
   std::string ToString() const { return "#" + std::to_string(end_line_num); }
 
-  const int start_line_num;
-  const int end_line_num;
+  int start_line_num;
+  int end_line_num;
 };
 
-class Expr {
-  // TODO
+class Expr {};
+
+class AssignExpr : public Expr {
+ public:
+  AssignExpr(std::string id, std::unique_ptr<Expr> rhs_expr,
+             LineRange line_range)
+      : id_(std::move(id)),
+        rhs_expr_(std::move(rhs_expr)),
+        line_range_(line_range) {}
+
+ private:
+  std::string id_;
+  std::unique_ptr<Expr> rhs_expr_;
+  LineRange line_range_;
+};
+
+class IntExpr : public Expr {
+ public:
+  IntExpr(std::string val, LineRange line_range)
+      : val_(std::move(val)), line_range_(line_range) {}
+
+ private:
+  std::string val_;
+  LineRange line_range_;
 };
 
 class Formal {
@@ -36,48 +58,52 @@ class Formal {
   std::string ToString() const;
 
  private:
-  const std::string id_;
-  const std::string type_;
-  const LineRange line_range_;
+  std::string id_;
+  std::string type_;
+  LineRange line_range_;
 };
 
-class MethodFeature {
-  // TODO
+class Feature {
  public:
-  std::string ToString() const;
+  virtual std::string ToString() const = 0;
 };
 
-class AttributeFeature {
+class MethodFeature : public Feature {
  public:
-  AttributeFeature(std::string id, std::string type,
-                   std::optional<Expr> initialization_expr,
-                   LineRange line_range)
+  MethodFeature(std::string id, std::string return_type, LineRange line_range)
       : id_(std::move(id)),
-        type_(std::move(type)),
-        initialization_expr_(initialization_expr),
+        return_type_(std::move(return_type)),
         line_range_(line_range) {}
 
-  std::string ToString() const;
+  std::string ToString() const override;
 
  private:
-  const std::string id_;
-  const std::string type_;
-  const std::optional<Expr> initialization_expr_;
-  const LineRange line_range_;
+  std::string id_;
+  // TODO arg list
+  std::string return_type_;
+  const std::unique_ptr<Expr> body_;
+  LineRange line_range_;
 };
 
-using Feature = std::variant<MethodFeature, AttributeFeature>;
+class AttributeFeature : public Feature {
+ public:
+  AttributeFeature(std::string id, std::string type, LineRange line_range)
+      : id_(std::move(id)), type_(std::move(type)), line_range_(line_range) {}
 
-inline std::string FeatureToString(Feature feature) {
-  return std::visit([](auto&& arg) -> std::string { return arg.ToString(); },
-                    feature);
-}
+  std::string ToString() const override;
+
+ private:
+  std::string id_;
+  std::string type_;
+  std::optional<Expr> initialization_expr_;
+  LineRange line_range_;
+};
 
 class CoolClass {
  public:
   CoolClass(std::string type, std::optional<std::string> inherits_type,
-            std::vector<Feature> features, LineRange line_range,
-            std::string containing_file_name)
+            std::vector<std::unique_ptr<Feature>>&& features,
+            LineRange line_range, std::string containing_file_name)
       : type_(std::move(type)),
         inherits_type_(std::move(inherits_type)),
         features_(std::move(features)),
@@ -93,24 +119,24 @@ class CoolClass {
   }
 
  private:
-  const std::string type_;
-  const std::optional<std::string> inherits_type_;
-  const std::vector<Feature> features_;
-  const LineRange line_range_;
+  std::string type_;
+  std::optional<std::string> inherits_type_;
+  std::vector<std::unique_ptr<Feature>> features_;
+  LineRange line_range_;
 
-  const std::string containing_file_name_;
+  std::string containing_file_name_;
 };
 
 class Program {
  public:
-  Program(std::vector<CoolClass> cool_classes, LineRange line_range)
+  Program(std::vector<CoolClass>&& cool_classes, LineRange line_range)
       : classes_(std::move(cool_classes)), line_range_(line_range) {}
 
   std::string ToString() const;
 
  private:
-  const std::vector<CoolClass> classes_;
-  const LineRange line_range_;
+  std::vector<CoolClass> classes_;
+  LineRange line_range_;
 };
 
 }  // namespace ast
