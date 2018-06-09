@@ -8,7 +8,17 @@ std::string Indentation(int indentation_level) {
 
 std::string coolang::ast::Formal::ToString() const { return ""; }
 
-std::string coolang::ast::MethodFeature::ToString() const { return ""; }
+std::string coolang::ast::MethodFeature::ToString() const {
+  std::string str;
+
+  str += Indentation(2) + line_range_.ToString() + '\n';
+  str += Indentation(2) + "_method" + '\n';
+
+  str += Indentation(3) + id_ + '\n';
+  str += Indentation(3) + return_type_ + '\n';
+
+  return str;
+}
 
 std::string coolang::ast::AttributeFeature::ToString() const {
   std::string str;
@@ -41,7 +51,7 @@ std::string coolang::ast::CoolClass::ToString() const {
   str += Indentation(2) + '(' + '\n';
 
   for (const auto& feature : features_) {
-    str += feature->ToString();
+    str += FeatureToString(feature);
   }
 
   str += Indentation(2) + ')' + '\n';

@@ -64,7 +64,7 @@ CoolClass Parser::ParseClass() const {
   auto lbrace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  std::vector<std::unique_ptr<Feature>> features;
+  std::vector<Feature> features;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
     features.push_back(ParseFeature());
 
@@ -76,19 +76,19 @@ CoolClass Parser::ParseClass() const {
   lexer_->PopToken();
 
   return CoolClass(
-      type_id_token.get_data(), std::nullopt,  std::move(features),
+      type_id_token.get_data(), std::nullopt, std::move(features),
       LineRange(class_token.get_line_num(), rbrace_token.get_line_num()),
       lexer_->GetInputFile().filename().string());
 }
 
-std::unique_ptr<Feature> Parser::ParseFeature() const {
+Feature Parser::ParseFeature() const {
   if (std::holds_alternative<TokenLparen>(lexer_->LookAheadToken())) {
     return ParseMethodFeature();
   }
   return ParseAttributeFeature();
 }
 
-std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
+MethodFeature Parser::ParseMethodFeature() const {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -117,16 +117,15 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
   const LineRange line_range =
       LineRange(GetLineNum(object_id_token), GetLineNum(right_brace_token));
 
-  return std::make_unique<MethodFeature>(object_id_token.get_data(),
-                                         type_id_token.get_data(), line_range);
+  return MethodFeature(object_id_token.get_data(), type_id_token.get_data(),
+                       line_range);
 }
 
-std::unique_ptr<AttributeFeature> Parser::ParseAttributeFeature() const {
+AttributeFeature Parser::ParseAttributeFeature() const {
   Formal f = ParseFormal();
   // TODO parse init expr if present
   // need to change line range if theres an init expr
-  return std::make_unique<AttributeFeature>(f.GetId(), f.GetType(),
-                                            f.GetLineRange());
+  return AttributeFeature(f.GetId(), f.GetType(), f.GetLineRange());
 }
 
 Formal Parser::ParseFormal() const {
