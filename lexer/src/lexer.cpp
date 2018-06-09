@@ -30,7 +30,7 @@ void Lexer::PopToken() {
 Token Lexer::LookAheadToken() {
   if (!look_ahead_token_.has_value()) {
     look_ahead_token_ = GetNextToken();
-  } 
+  }
   return look_ahead_token_.value();
 }
 
@@ -184,6 +184,11 @@ Token Lexer::GetNextToken() {
           broke_before_end_quote = true;
           break;
         } else {
+          if (char_stream_.Peek() == '\r') {
+            // skip over the \r in the windows line ending to just get to the \n
+            // and only add \n to the string
+            char_stream_.Pop();
+          }
           str_const += char_stream_.Peek();
         }
         char_stream_.Pop();

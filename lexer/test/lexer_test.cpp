@@ -22,7 +22,7 @@ std::string GetLexerOutput(std::string input_file_name) {
   while (!lexer.PeekTokenTypeIs<TokenEndOfFile>()) {
     lexer_output += TokenToString(lexer.PeekToken());
     lexer_output += '\n';
-    // std::cout << TokenToString(lexer.PeekToken().value()) << std::endl;
+    // std::cout << TokenToString(lexer.PeekToken()) << std::endl;
     lexer.PopToken();
   }
   return lexer_output;
