@@ -76,8 +76,9 @@ class Formal {
   LineRange line_range_;
 };
 
-class Feature {
+class Feature : public AstNode {
  public:
+  Feature(LineRange line_range) : AstNode(line_range) {}
   virtual std::string ToString() const = 0;
 };
 
@@ -85,10 +86,10 @@ class MethodFeature : public Feature {
  public:
   MethodFeature(std::string id, std::string return_type,
                 std::unique_ptr<Expr> body, LineRange line_range)
-      : id_(std::move(id)),
+      : Feature(line_range),
+        id_(std::move(id)),
         return_type_(std::move(return_type)),
-        body_(std::move(body)),
-        line_range_(line_range) {}
+        body_(std::move(body)) {}
 
   std::string ToString() const override;
 
@@ -97,13 +98,12 @@ class MethodFeature : public Feature {
   // TODO arg list
   std::string return_type_;
   std::unique_ptr<Expr> body_;
-  LineRange line_range_;
 };
 
 class AttributeFeature : public Feature {
  public:
   AttributeFeature(std::string id, std::string type, LineRange line_range)
-      : id_(std::move(id)), type_(std::move(type)), line_range_(line_range) {}
+      : Feature(line_range), id_(std::move(id)), type_(std::move(type)) {}
 
   std::string ToString() const override;
 
@@ -111,7 +111,6 @@ class AttributeFeature : public Feature {
   std::string id_;
   std::string type_;
   std::unique_ptr<Expr> initialization_expr_;
-  LineRange line_range_;
 };
 
 class CoolClass {

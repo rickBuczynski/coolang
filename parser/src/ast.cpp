@@ -39,7 +39,7 @@ std::string coolang::ast::Formal::ToString() const { return ""; }
 std::string coolang::ast::MethodFeature::ToString() const {
   std::string str;
 
-  str += Indentation(2) + line_range_.ToString() + '\n';
+  str += Indentation(2) + GetLineRange().ToString() + '\n';
   str += Indentation(2) + "_method" + '\n';
 
   str += Indentation(3) + id_ + '\n';
@@ -53,7 +53,7 @@ std::string coolang::ast::MethodFeature::ToString() const {
 std::string coolang::ast::AttributeFeature::ToString() const {
   std::string str;
 
-  str += Indentation(2) + line_range_.ToString() + '\n';
+  str += Indentation(2) + GetLineRange().ToString() + '\n';
   str += Indentation(2) + "_attr" + '\n';
 
   str += Indentation(3) + id_ + '\n';
@@ -62,7 +62,7 @@ std::string coolang::ast::AttributeFeature::ToString() const {
   if (initialization_expr_) {
     // TODO
   } else {
-    str += Indentation(3) + line_range_.ToString() + '\n';
+    str += Indentation(3) + GetLineRange().ToString() + '\n';
     str += Indentation(3) + "_no_expr" + '\n';
     str += Indentation(3) + ": _no_type" + '\n';
   }
