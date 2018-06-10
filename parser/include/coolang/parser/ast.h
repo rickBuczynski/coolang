@@ -20,7 +20,10 @@ class LineRange {
   int end_line_num;
 };
 
-class Expr {};
+class Expr {
+ public:
+  virtual LineRange GetLineRange() const = 0;
+};
 
 class AssignExpr : public Expr {
  public:
@@ -29,6 +32,8 @@ class AssignExpr : public Expr {
       : id_(std::move(id)),
         rhs_expr_(std::move(rhs_expr)),
         line_range_(line_range) {}
+
+  LineRange GetLineRange() const override { return line_range_; }
 
  private:
   std::string id_;
@@ -40,6 +45,8 @@ class IntExpr : public Expr {
  public:
   IntExpr(std::string val, LineRange line_range)
       : val_(std::move(val)), line_range_(line_range) {}
+
+  LineRange GetLineRange() const override { return line_range_; }
 
  private:
   std::string val_;
@@ -65,9 +72,11 @@ class Formal {
 
 class MethodFeature {
  public:
-  MethodFeature(std::string id, std::string return_type, LineRange line_range)
+  MethodFeature(std::string id, std::string return_type,
+                std::unique_ptr<Expr> body, LineRange line_range)
       : id_(std::move(id)),
         return_type_(std::move(return_type)),
+        body_(std::move(body)),
         line_range_(line_range) {}
 
   std::string ToString() const;
@@ -90,7 +99,7 @@ class AttributeFeature {
  private:
   std::string id_;
   std::string type_;
-  std::optional<Expr> initialization_expr_;
+  std::unique_ptr<Expr> initialization_expr_;
   LineRange line_range_;
 };
 
@@ -104,8 +113,8 @@ inline std::string FeatureToString(const Feature& feature) {
 class CoolClass {
  public:
   CoolClass(std::string type, std::optional<std::string> inherits_type,
-            std::vector<Feature>&& features,
-            LineRange line_range, std::string containing_file_name)
+            std::vector<Feature>&& features, LineRange line_range,
+            std::string containing_file_name)
       : type_(std::move(type)),
         inherits_type_(std::move(inherits_type)),
         features_(std::move(features)),

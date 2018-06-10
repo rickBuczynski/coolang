@@ -32,12 +32,18 @@ class Parser {
 
  private:
   coolang::ast::CoolClass ParseClass() const;
+  
   coolang::ast::Feature ParseFeature() const;
   coolang::ast::MethodFeature ParseMethodFeature() const;
   coolang::ast::AttributeFeature ParseAttributeFeature() const;
+  
   coolang::ast::Formal ParseFormal() const;
 
-  const std::unique_ptr<Lexer> lexer_;
+  std::unique_ptr<coolang::ast::Expr> ParseExpr() const;
+  std::unique_ptr<coolang::ast::AssignExpr> ParseAssignExpr() const;
+  std::unique_ptr<coolang::ast::IntExpr> ParseIntExpr() const;
+
+  std::unique_ptr<Lexer> lexer_;
 };
 
 #endif  // COOLANG_PARSER_PARSER_H_

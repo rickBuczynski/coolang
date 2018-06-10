@@ -2,10 +2,13 @@
 #include "coolang/lexer/token.h"
 #include "coolang/parser/parser.h"
 
+using coolang::ast::AssignExpr;
 using coolang::ast::AttributeFeature;
 using coolang::ast::CoolClass;
+using coolang::ast::Expr;
 using coolang::ast::Feature;
 using coolang::ast::Formal;
+using coolang::ast::IntExpr;
 using coolang::ast::LineRange;
 using coolang::ast::MethodFeature;
 using coolang::ast::Program;
@@ -109,7 +112,7 @@ MethodFeature Parser::ParseMethodFeature() const {
   auto left_brace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  // TODO expr
+  std::unique_ptr<Expr> expr = ParseExpr();
 
   auto right_brace_token = ExpectToken<TokenRbrace>(lexer_->PeekToken());
   lexer_->PopToken();
@@ -118,7 +121,7 @@ MethodFeature Parser::ParseMethodFeature() const {
       LineRange(GetLineNum(object_id_token), GetLineNum(right_brace_token));
 
   return MethodFeature(object_id_token.get_data(), type_id_token.get_data(),
-                       line_range);
+                       std::move(expr), line_range);
 }
 
 AttributeFeature Parser::ParseAttributeFeature() const {
@@ -141,4 +144,37 @@ Formal Parser::ParseFormal() const {
   return Formal(
       object_id_token.get_data(), type_id_token.get_data(),
       LineRange(GetLineNum(object_id_token), GetLineNum(type_id_token)));
+}
+
+std::unique_ptr<Expr> Parser::ParseExpr() const {
+  if (std::holds_alternative<TokenIntConst>(lexer_->PeekToken())) {
+    return ParseIntExpr();
+  }
+  return ParseAssignExpr();
+}
+
+std::unique_ptr<IntExpr> Parser::ParseIntExpr() const {
+  auto int_const_token = ExpectToken<TokenIntConst>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  const auto line_range =
+      LineRange(GetLineNum(int_const_token), GetLineNum(int_const_token));
+
+  return std::make_unique<IntExpr>(int_const_token.get_data(), line_range);
+}
+
+std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {
+  auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  auto assign_token = ExpectToken<TokenAssign>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  auto rhs_expr = ParseExpr();
+
+  const auto line_range = LineRange(GetLineNum(object_id_token),
+                                    rhs_expr->GetLineRange().end_line_num);
+
+  return std::make_unique<AssignExpr>(object_id_token.get_data(),
+                                      std::move(rhs_expr), line_range);
 }
