@@ -20,40 +20,43 @@ class LineRange {
   int end_line_num;
 };
 
-class Expr {
+class AstNode {
  public:
+  AstNode(LineRange line_range) : line_range_(line_range) {}
+  LineRange GetLineRange() const { return line_range_; }
+
+ private:
+  LineRange line_range_;
+};
+
+class Expr : public AstNode {
+ public:
+  Expr(LineRange line_range) : AstNode(line_range) {}
   virtual std::string ToString() const = 0;
-  virtual LineRange GetLineRange() const = 0;
 };
 
 class AssignExpr : public Expr {
  public:
   AssignExpr(std::string id, std::unique_ptr<Expr> rhs_expr,
              LineRange line_range)
-      : id_(std::move(id)),
-        rhs_expr_(std::move(rhs_expr)),
-        line_range_(line_range) {}
+      : Expr(line_range), id_(std::move(id)), rhs_expr_(std::move(rhs_expr)) {}
 
-  LineRange GetLineRange() const override { return line_range_; }
   std::string ToString() const override;
 
  private:
   std::string id_;
   std::unique_ptr<Expr> rhs_expr_;
-  LineRange line_range_;
 };
 
 class IntExpr : public Expr {
  public:
   IntExpr(std::string val, LineRange line_range)
-      : val_(std::move(val)), line_range_(line_range) {}
+      : Expr(line_range), val_(std::move(val)) {}
 
-  LineRange GetLineRange() const override { return line_range_; }
   std::string ToString() const override;
 
  private:
   std::string val_;
-  LineRange line_range_;
 };
 
 class Formal {

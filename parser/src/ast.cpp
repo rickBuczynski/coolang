@@ -9,7 +9,7 @@ std::string Indentation(int indentation_level) {
 std::string coolang::ast::AssignExpr::ToString() const {
   std::string str;
 
-  str += Indentation(3) + line_range_.ToString() + '\n';
+  str += Indentation(3) + GetLineRange().ToString() + '\n';
   str += Indentation(3) + "_assign" + '\n';
 
   str += Indentation(4) + id_ + '\n';
@@ -24,7 +24,7 @@ std::string coolang::ast::AssignExpr::ToString() const {
 std::string coolang::ast::IntExpr::ToString() const {
   std::string str;
 
-  str += Indentation(4) + line_range_.ToString() + '\n';
+  str += Indentation(4) + GetLineRange().ToString() + '\n';
   str += Indentation(4) + "_int" + '\n';
 
   str += Indentation(5) + val_ + '\n';
