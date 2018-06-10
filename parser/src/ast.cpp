@@ -72,7 +72,7 @@ std::string coolang::ast::AttributeFeature::ToString() const {
 std::string coolang::ast::CoolClass::ToString() const {
   std::string str;
 
-  str += Indentation(1) + line_range_.ToString() + '\n';
+  str += Indentation(1) + GetLineRange().ToString() + '\n';
   str += Indentation(1) + "_class" + '\n';
 
   str += Indentation(2) + type_ + '\n';
@@ -94,7 +94,7 @@ std::string coolang::ast::Program::ToString() const {
 
   std::string str;
 
-  str += line_range_.ToString() + '\n';
+  str += GetLineRange().ToString() + '\n';
   str += "_program"s + '\n';
 
   for (const auto& cool_class : classes_) {

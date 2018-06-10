@@ -25,6 +25,8 @@ class AstNode {
   AstNode(LineRange line_range) : line_range_(line_range) {}
   LineRange GetLineRange() const { return line_range_; }
 
+  virtual std::string ToString() const = 0;
+
  private:
   LineRange line_range_;
 };
@@ -32,7 +34,6 @@ class AstNode {
 class Expr : public AstNode {
  public:
   Expr(LineRange line_range) : AstNode(line_range) {}
-  virtual std::string ToString() const = 0;
 };
 
 class AssignExpr : public Expr {
@@ -113,20 +114,18 @@ class AttributeFeature : public Feature {
   std::unique_ptr<Expr> initialization_expr_;
 };
 
-class CoolClass {
+class CoolClass : public AstNode {
  public:
   CoolClass(std::string type, std::optional<std::string> inherits_type,
             std::vector<std::unique_ptr<Feature>>&& features,
             LineRange line_range, std::string containing_file_name)
-      : type_(std::move(type)),
+      : AstNode(line_range),
+        type_(std::move(type)),
         inherits_type_(std::move(inherits_type)),
         features_(std::move(features)),
-        line_range_(line_range),
         containing_file_name_(std::move(containing_file_name)) {}
 
-  LineRange GetLineRange() const { return line_range_; }
-
-  std::string ToString() const;
+  std::string ToString() const override;
 
   std::string InheritsTypeAsString() const {
     return inherits_type_.value_or("Object");
@@ -136,21 +135,18 @@ class CoolClass {
   std::string type_;
   std::optional<std::string> inherits_type_;
   std::vector<std::unique_ptr<Feature>> features_;
-  LineRange line_range_;
-
   std::string containing_file_name_;
 };
 
-class Program {
+class Program : public AstNode {
  public:
   Program(std::vector<CoolClass>&& cool_classes, LineRange line_range)
-      : classes_(std::move(cool_classes)), line_range_(line_range) {}
+      : AstNode(line_range), classes_(std::move(cool_classes)) {}
 
-  std::string ToString() const;
+  std::string ToString() const override;
 
  private:
   std::vector<CoolClass> classes_;
-  LineRange line_range_;
 };
 
 }  // namespace ast
