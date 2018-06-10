@@ -60,6 +60,28 @@ class IntExpr : public Expr {
   std::string val_;
 };
 
+class LetExpr : public Expr {
+ public:
+  LetExpr(LineRange line_range, std::string id, std::string type,
+          std::unique_ptr<Expr> initialization_expr,
+          std::unique_ptr<Expr> in_expr)
+      : Expr(line_range),
+        id_(std::move(id)),
+        type_(std::move(type)),
+        initialization_expr_(std::move(initialization_expr)),
+        in_expr_(std::move(in_expr)) {}
+
+  std::string ToString() const override;
+
+ private:
+  // TODO make these vectors to allow multiple vars in one let
+  std::string id_;
+  std::string type_;
+  std::unique_ptr<Expr> initialization_expr_;
+
+  std::unique_ptr<Expr> in_expr_;
+};
+
 class Formal {
  public:
   Formal(std::string id, std::string type, LineRange line_range)

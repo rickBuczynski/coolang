@@ -34,6 +34,10 @@ std::string coolang::ast::IntExpr::ToString() const {
   return str;
 }
 
+std::string coolang::ast::LetExpr::ToString() const {
+  return "TODO LET EXPR";
+}
+
 std::string coolang::ast::Formal::ToString() const { return ""; }
 
 std::string coolang::ast::MethodFeature::ToString() const {

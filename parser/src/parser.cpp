@@ -151,6 +151,8 @@ Formal Parser::ParseFormal() const {
 std::unique_ptr<Expr> Parser::ParseExpr() const {
   if (std::holds_alternative<TokenIntConst>(lexer_->PeekToken())) {
     return ParseIntExpr();
+  } else if (std::holds_alternative<TokenLet>(lexer_->PeekToken())) {
+    return ParseLetExpr();
   }
   return ParseAssignExpr();
 }
@@ -163,6 +165,20 @@ std::unique_ptr<IntExpr> Parser::ParseIntExpr() const {
       LineRange(GetLineNum(int_const_token), GetLineNum(int_const_token));
 
   return std::make_unique<IntExpr>(int_const_token.get_data(), line_range);
+}
+
+std::unique_ptr<coolang::ast::LetExpr> Parser::ParseLetExpr() const {
+  auto let_token = ExpectToken<TokenLet>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  Formal f = ParseFormal();
+
+  auto token_in = ExpectToken<TokenIn>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  std::unique_ptr<Expr> in_expr = ParseExpr();
+
+  return std::unique_ptr<coolang::ast::LetExpr>();
 }
 
 std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {
