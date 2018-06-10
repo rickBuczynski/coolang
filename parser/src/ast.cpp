@@ -81,7 +81,7 @@ std::string coolang::ast::CoolClass::ToString() const {
   str += Indentation(2) + '(' + '\n';
 
   for (const auto& feature : features_) {
-    str += FeatureToString(feature);
+    str += feature->ToString();
   }
 
   str += Indentation(2) + ')' + '\n';

@@ -33,9 +33,9 @@ class Parser {
  private:
   coolang::ast::CoolClass ParseClass() const;
   
-  coolang::ast::Feature ParseFeature() const;
-  coolang::ast::MethodFeature ParseMethodFeature() const;
-  coolang::ast::AttributeFeature ParseAttributeFeature() const;
+  std::unique_ptr<coolang::ast::Feature> ParseFeature() const;
+  std::unique_ptr<coolang::ast::MethodFeature> ParseMethodFeature() const;
+  std::unique_ptr<coolang::ast::AttributeFeature> ParseAttributeFeature() const;
   
   coolang::ast::Formal ParseFormal() const;
 

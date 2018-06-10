@@ -67,7 +67,7 @@ CoolClass Parser::ParseClass() const {
   auto lbrace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  std::vector<Feature> features;
+  std::vector<std::unique_ptr<Feature>> features;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
     features.push_back(ParseFeature());
 
@@ -84,14 +84,14 @@ CoolClass Parser::ParseClass() const {
       lexer_->GetInputFile().filename().string());
 }
 
-Feature Parser::ParseFeature() const {
+std::unique_ptr<Feature> Parser::ParseFeature() const {
   if (std::holds_alternative<TokenLparen>(lexer_->LookAheadToken())) {
     return ParseMethodFeature();
   }
   return ParseAttributeFeature();
 }
 
-MethodFeature Parser::ParseMethodFeature() const {
+std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -120,15 +120,17 @@ MethodFeature Parser::ParseMethodFeature() const {
   const LineRange line_range =
       LineRange(GetLineNum(object_id_token), GetLineNum(right_brace_token));
 
-  return MethodFeature(object_id_token.get_data(), type_id_token.get_data(),
-                       std::move(expr), line_range);
+  return std::make_unique<MethodFeature>(object_id_token.get_data(),
+                                         type_id_token.get_data(),
+                                         std::move(expr), line_range);
 }
 
-AttributeFeature Parser::ParseAttributeFeature() const {
+std::unique_ptr<AttributeFeature> Parser::ParseAttributeFeature() const {
   Formal f = ParseFormal();
   // TODO parse init expr if present
   // need to change line range if theres an init expr
-  return AttributeFeature(f.GetId(), f.GetType(), f.GetLineRange());
+  return std::make_unique<AttributeFeature>(f.GetId(), f.GetType(),
+                                            f.GetLineRange());
 }
 
 Formal Parser::ParseFormal() const {
