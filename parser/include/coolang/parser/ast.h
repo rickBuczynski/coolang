@@ -80,7 +80,6 @@ class Formal {
 class Feature : public AstNode {
  public:
   Feature(LineRange line_range) : AstNode(line_range) {}
-  virtual std::string ToString() const = 0;
 };
 
 class MethodFeature : public Feature {
