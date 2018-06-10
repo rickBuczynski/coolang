@@ -22,6 +22,7 @@ class LineRange {
 
 class Expr {
  public:
+  virtual std::string ToString() const = 0;
   virtual LineRange GetLineRange() const = 0;
 };
 
@@ -34,6 +35,7 @@ class AssignExpr : public Expr {
         line_range_(line_range) {}
 
   LineRange GetLineRange() const override { return line_range_; }
+  std::string ToString() const override;
 
  private:
   std::string id_;
@@ -47,6 +49,7 @@ class IntExpr : public Expr {
       : val_(std::move(val)), line_range_(line_range) {}
 
   LineRange GetLineRange() const override { return line_range_; }
+  std::string ToString() const override;
 
  private:
   std::string val_;

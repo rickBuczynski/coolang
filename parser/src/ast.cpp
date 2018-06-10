@@ -6,6 +6,30 @@ std::string Indentation(int indentation_level) {
   return std::string(indentation_level * 2, ' ');
 }
 
+std::string coolang::ast::AssignExpr::ToString() const {
+  std::string str;
+
+  str += Indentation(3) + line_range_.ToString() + '\n';
+  str += Indentation(3) + "_assign" + '\n';
+
+  str += Indentation(4) + id_ + '\n';
+
+  str += rhs_expr_->ToString();
+
+  return str;
+}
+
+std::string coolang::ast::IntExpr::ToString() const {
+  std::string str;
+
+  str += Indentation(4) + line_range_.ToString() + '\n';
+  str += Indentation(4) + "_int" + '\n';
+
+  str += Indentation(5) + val_ + '\n';
+
+  return str;
+}
+
 std::string coolang::ast::Formal::ToString() const { return ""; }
 
 std::string coolang::ast::MethodFeature::ToString() const {
@@ -16,6 +40,8 @@ std::string coolang::ast::MethodFeature::ToString() const {
 
   str += Indentation(3) + id_ + '\n';
   str += Indentation(3) + return_type_ + '\n';
+
+  str += body_->ToString();
 
   return str;
 }
