@@ -16,6 +16,8 @@ std::string coolang::ast::AssignExpr::ToString() const {
 
   str += rhs_expr_->ToString();
 
+  str += Indentation(3) + ": _no_type" + '\n';
+
   return str;
 }
 
@@ -26,6 +28,8 @@ std::string coolang::ast::IntExpr::ToString() const {
   str += Indentation(4) + "_int" + '\n';
 
   str += Indentation(5) + val_ + '\n';
+
+  str += Indentation(4) + ": _no_type" + '\n';
 
   return str;
 }
