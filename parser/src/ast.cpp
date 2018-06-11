@@ -53,6 +53,8 @@ std::string coolang::ast::LetExpr::ToString(int indent_depth) const {
 
   str += in_expr_->ToString(indent_depth+1);
 
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
   return str;
 }
 
@@ -64,6 +66,8 @@ std::string coolang::ast::AddExpr::ToString(int indent_depth) const {
 
   str += lhs_expr_->ToString(indent_depth+1);
   str += rhs_expr_->ToString(indent_depth+1);
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
 
   return str;
 }
