@@ -13,6 +13,7 @@ using coolang::ast::IntExpr;
 using coolang::ast::LetExpr;
 using coolang::ast::LineRange;
 using coolang::ast::MethodFeature;
+using coolang::ast::ObjectExpr;
 using coolang::ast::Program;
 
 class UnexpectedTokenExcpetion : public std::exception {
@@ -155,10 +156,14 @@ std::unique_ptr<Expr> Parser::ParseExpr() const {
 
   if (std::holds_alternative<TokenIntConst>(lexer_->PeekToken())) {
     lhs_expr = ParseIntExpr();
+  } else if (std::holds_alternative<TokenObjectId>(lexer_->PeekToken())) {
+    if (std::holds_alternative<TokenAssign>(lexer_->LookAheadToken())) {
+      lhs_expr = ParseAssignExpr();
+    } else {
+      lhs_expr = ParseObjectExpr();
+    }
   } else if (std::holds_alternative<TokenLet>(lexer_->PeekToken())) {
     lhs_expr = ParseLetExpr();
-  } else {
-    lhs_expr = ParseAssignExpr();
   }
 
   // TODO will this work for expr + expr + expr
@@ -189,7 +194,7 @@ std::unique_ptr<IntExpr> Parser::ParseIntExpr() const {
   return std::make_unique<IntExpr>(int_const_token.get_data(), line_range);
 }
 
-std::unique_ptr<coolang::ast::LetExpr> Parser::ParseLetExpr() const {
+std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
   auto let_token = ExpectToken<TokenLet>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -205,7 +210,17 @@ std::unique_ptr<coolang::ast::LetExpr> Parser::ParseLetExpr() const {
 
   // TODO init expr is empty default constructor
   return std::make_unique<LetExpr>(line_range, f.GetId(), f.GetType(),
-                                  std::unique_ptr<Expr>(), std::move(in_expr));
+                                   std::unique_ptr<Expr>(), std::move(in_expr));
+}
+
+std::unique_ptr<ObjectExpr> Parser::ParseObjectExpr() const {
+  auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  const auto line_range =
+      LineRange(GetLineNum(object_id_token), GetLineNum(object_id_token));
+
+  return std::make_unique<ObjectExpr>(line_range, object_id_token.get_data());
 }
 
 std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {

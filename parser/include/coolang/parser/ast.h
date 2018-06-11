@@ -97,6 +97,17 @@ class AddExpr : public Expr {
   std::unique_ptr<Expr> rhs_expr_;
 };
 
+class ObjectExpr : public Expr {
+ public:
+  ObjectExpr(LineRange line_range, std::string id)
+      : Expr(line_range), id_(std::move(id)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::string id_;
+};
+
 class Formal {
  public:
   Formal(std::string id, std::string type, LineRange line_range)

@@ -45,6 +45,7 @@ class Parser {
   std::unique_ptr<coolang::ast::AssignExpr> ParseAssignExpr() const;
   std::unique_ptr<coolang::ast::IntExpr> ParseIntExpr() const;
   std::unique_ptr<coolang::ast::LetExpr> ParseLetExpr() const;
+  std::unique_ptr<coolang::ast::ObjectExpr> ParseObjectExpr() const;
 
   std::unique_ptr<Lexer> lexer_;
 };
