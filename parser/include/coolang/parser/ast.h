@@ -82,6 +82,21 @@ class LetExpr : public Expr {
   std::unique_ptr<Expr> in_expr_;
 };
 
+class AddExpr : public Expr {
+ public:
+  AddExpr(LineRange line_range, std::unique_ptr<Expr> lhs_expr,
+          std::unique_ptr<Expr> rhs_expr)
+      : Expr(line_range),
+        lhs_expr_(std::move(lhs_expr)),
+        rhs_expr_(std::move(rhs_expr)) {}
+
+  std::string ToString() const override;
+
+ private:
+  std::unique_ptr<Expr> lhs_expr_;
+  std::unique_ptr<Expr> rhs_expr_;
+};
+
 class Formal {
  public:
   Formal(std::string id, std::string type, LineRange line_range)

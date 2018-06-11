@@ -2,6 +2,7 @@
 #include "coolang/lexer/token.h"
 #include "coolang/parser/parser.h"
 
+using coolang::ast::AddExpr;
 using coolang::ast::AssignExpr;
 using coolang::ast::AttributeFeature;
 using coolang::ast::CoolClass;
@@ -9,6 +10,7 @@ using coolang::ast::Expr;
 using coolang::ast::Feature;
 using coolang::ast::Formal;
 using coolang::ast::IntExpr;
+using coolang::ast::LetExpr;
 using coolang::ast::LineRange;
 using coolang::ast::MethodFeature;
 using coolang::ast::Program;
@@ -149,12 +151,32 @@ Formal Parser::ParseFormal() const {
 }
 
 std::unique_ptr<Expr> Parser::ParseExpr() const {
+  std::unique_ptr<Expr> lhs_expr;
+
   if (std::holds_alternative<TokenIntConst>(lexer_->PeekToken())) {
-    return ParseIntExpr();
+    lhs_expr = ParseIntExpr();
   } else if (std::holds_alternative<TokenLet>(lexer_->PeekToken())) {
-    return ParseLetExpr();
+    lhs_expr = ParseLetExpr();
+  } else {
+    lhs_expr = ParseAssignExpr();
   }
-  return ParseAssignExpr();
+
+  // TODO will this work for expr + expr + expr
+  // or do I need a loop to handle left recursion like in that article?
+  if (std::holds_alternative<TokenPlus>(lexer_->PeekToken())) {
+    auto plus_token = ExpectToken<TokenPlus>(lexer_->PeekToken());
+    lexer_->PopToken();
+
+    std::unique_ptr<Expr> rhs_expr = ParseExpr();
+
+    LineRange line_range(lhs_expr->GetLineRange().start_line_num,
+                         rhs_expr->GetLineRange().start_line_num);
+
+    return std::make_unique<AddExpr>(line_range, std::move(lhs_expr),
+                                     std::move(rhs_expr));
+  }
+
+  return lhs_expr;
 }
 
 std::unique_ptr<IntExpr> Parser::ParseIntExpr() const {
@@ -178,7 +200,11 @@ std::unique_ptr<coolang::ast::LetExpr> Parser::ParseLetExpr() const {
 
   std::unique_ptr<Expr> in_expr = ParseExpr();
 
-  return std::unique_ptr<coolang::ast::LetExpr>();
+  const auto line_range =
+      LineRange(GetLineNum(let_token), in_expr->GetLineRange().end_line_num);
+
+  return std::make_unique<LetExpr>(line_range, f.GetId(), f.GetType(),
+                                  std::unique_ptr<Expr>(), std::move(in_expr));
 }
 
 std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {

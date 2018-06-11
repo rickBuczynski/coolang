@@ -38,6 +38,10 @@ std::string coolang::ast::LetExpr::ToString() const {
   return "TODO LET EXPR";
 }
 
+std::string coolang::ast::AddExpr::ToString() const {
+  return "TODO ADD EXPR";
+}
+
 std::string coolang::ast::Formal::ToString() const { return ""; }
 
 std::string coolang::ast::MethodFeature::ToString() const {
