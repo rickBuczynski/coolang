@@ -57,7 +57,15 @@ std::string coolang::ast::LetExpr::ToString(int indent_depth) const {
 }
 
 std::string coolang::ast::AddExpr::ToString(int indent_depth) const {
-  return "TODO ADD EXPR\n";
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_plus" + '\n';
+
+  str += lhs_expr_->ToString(indent_depth+1);
+  str += rhs_expr_->ToString(indent_depth+1);
+
+  return str;
 }
 
 std::string coolang::ast::Formal::ToString() const { return ""; }
