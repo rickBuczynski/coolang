@@ -35,11 +35,29 @@ std::string coolang::ast::IntExpr::ToString() const {
 }
 
 std::string coolang::ast::LetExpr::ToString() const {
-  return "TODO LET EXPR";
+  std::string str;
+
+  str += Indentation(4) + GetLineRange().ToString() + '\n';
+  str += Indentation(4) + "_let" + '\n';
+
+  str += Indentation(5) + id_ + '\n';
+  str += Indentation(5) + type_ + '\n';
+
+  if (initialization_expr_) {
+    // TODO
+  } else {
+    str += Indentation(5) + GetLineRange().ToString() + '\n';
+    str += Indentation(5) + "_no_expr" + '\n';
+    str += Indentation(5) + ": _no_type" + '\n';
+  }
+
+  str += in_expr_->ToString();
+
+  return str;
 }
 
 std::string coolang::ast::AddExpr::ToString() const {
-  return "TODO ADD EXPR";
+  return "TODO ADD EXPR\n";
 }
 
 std::string coolang::ast::Formal::ToString() const { return ""; }

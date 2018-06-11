@@ -203,6 +203,7 @@ std::unique_ptr<coolang::ast::LetExpr> Parser::ParseLetExpr() const {
   const auto line_range =
       LineRange(GetLineNum(let_token), in_expr->GetLineRange().end_line_num);
 
+  // TODO init expr is empty default constructor
   return std::make_unique<LetExpr>(line_range, f.GetId(), f.GetType(),
                                   std::unique_ptr<Expr>(), std::move(in_expr));
 }
