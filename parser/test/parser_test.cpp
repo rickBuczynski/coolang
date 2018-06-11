@@ -19,7 +19,7 @@ std::string GetParserOutput(std::string input_file_name) {
       parser.ParseProgram();
 
   std::string parse_output =
-      std::visit([](auto&& e) { return e.ToString(); }, program_or_error);
+      std::visit([](auto&& e) { return e.ToString(0); }, program_or_error);
   std::cout << parse_output;
 
   return parse_output;

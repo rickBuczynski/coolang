@@ -25,7 +25,7 @@ class AstNode {
   AstNode(LineRange line_range) : line_range_(line_range) {}
   LineRange GetLineRange() const { return line_range_; }
 
-  virtual std::string ToString() const = 0;
+  virtual std::string ToString(int indent_depth) const = 0;
 
  private:
   LineRange line_range_;
@@ -42,7 +42,7 @@ class AssignExpr : public Expr {
              LineRange line_range)
       : Expr(line_range), id_(std::move(id)), rhs_expr_(std::move(rhs_expr)) {}
 
-  std::string ToString() const override;
+  std::string ToString(int indent_depth) const override;
 
  private:
   std::string id_;
@@ -54,7 +54,7 @@ class IntExpr : public Expr {
   IntExpr(std::string val, LineRange line_range)
       : Expr(line_range), val_(std::move(val)) {}
 
-  std::string ToString() const override;
+  std::string ToString(int indent_depth) const override;
 
  private:
   std::string val_;
@@ -71,7 +71,7 @@ class LetExpr : public Expr {
         initialization_expr_(std::move(initialization_expr)),
         in_expr_(std::move(in_expr)) {}
 
-  std::string ToString() const override;
+  std::string ToString(int indent_depth) const override;
 
  private:
   // TODO make these vectors to allow multiple vars in one let
@@ -90,7 +90,7 @@ class AddExpr : public Expr {
         lhs_expr_(std::move(lhs_expr)),
         rhs_expr_(std::move(rhs_expr)) {}
 
-  std::string ToString() const override;
+  std::string ToString(int indent_depth) const override;
 
  private:
   std::unique_ptr<Expr> lhs_expr_;
@@ -128,7 +128,7 @@ class MethodFeature : public Feature {
         return_type_(std::move(return_type)),
         body_(std::move(body)) {}
 
-  std::string ToString() const override;
+  std::string ToString(int indent_depth) const override;
 
  private:
   std::string id_;
@@ -142,7 +142,7 @@ class AttributeFeature : public Feature {
   AttributeFeature(std::string id, std::string type, LineRange line_range)
       : Feature(line_range), id_(std::move(id)), type_(std::move(type)) {}
 
-  std::string ToString() const override;
+  std::string ToString(int indent_depth) const override;
 
  private:
   std::string id_;
@@ -161,7 +161,7 @@ class CoolClass : public AstNode {
         features_(std::move(features)),
         containing_file_name_(std::move(containing_file_name)) {}
 
-  std::string ToString() const override;
+  std::string ToString(int indent_depth) const override;
 
   std::string InheritsTypeAsString() const {
     return inherits_type_.value_or("Object");
@@ -179,7 +179,7 @@ class Program : public AstNode {
   Program(std::vector<CoolClass>&& cool_classes, LineRange line_range)
       : AstNode(line_range), classes_(std::move(cool_classes)) {}
 
-  std::string ToString() const override;
+  std::string ToString(int indent_depth) const override;
 
  private:
   std::vector<CoolClass> classes_;

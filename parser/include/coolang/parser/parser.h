@@ -11,7 +11,9 @@ class ParseError {
       : unexpected_token_(std::move(unexpected_token)),
         file_name_(std::move(file_name)) {}
 
-  std::string ToString() const {
+  std::string ToString(int indent_depth) const {
+    // TODO either use indent_depth or refactor to get rid of it as unneeded
+
     using namespace std::string_literals;
     return ""s + '"' + file_name_ + '"' + ", line " +
            std::to_string(GetLineNum(unexpected_token_)) +
@@ -32,11 +34,11 @@ class Parser {
 
  private:
   coolang::ast::CoolClass ParseClass() const;
-  
+
   std::unique_ptr<coolang::ast::Feature> ParseFeature() const;
   std::unique_ptr<coolang::ast::MethodFeature> ParseMethodFeature() const;
   std::unique_ptr<coolang::ast::AttributeFeature> ParseAttributeFeature() const;
-  
+
   coolang::ast::Formal ParseFormal() const;
 
   std::unique_ptr<coolang::ast::Expr> ParseExpr() const;
