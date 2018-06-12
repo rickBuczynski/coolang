@@ -217,5 +217,7 @@ int GetLineNum(Token token);
 std::string TokenToString(const Token& token);
 std::string TokenTypeSpecificStr(Token token,
                                  const std::string& separator = " ");
+bool TokenIsBinOp(const Token& token);
+int TokenBinOpPrecidence(const Token& token);
 
 #endif  // COOLANG_LEXER_TOKEN_H_

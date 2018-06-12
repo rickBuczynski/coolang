@@ -72,6 +72,19 @@ std::string coolang::ast::AddExpr::ToString(int indent_depth) const {
   return str;
 }
 
+std::string coolang::ast::MultiplyExpr::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_mul" + '\n';
+
+  str += lhs_expr_->ToString(indent_depth + 1);
+  str += rhs_expr_->ToString(indent_depth + 1);
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
+  return str;
+}
 std::string coolang::ast::ObjectExpr::ToString(int indent_depth) const {
   std::string str;
 

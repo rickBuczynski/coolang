@@ -98,6 +98,21 @@ class AddExpr : public Expr {
   std::unique_ptr<Expr> rhs_expr_;
 };
 
+class MultiplyExpr : public Expr {
+ public:
+  MultiplyExpr(LineRange line_range, std::unique_ptr<Expr> lhs_expr,
+               std::unique_ptr<Expr> rhs_expr)
+      : Expr(line_range),
+        lhs_expr_(std::move(lhs_expr)),
+        rhs_expr_(std::move(rhs_expr)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::unique_ptr<Expr> lhs_expr_;
+  std::unique_ptr<Expr> rhs_expr_;
+};
+
 class ObjectExpr : public Expr {
  public:
   ObjectExpr(LineRange line_range, std::string id)

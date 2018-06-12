@@ -5,6 +5,7 @@
 using coolang::ast::AddExpr;
 using coolang::ast::AssignExpr;
 using coolang::ast::AttributeFeature;
+using coolang::ast::BlockExpr;
 using coolang::ast::CoolClass;
 using coolang::ast::Expr;
 using coolang::ast::Feature;
@@ -15,7 +16,6 @@ using coolang::ast::LineRange;
 using coolang::ast::MethodFeature;
 using coolang::ast::ObjectExpr;
 using coolang::ast::Program;
-using coolang::ast::BlockExpr;
 
 class UnexpectedTokenExcpetion : public std::exception {
  public:
@@ -116,7 +116,7 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
   auto left_brace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  std::unique_ptr<Expr> expr = ParseExpr();
+  std::unique_ptr<Expr> expr = ParseExpr(0);
 
   auto right_brace_token = ExpectToken<TokenRbrace>(lexer_->PeekToken());
   lexer_->PopToken();
@@ -152,7 +152,7 @@ Formal Parser::ParseFormal() const {
       LineRange(GetLineNum(object_id_token), GetLineNum(type_id_token)));
 }
 
-std::unique_ptr<Expr> Parser::ParseExpr() const {
+std::unique_ptr<Expr> Parser::ParseExpr(int min_precidence) const {
   std::unique_ptr<Expr> lhs_expr;
 
   if (std::holds_alternative<TokenIntConst>(lexer_->PeekToken())) {
@@ -169,19 +169,25 @@ std::unique_ptr<Expr> Parser::ParseExpr() const {
     lhs_expr = ParseBlockExpr();
   }
 
-  // TODO will this work for expr + expr + expr
-  // or do I need a loop to handle left recursion like in that article?
-  if (std::holds_alternative<TokenPlus>(lexer_->PeekToken())) {
-    auto plus_token = ExpectToken<TokenPlus>(lexer_->PeekToken());
+  while (TokenIsBinOp(lexer_->PeekToken()) &&
+         TokenBinOpPrecidence(lexer_->PeekToken()) >= min_precidence) {
+    int next_min_precidence = TokenBinOpPrecidence(lexer_->PeekToken()) + 1;
+    bool is_add = lexer_->PeekTokenTypeIs<TokenPlus>();
+
     lexer_->PopToken();
 
-    std::unique_ptr<Expr> rhs_expr = ParseExpr();
+    std::unique_ptr<Expr> rhs_expr = ParseExpr(next_min_precidence);
 
     LineRange line_range(lhs_expr->GetLineRange().start_line_num,
                          rhs_expr->GetLineRange().start_line_num);
 
-    return std::make_unique<AddExpr>(line_range, std::move(lhs_expr),
-                                     std::move(rhs_expr));
+    if (is_add) {
+      lhs_expr = std::make_unique<AddExpr>(line_range, std::move(lhs_expr),
+                                           std::move(rhs_expr));
+    } else {
+      lhs_expr = std::make_unique<coolang::ast::MultiplyExpr>(
+          line_range, std::move(lhs_expr), std::move(rhs_expr));
+    }
   }
 
   return lhs_expr;
@@ -206,7 +212,7 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
   auto token_in = ExpectToken<TokenIn>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  std::unique_ptr<Expr> in_expr = ParseExpr();
+  std::unique_ptr<Expr> in_expr = ParseExpr(0);
 
   const auto line_range =
       LineRange(GetLineNum(let_token), in_expr->GetLineRange().end_line_num);
@@ -232,7 +238,7 @@ std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() const {
 
   std::vector<std::unique_ptr<Expr>> exprs;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
-    exprs.push_back(ParseExpr());
+    exprs.push_back(ParseExpr(0));
 
     auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
     lexer_->PopToken();
@@ -254,7 +260,8 @@ std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {
   auto assign_token = ExpectToken<TokenAssign>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  auto rhs_expr = ParseExpr();
+  // TODO assign is consider a binop with low precidence in cool manual
+  auto rhs_expr = ParseExpr(0);
 
   const auto line_range = LineRange(GetLineNum(object_id_token),
                                     rhs_expr->GetLineRange().end_line_num);

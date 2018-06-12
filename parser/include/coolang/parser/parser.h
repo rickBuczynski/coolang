@@ -41,7 +41,8 @@ class Parser {
 
   coolang::ast::Formal ParseFormal() const;
 
-  std::unique_ptr<coolang::ast::Expr> ParseExpr() const;
+  // TODO maybe misspelled precedence
+  std::unique_ptr<coolang::ast::Expr> ParseExpr(int min_precidence) const;
   std::unique_ptr<coolang::ast::AssignExpr> ParseAssignExpr() const;
   std::unique_ptr<coolang::ast::IntExpr> ParseIntExpr() const;
   std::unique_ptr<coolang::ast::LetExpr> ParseLetExpr() const;
