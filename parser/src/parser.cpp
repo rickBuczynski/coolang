@@ -15,6 +15,7 @@ using coolang::ast::LineRange;
 using coolang::ast::MethodFeature;
 using coolang::ast::ObjectExpr;
 using coolang::ast::Program;
+using coolang::ast::BlockExpr;
 
 class UnexpectedTokenExcpetion : public std::exception {
  public:
@@ -164,6 +165,8 @@ std::unique_ptr<Expr> Parser::ParseExpr() const {
     }
   } else if (std::holds_alternative<TokenLet>(lexer_->PeekToken())) {
     lhs_expr = ParseLetExpr();
+  } else if (std::holds_alternative<TokenLbrace>(lexer_->PeekToken())) {
+    lhs_expr = ParseBlockExpr();
   }
 
   // TODO will this work for expr + expr + expr
@@ -221,6 +224,27 @@ std::unique_ptr<ObjectExpr> Parser::ParseObjectExpr() const {
       LineRange(GetLineNum(object_id_token), GetLineNum(object_id_token));
 
   return std::make_unique<ObjectExpr>(line_range, object_id_token.get_data());
+}
+
+std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() const {
+  auto lbrace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  std::vector<std::unique_ptr<Expr>> exprs;
+  while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
+    exprs.push_back(ParseExpr());
+
+    auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
+    lexer_->PopToken();
+  }
+
+  auto rbrace_token = ExpectToken<TokenRbrace>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  const auto line_range =
+      LineRange(GetLineNum(lbrace_token), GetLineNum(rbrace_token));
+
+  return std::make_unique<BlockExpr>(line_range, std::move(exprs));
 }
 
 std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {

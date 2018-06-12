@@ -20,6 +20,7 @@ class LineRange {
   int end_line_num;
 };
 
+// TODO need virtual destructors, currently leaking memory
 class AstNode {
  public:
   AstNode(LineRange line_range) : line_range_(line_range) {}
@@ -106,6 +107,17 @@ class ObjectExpr : public Expr {
 
  private:
   std::string id_;
+};
+
+class BlockExpr : public Expr {
+ public:
+  BlockExpr(LineRange line_range, std::vector<std::unique_ptr<Expr>> exprs)
+      : Expr(line_range), exprs_(std::move(exprs)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::vector<std::unique_ptr<Expr>> exprs_;
 };
 
 class Formal {
