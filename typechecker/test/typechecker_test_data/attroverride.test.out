@@ -1,0 +1,2 @@
+attroverride.test:8: Attribute B.moo is already defined in class A at attroverride.test:4.
+Compilation halted due to static semantic errors.
