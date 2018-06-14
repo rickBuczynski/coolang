@@ -17,6 +17,57 @@ using coolang::ast::MethodFeature;
 using coolang::ast::ObjectExpr;
 using coolang::ast::Program;
 
+int TokenBinOpPrecidence(const Token& token) {
+  return std::visit(
+      [](auto&& arg) -> int {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, TokenDiv>) {
+          return 3;
+        } else if constexpr (std::is_same_v<T, TokenMult>) {
+          return 3;
+        } else if constexpr (std::is_same_v<T, TokenPlus>) {
+          return 2;
+        } else if constexpr (std::is_same_v<T, TokenMinus>) {
+          return 2;
+        } else if constexpr (std::is_same_v<T, TokenEq>) {
+          return 1;
+        } else if constexpr (std::is_same_v<T, TokenLt>) {
+          return 1;
+        } else if constexpr (std::is_same_v<T, TokenLe>) {
+          return 1;
+        } else {
+          throw std::invalid_argument(TokenToString(arg) +
+                                      " is not a binary operator");
+        }
+      },
+      token);
+}
+
+bool TokenIsBinOp(const Token& token) {
+  return std::visit(
+      [](auto&& arg) -> bool {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, TokenPlus>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenDiv>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenMinus>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenMult>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenEq>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenLt>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenLe>) {
+          return true;
+        } else {
+          return false;
+        }
+      },
+      token);
+}
+
 class UnexpectedTokenExcpetion : public std::exception {
  public:
   explicit UnexpectedTokenExcpetion(Token unexpected_token)
@@ -171,8 +222,9 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precidence) const {
 
   while (TokenIsBinOp(lexer_->PeekToken()) &&
          TokenBinOpPrecidence(lexer_->PeekToken()) >= min_precidence) {
-    int next_min_precidence = TokenBinOpPrecidence(lexer_->PeekToken()) + 1;
-    bool is_add = lexer_->PeekTokenTypeIs<TokenPlus>();
+    const int next_min_precidence =
+        TokenBinOpPrecidence(lexer_->PeekToken()) + 1;
+    const bool is_add = lexer_->PeekTokenTypeIs<TokenPlus>();
 
     lexer_->PopToken();
 
