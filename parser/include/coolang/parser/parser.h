@@ -18,7 +18,7 @@ class ParseError {
     return ""s + '"' + file_name_ + '"' + ", line " +
            std::to_string(GetLineNum(unexpected_token_)) +
            ": syntax error at or near " +
-           TokenTypeSpecificStr(unexpected_token_) + '\n' +
+           TokenTypeSpecificStr(unexpected_token_, " = ") + '\n' +
            "Compilation halted due to lex and parse errors\n";
   }
 

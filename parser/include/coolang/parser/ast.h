@@ -228,8 +228,12 @@ class MethodFeature : public Feature {
 
 class AttributeFeature : public Feature {
  public:
-  AttributeFeature(std::string id, std::string type, LineRange line_range)
-      : Feature(line_range), id_(std::move(id)), type_(std::move(type)) {}
+  AttributeFeature(LineRange line_range, std::string id, std::string type,
+                   std::unique_ptr<Expr> initialization_expr)
+      : Feature(std::move(line_range)),
+        id_(std::move(id)),
+        type_(std::move(type)),
+        initialization_expr_(std::move(initialization_expr)) {}
 
   std::string ToString(int indent_depth) const override;
 

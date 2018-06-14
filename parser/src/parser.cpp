@@ -223,10 +223,16 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
 
 std::unique_ptr<AttributeFeature> Parser::ParseAttributeFeature() const {
   Formal f = ParseFormal();
-  // TODO parse init expr if present
+
+  std::unique_ptr<Expr> initialization_expr;
+  if (lexer_->PeekTokenTypeIs<TokenAssign>()) {
+    lexer_->PopToken();
+    initialization_expr = ParseExpr(0);
+  }
+
   // need to change line range if theres an init expr
-  return std::make_unique<AttributeFeature>(f.GetId(), f.GetType(),
-                                            f.GetLineRange());
+  return std::make_unique<AttributeFeature>(
+      f.GetLineRange(), f.GetId(), f.GetType(), std::move(initialization_expr));
 }
 
 Formal Parser::ParseFormal() const {
@@ -276,7 +282,10 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precidence) const {
                                  std::move(rhs_expr));
   }
 
-  return lhs_expr;
+  if (lhs_expr) {
+    return lhs_expr;
+  }
+  throw UnexpectedTokenExcpetion(lexer_->PeekToken());
 }
 
 std::unique_ptr<IntExpr> Parser::ParseIntExpr() const {
