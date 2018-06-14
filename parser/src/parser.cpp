@@ -68,6 +68,42 @@ bool TokenIsBinOp(const Token& token) {
       token);
 }
 
+std::unique_ptr<coolang::ast::BinOpExpr> BinOpExprForToken(
+    const Token& token, LineRange line_range, std::unique_ptr<Expr> lhs_expr,
+    std::unique_ptr<Expr> rhs_expr) {
+  return std::visit(
+      [line_range, &lhs_expr,
+       &rhs_expr](auto&& arg) -> std::unique_ptr<coolang::ast::BinOpExpr> {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, TokenDiv>) {
+          return std::make_unique<coolang::ast::DivideExpr>(
+              line_range, std::move(lhs_expr), std::move(rhs_expr));
+        } else if constexpr (std::is_same_v<T, TokenMult>) {
+          return std::make_unique<coolang::ast::MultiplyExpr>(
+              line_range, std::move(lhs_expr), std::move(rhs_expr));
+        } else if constexpr (std::is_same_v<T, TokenPlus>) {
+          return std::make_unique<coolang::ast::AddExpr>(
+              line_range, std::move(lhs_expr), std::move(rhs_expr));
+        } else if constexpr (std::is_same_v<T, TokenMinus>) {
+          return std::make_unique<coolang::ast::SubtractExpr>(
+              line_range, std::move(lhs_expr), std::move(rhs_expr));
+        } else if constexpr (std::is_same_v<T, TokenEq>) {
+          return std::make_unique<coolang::ast::EqCompareExpr>(
+              line_range, std::move(lhs_expr), std::move(rhs_expr));
+        } else if constexpr (std::is_same_v<T, TokenLt>) {
+          return std::make_unique<coolang::ast::LessThanCompareExpr>(
+              line_range, std::move(lhs_expr), std::move(rhs_expr));
+        } else if constexpr (std::is_same_v<T, TokenLe>) {
+          return std::make_unique<coolang::ast::LessThanEqualCompareExpr>(
+              line_range, std::move(lhs_expr), std::move(rhs_expr));
+        } else {
+          throw std::invalid_argument(TokenToString(arg) +
+                                      " is not a binary operator");
+        }
+      },
+      token);
+}
+
 class UnexpectedTokenExcpetion : public std::exception {
  public:
   explicit UnexpectedTokenExcpetion(Token unexpected_token)
@@ -222,24 +258,17 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precidence) const {
 
   while (TokenIsBinOp(lexer_->PeekToken()) &&
          TokenBinOpPrecidence(lexer_->PeekToken()) >= min_precidence) {
-    const int next_min_precidence =
-        TokenBinOpPrecidence(lexer_->PeekToken()) + 1;
-    const bool is_add = lexer_->PeekTokenTypeIs<TokenPlus>();
-
+    Token binop_token = lexer_->PeekToken();
     lexer_->PopToken();
 
-    std::unique_ptr<Expr> rhs_expr = ParseExpr(next_min_precidence);
+    std::unique_ptr<Expr> rhs_expr =
+        ParseExpr(TokenBinOpPrecidence(binop_token) + 1);
 
-    LineRange line_range(lhs_expr->GetLineRange().start_line_num,
-                         rhs_expr->GetLineRange().start_line_num);
+    const LineRange line_range(lhs_expr->GetLineRange().start_line_num,
+                               rhs_expr->GetLineRange().end_line_num);
 
-    if (is_add) {
-      lhs_expr = std::make_unique<AddExpr>(line_range, std::move(lhs_expr),
-                                           std::move(rhs_expr));
-    } else {
-      lhs_expr = std::make_unique<coolang::ast::MultiplyExpr>(
-          line_range, std::move(lhs_expr), std::move(rhs_expr));
-    }
+    lhs_expr = BinOpExprForToken(binop_token, line_range, std::move(lhs_expr),
+                                 std::move(rhs_expr));
   }
 
   return lhs_expr;

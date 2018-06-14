@@ -107,12 +107,12 @@ class BinOpExpr : public Expr {
   std::unique_ptr<Expr> rhs_expr_;
 };
 
-class AddExpr : public BinOpExpr {
+class DivideExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
  protected:
-  std::string OpName() const override { return "_plus"; }
+  std::string OpName() const override { return "_divide"; }
 };
 
 class MultiplyExpr : public BinOpExpr {
@@ -121,6 +121,46 @@ class MultiplyExpr : public BinOpExpr {
 
  protected:
   std::string OpName() const override { return "_mul"; }
+};
+
+class AddExpr : public BinOpExpr {
+ public:
+  using BinOpExpr::BinOpExpr;
+
+ protected:
+  std::string OpName() const override { return "_plus"; }
+};
+
+class SubtractExpr : public BinOpExpr {
+ public:
+  using BinOpExpr::BinOpExpr;
+
+ protected:
+  std::string OpName() const override { return "_sub"; }
+};
+
+class EqCompareExpr : public BinOpExpr {
+ public:
+  using BinOpExpr::BinOpExpr;
+
+ protected:
+  std::string OpName() const override { return "_eqTODO"; }
+};
+
+class LessThanCompareExpr : public BinOpExpr {
+ public:
+  using BinOpExpr::BinOpExpr;
+
+ protected:
+  std::string OpName() const override { return "_ltTODO"; }
+};
+
+class LessThanEqualCompareExpr : public BinOpExpr {
+ public:
+  using BinOpExpr::BinOpExpr;
+
+ protected:
+  std::string OpName() const override { return "_leTODO"; }
 };
 
 class ObjectExpr : public Expr {
