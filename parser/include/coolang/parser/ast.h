@@ -27,7 +27,7 @@ class AstNode {
 
   AstNode(const AstNode& other) = delete;
   AstNode& operator=(const AstNode& other) = delete;
-  
+
   AstNode(AstNode&& other) noexcept = default;
   AstNode& operator=(AstNode&& other) noexcept = default;
 
@@ -90,34 +90,38 @@ class LetExpr : public Expr {
   std::unique_ptr<Expr> in_expr_;
 };
 
-class AddExpr : public Expr {
+class BinOpExpr : public Expr {
  public:
-  AddExpr(LineRange line_range, std::unique_ptr<Expr> lhs_expr,
-          std::unique_ptr<Expr> rhs_expr)
+  BinOpExpr(LineRange line_range, std::unique_ptr<Expr> lhs_expr,
+            std::unique_ptr<Expr> rhs_expr)
       : Expr(line_range),
         lhs_expr_(std::move(lhs_expr)),
         rhs_expr_(std::move(rhs_expr)) {}
 
   std::string ToString(int indent_depth) const override;
+
+ protected:
+  virtual std::string OpName() const = 0;
 
  private:
   std::unique_ptr<Expr> lhs_expr_;
   std::unique_ptr<Expr> rhs_expr_;
 };
 
-class MultiplyExpr : public Expr {
+class AddExpr : public BinOpExpr {
  public:
-  MultiplyExpr(LineRange line_range, std::unique_ptr<Expr> lhs_expr,
-               std::unique_ptr<Expr> rhs_expr)
-      : Expr(line_range),
-        lhs_expr_(std::move(lhs_expr)),
-        rhs_expr_(std::move(rhs_expr)) {}
+  using BinOpExpr::BinOpExpr;
 
-  std::string ToString(int indent_depth) const override;
+ protected:
+  std::string OpName() const override { return "_plus"; }
+};
 
- private:
-  std::unique_ptr<Expr> lhs_expr_;
-  std::unique_ptr<Expr> rhs_expr_;
+class MultiplyExpr : public BinOpExpr {
+ public:
+  using BinOpExpr::BinOpExpr;
+
+ protected:
+  std::string OpName() const override { return "_mul"; }
 };
 
 class ObjectExpr : public Expr {

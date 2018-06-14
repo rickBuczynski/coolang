@@ -153,6 +153,7 @@ std::string TokenTypeSpecificStr(Token token, const std::string& separator) {
       token);
 }
 
+// TODO maybe move this it should maybe be part of parser not lexer
 bool TokenIsBinOp(const Token& token) {
   return std::visit(
       [](auto&& arg) -> bool {
@@ -178,6 +179,7 @@ bool TokenIsBinOp(const Token& token) {
       token);
 }
 
+// TODO move this it should be part of parser not lexer
 int TokenBinOpPrecidence(const Token& token) {
   return std::visit(
       [](auto&& arg) -> int {
