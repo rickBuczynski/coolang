@@ -20,10 +20,17 @@ class LineRange {
   int end_line_num;
 };
 
-// TODO need virtual destructors, currently leaking memory
 class AstNode {
  public:
   AstNode(LineRange line_range) : line_range_(line_range) {}
+  virtual ~AstNode() = default;
+
+  AstNode(const AstNode& other) = delete;
+  AstNode& operator=(const AstNode& other) = delete;
+  
+  AstNode(AstNode&& other) noexcept = default;
+  AstNode& operator=(AstNode&& other) noexcept = default;
+
   LineRange GetLineRange() const { return line_range_; }
 
   virtual std::string ToString(int indent_depth) const = 0;
