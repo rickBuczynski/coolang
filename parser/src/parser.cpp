@@ -189,7 +189,12 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
   auto left_paren_token = ExpectToken<TokenLparen>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  // TODO arg list
+  std::vector<Formal> args;
+  while (!lexer_->PeekTokenTypeIs<TokenRparen>()) {
+    args.push_back(ParseFormal());
+
+    if (lexer_->PeekTokenTypeIs<TokenComma>()) lexer_->PopToken();
+  }
 
   auto right_paren_token = ExpectToken<TokenRparen>(lexer_->PeekToken());
   lexer_->PopToken();
@@ -211,9 +216,9 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
   const LineRange line_range =
       LineRange(GetLineNum(object_id_token), GetLineNum(right_brace_token));
 
-  return std::make_unique<MethodFeature>(object_id_token.get_data(),
-                                         type_id_token.get_data(),
-                                         std::move(expr), line_range);
+  return std::make_unique<MethodFeature>(line_range, object_id_token.get_data(),
+                                         args, type_id_token.get_data(),
+                                         std::move(expr));
 }
 
 std::unique_ptr<AttributeFeature> Parser::ParseAttributeFeature() const {

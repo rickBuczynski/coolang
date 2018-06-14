@@ -100,7 +100,17 @@ std::string coolang::ast::BlockExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::Formal::ToString() const { return ""; }
+std::string coolang::ast::Formal::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_formal" + '\n';
+
+  str += Indentation(indent_depth + 1) + id_ + '\n';
+  str += Indentation(indent_depth + 1) + type_ + '\n';
+
+  return str;
+}
 
 std::string coolang::ast::MethodFeature::ToString(int indent_depth) const {
   std::string str;
@@ -109,6 +119,11 @@ std::string coolang::ast::MethodFeature::ToString(int indent_depth) const {
   str += Indentation(indent_depth) + "_method" + '\n';
 
   str += Indentation(indent_depth + 1) + id_ + '\n';
+
+  for (const auto& arg : args_) {
+    str += arg.ToString(indent_depth + 1);
+  }
+
   str += Indentation(indent_depth + 1) + return_type_ + '\n';
 
   str += body_->ToString(indent_depth + 1);

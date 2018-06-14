@@ -194,7 +194,7 @@ class Formal {
   std::string GetType() const { return type_; }
   LineRange GetLineRange() const { return line_range_; }
 
-  std::string ToString() const;
+  std::string ToString(int indent_depth) const;
 
  private:
   std::string id_;
@@ -209,10 +209,11 @@ class Feature : public AstNode {
 
 class MethodFeature : public Feature {
  public:
-  MethodFeature(std::string id, std::string return_type,
-                std::unique_ptr<Expr> body, LineRange line_range)
+  MethodFeature(LineRange line_range, std::string id, std::vector<Formal> args,
+                std::string return_type, std::unique_ptr<Expr> body)
       : Feature(line_range),
         id_(std::move(id)),
+        args_(std::move(args)),
         return_type_(std::move(return_type)),
         body_(std::move(body)) {}
 
@@ -220,7 +221,7 @@ class MethodFeature : public Feature {
 
  private:
   std::string id_;
-  // TODO arg list
+  std::vector<Formal> args_;
   std::string return_type_;
   std::unique_ptr<Expr> body_;
 };

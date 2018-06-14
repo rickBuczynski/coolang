@@ -38,5 +38,6 @@ TEST(ParserTest, classtwofields) { TestParser("classtwofields.test"); }
 TEST(ParserTest, assignment) { TestParser("assignment.test"); }
 TEST(ParserTest, addedlet) { TestParser("addedlet.test"); }
 TEST(ParserTest, arithprecedence) { TestParser("arithprecedence.test"); }
+TEST(ParserTest, associativity) { TestParser("associativity-.test"); }
 
 }  // namespace
