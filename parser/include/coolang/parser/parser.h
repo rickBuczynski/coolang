@@ -32,24 +32,24 @@ class ParseError {
 class Parser {
  public:
   explicit Parser(std::unique_ptr<Lexer> lexer) : lexer_(std::move(lexer)){};
-  std::variant<ast::Program, ParseError> ParseProgram() const;
+  std::variant<ProgramAst, ParseError> ParseProgram() const;
 
  private:
-  ast::CoolClass ParseClass() const;
+  ClassAst ParseClass() const;
 
-  std::unique_ptr<ast::Feature> ParseFeature() const;
-  std::unique_ptr<ast::MethodFeature> ParseMethodFeature() const;
-  std::unique_ptr<ast::AttributeFeature> ParseAttributeFeature() const;
+  std::unique_ptr<Feature> ParseFeature() const;
+  std::unique_ptr<MethodFeature> ParseMethodFeature() const;
+  std::unique_ptr<AttributeFeature> ParseAttributeFeature() const;
 
-  ast::Formal ParseFormal() const;
+  Formal ParseFormal() const;
 
   // TODO maybe misspelled precedence
-  std::unique_ptr<ast::Expr> ParseExpr(int min_precidence) const;
-  std::unique_ptr<ast::AssignExpr> ParseAssignExpr() const;
-  std::unique_ptr<ast::IntExpr> ParseIntExpr() const;
-  std::unique_ptr<ast::LetExpr> ParseLetExpr() const;
-  std::unique_ptr<ast::ObjectExpr> ParseObjectExpr() const;
-  std::unique_ptr<ast::BlockExpr> ParseBlockExpr() const;
+  std::unique_ptr<Expr> ParseExpr(int min_precidence) const;
+  std::unique_ptr<AssignExpr> ParseAssignExpr() const;
+  std::unique_ptr<IntExpr> ParseIntExpr() const;
+  std::unique_ptr<LetExpr> ParseLetExpr() const;
+  std::unique_ptr<ObjectExpr> ParseObjectExpr() const;
+  std::unique_ptr<BlockExpr> ParseBlockExpr() const;
 
   std::unique_ptr<Lexer> lexer_;
 };

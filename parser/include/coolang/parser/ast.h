@@ -18,8 +18,6 @@ class LineRange {
   int end_line_num;
 };
 
-namespace ast {
-
 class AstNode {
  public:
   explicit AstNode(LineRange line_range) : line_range_(line_range) {}
@@ -244,11 +242,11 @@ class AttributeFeature : public Feature {
   std::unique_ptr<Expr> initialization_expr_;
 };
 
-class CoolClass : public AstNode {
+class ClassAst : public AstNode {
  public:
-  CoolClass(std::string type, std::optional<std::string> inherits_type,
-            std::vector<std::unique_ptr<Feature>>&& features,
-            LineRange line_range, std::string containing_file_name)
+  ClassAst(std::string type, std::optional<std::string> inherits_type,
+           std::vector<std::unique_ptr<Feature>>&& features,
+           LineRange line_range, std::string containing_file_name)
       : AstNode(line_range),
         type_(std::move(type)),
         inherits_type_(std::move(inherits_type)),
@@ -268,18 +266,17 @@ class CoolClass : public AstNode {
   std::string containing_file_name_;
 };
 
-class Program : public AstNode {
+class ProgramAst : public AstNode {
  public:
-  Program(std::vector<CoolClass>&& cool_classes, LineRange line_range)
+  ProgramAst(std::vector<ClassAst>&& cool_classes, LineRange line_range)
       : AstNode(line_range), classes_(std::move(cool_classes)) {}
 
   std::string ToString(int indent_depth) const override;
 
  private:
-  std::vector<CoolClass> classes_;
+  std::vector<ClassAst> classes_;
 };
 
-}  // namespace ast
 }  // namespace coolang
 
 #endif  // COOLANG_PARSER_AST_H

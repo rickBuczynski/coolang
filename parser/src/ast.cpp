@@ -8,7 +8,7 @@ std::string Indentation(int indentation_level) {
   return std::string(indentation_level * 2, ' ');
 }
 
-std::string ast::AssignExpr::ToString(int indent_depth) const {
+std::string AssignExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -23,7 +23,7 @@ std::string ast::AssignExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::IntExpr::ToString(int indent_depth) const {
+std::string IntExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -36,7 +36,7 @@ std::string ast::IntExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::LetExpr::ToString(int indent_depth) const {
+std::string LetExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -60,7 +60,7 @@ std::string ast::LetExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::BinOpExpr::ToString(int indent_depth) const {
+std::string BinOpExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -74,7 +74,7 @@ std::string ast::BinOpExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::ObjectExpr::ToString(int indent_depth) const {
+std::string ObjectExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -87,7 +87,7 @@ std::string ast::ObjectExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::BlockExpr::ToString(int indent_depth) const {
+std::string BlockExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -102,7 +102,7 @@ std::string ast::BlockExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::Formal::ToString(int indent_depth) const {
+std::string Formal::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -114,7 +114,7 @@ std::string ast::Formal::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::MethodFeature::ToString(int indent_depth) const {
+std::string MethodFeature::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -133,7 +133,7 @@ std::string ast::MethodFeature::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::AttributeFeature::ToString(int indent_depth) const {
+std::string AttributeFeature::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -152,7 +152,7 @@ std::string ast::AttributeFeature::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::CoolClass::ToString(int indent_depth) const {
+std::string ClassAst::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -173,7 +173,7 @@ std::string ast::CoolClass::ToString(int indent_depth) const {
   return str;
 }
 
-std::string ast::Program::ToString(int indent_depth) const {
+std::string ProgramAst::ToString(int indent_depth) const {
   using namespace std::string_literals;
 
   std::string str;
