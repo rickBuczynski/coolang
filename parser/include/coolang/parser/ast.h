@@ -21,7 +21,7 @@ class LineRange {
 
 class AstNode {
  public:
-  AstNode(LineRange line_range) : line_range_(line_range) {}
+  explicit AstNode(LineRange line_range) : line_range_(line_range) {}
   virtual ~AstNode() = default;
 
   AstNode(const AstNode& other) = delete;
@@ -40,7 +40,7 @@ class AstNode {
 
 class Expr : public AstNode {
  public:
-  Expr(LineRange line_range) : AstNode(line_range) {}
+  explicit Expr(LineRange line_range) : AstNode(line_range) {}
 };
 
 class AssignExpr : public Expr {
@@ -230,7 +230,7 @@ class AttributeFeature : public Feature {
  public:
   AttributeFeature(LineRange line_range, std::string id, std::string type,
                    std::unique_ptr<Expr> initialization_expr)
-      : Feature(std::move(line_range)),
+      : Feature(line_range),
         id_(std::move(id)),
         type_(std::move(type)),
         initialization_expr_(std::move(initialization_expr)) {}

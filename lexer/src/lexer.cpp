@@ -1,6 +1,4 @@
 #include <algorithm>
-#include <fstream>
-#include <iostream>
 #include <optional>
 #include <vector>
 #include "coolang/lexer/lexer.h"

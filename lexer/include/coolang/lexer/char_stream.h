@@ -6,21 +6,21 @@
 
 class CharStream {
  public:
-  CharStream(std::string input_file_name);
+  explicit CharStream(const std::string& input_file_name);
 
   void Pop();
-  char Peek() { return cur_char; };
+  char Peek() const { return cur_char_; }
 
-  int CurLineNum() { return cur_line_num; };
+  int CurLineNum() const { return cur_line_num_; }
 
  private:
-  std::ifstream infile;
+  std::ifstream infile_;
 
-  int cur_line_num = 1;
+  int cur_line_num_ = 1;
 
   // set an initial value so we don't increment cur_line_num when comparing to
   // newline during first pop
-  char cur_char = 0;
+  char cur_char_ = 0;
 };
 
 #endif  // COOLANG_LEXER_CHAR_STREAM_H_
