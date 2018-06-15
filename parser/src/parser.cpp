@@ -55,33 +55,34 @@ bool TokenIsBinOp(const Token& token) {
       token);
 }
 
-std::unique_ptr<coolang::BinOpExpr> BinOpExprForToken(
-    const Token& token, LineRange line_range, std::unique_ptr<Expr> lhs_expr,
-    std::unique_ptr<Expr> rhs_expr) {
+std::unique_ptr<BinOpExpr> BinOpExprForToken(const Token& token,
+                                             LineRange line_range,
+                                             std::unique_ptr<Expr> lhs_expr,
+                                             std::unique_ptr<Expr> rhs_expr) {
   return std::visit(
       [line_range, &lhs_expr,
-       &rhs_expr](auto&& arg) -> std::unique_ptr<coolang::BinOpExpr> {
+       &rhs_expr](auto&& arg) -> std::unique_ptr<BinOpExpr> {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, TokenDiv>) {
-          return std::make_unique<coolang::DivideExpr>(
-              line_range, std::move(lhs_expr), std::move(rhs_expr));
+          return std::make_unique<DivideExpr>(line_range, std::move(lhs_expr),
+                                              std::move(rhs_expr));
         } else if constexpr (std::is_same_v<T, TokenMult>) {
-          return std::make_unique<coolang::MultiplyExpr>(
-              line_range, std::move(lhs_expr), std::move(rhs_expr));
+          return std::make_unique<MultiplyExpr>(line_range, std::move(lhs_expr),
+                                                std::move(rhs_expr));
         } else if constexpr (std::is_same_v<T, TokenPlus>) {
-          return std::make_unique<coolang::AddExpr>(
-              line_range, std::move(lhs_expr), std::move(rhs_expr));
+          return std::make_unique<AddExpr>(line_range, std::move(lhs_expr),
+                                           std::move(rhs_expr));
         } else if constexpr (std::is_same_v<T, TokenMinus>) {
-          return std::make_unique<coolang::SubtractExpr>(
-              line_range, std::move(lhs_expr), std::move(rhs_expr));
+          return std::make_unique<SubtractExpr>(line_range, std::move(lhs_expr),
+                                                std::move(rhs_expr));
         } else if constexpr (std::is_same_v<T, TokenEq>) {
-          return std::make_unique<coolang::EqCompareExpr>(
+          return std::make_unique<EqCompareExpr>(
               line_range, std::move(lhs_expr), std::move(rhs_expr));
         } else if constexpr (std::is_same_v<T, TokenLt>) {
-          return std::make_unique<coolang::LessThanCompareExpr>(
+          return std::make_unique<LessThanCompareExpr>(
               line_range, std::move(lhs_expr), std::move(rhs_expr));
         } else if constexpr (std::is_same_v<T, TokenLe>) {
-          return std::make_unique<coolang::LessThanEqualCompareExpr>(
+          return std::make_unique<LessThanEqualCompareExpr>(
               line_range, std::move(lhs_expr), std::move(rhs_expr));
         } else {
           throw std::invalid_argument(TokenToString(arg) +
