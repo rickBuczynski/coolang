@@ -13,7 +13,7 @@ std::string GetExpectedOutput(const std::string& expected_output_file) {
 
 std::string GetParserOutput(const std::string& input_file_name) {
   coolang::Parser parser(
-      std::make_unique<Lexer>(PARSER_TEST_DATA_PATH + input_file_name));
+      std::make_unique<coolang::Lexer>(PARSER_TEST_DATA_PATH + input_file_name));
 
   std::variant<coolang::ProgramAst, coolang::ParseError> program_or_error =
       parser.ParseProgram();

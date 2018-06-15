@@ -4,6 +4,8 @@
 #include "coolang/lexer/lexer.h"
 #include "coolang/lexer/token.h"
 
+namespace coolang {
+
 std::string lower_case(std::string word) {
   std::transform(word.begin(), word.end(), word.begin(), tolower);
   return word;
@@ -303,3 +305,5 @@ std::optional<TokenError> Lexer::AdvancePastEndOfComment() {
   char_stream_.Pop();
   return std::nullopt;
 }
+
+}  // namespace coolang

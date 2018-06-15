@@ -4,6 +4,8 @@
 #include <fstream>
 #include <string>
 
+namespace coolang {
+
 class CharStream {
  public:
   explicit CharStream(const std::string& input_file_name);
@@ -22,5 +24,7 @@ class CharStream {
   // newline during first pop
   char cur_char_ = 0;
 };
+
+}  // namespace coolang
 
 #endif  // COOLANG_LEXER_CHAR_STREAM_H_

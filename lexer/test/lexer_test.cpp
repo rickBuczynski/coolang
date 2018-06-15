@@ -15,12 +15,12 @@ std::string GetExpectedOutput(const std::string& expected_output_file) {
 }
 
 std::string GetLexerOutput(const std::string& input_file_name) {
-  Lexer lexer(LEXER_TEST_DATA_PATH + input_file_name);
+  coolang::Lexer lexer(LEXER_TEST_DATA_PATH + input_file_name);
 
   std::string lexer_output = "#name \"" + input_file_name + "\"" + '\n';
 
-  while (!lexer.PeekTokenTypeIs<TokenEndOfFile>()) {
-    lexer_output += TokenToString(lexer.PeekToken());
+  while (!lexer.PeekTokenTypeIs<coolang::TokenEndOfFile>()) {
+    lexer_output += coolang::TokenToString(lexer.PeekToken());
     lexer_output += '\n';
     // std::cout << TokenToString(lexer.PeekToken()) << std::endl;
     lexer.PopToken();

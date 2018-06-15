@@ -8,6 +8,8 @@
 #include "coolang/lexer/char_stream.h"
 #include "coolang/lexer/token.h"
 
+namespace coolang {
+
 class Lexer {
  public:
   explicit Lexer(const std::string& input_file_path);
@@ -40,5 +42,7 @@ class Lexer {
 
   std::optional<Token> look_ahead_token_;
 };
+
+}  // namespace coolang
 
 #endif  // COOLANG_LEXER_LEXER_H_

@@ -4,6 +4,8 @@
 #include <string>
 #include <variant>
 
+namespace coolang {
+
 class TokenBase {
  public:
   TokenBase(int line_num) : line_num_(line_num){};
@@ -217,5 +219,7 @@ int GetLineNum(Token token);
 std::string TokenToString(const Token& token);
 std::string TokenTypeSpecificStr(Token token,
                                  const std::string& separator = " ");
+
+}  // namespace coolang
 
 #endif  // COOLANG_LEXER_TOKEN_H_

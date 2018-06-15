@@ -2,6 +2,8 @@
 #include <iostream>
 #include "coolang/lexer/char_stream.h"
 
+namespace coolang {
+
 CharStream::CharStream(const std::string& input_file_name)
     // open as binary to prevent ascii code 26 from triggering EOF
     // https://stackoverflow.com/questions/15034012/ifstream-eof-end-of-file-is-reached-before-the-real-end
@@ -24,3 +26,5 @@ void CharStream::Pop() {
     cur_char_ = EOF;
   }
 }
+
+}  // namespace coolang

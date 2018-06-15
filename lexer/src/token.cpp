@@ -4,6 +4,8 @@
 #include <variant>
 #include "coolang/lexer/token.h"
 
+namespace coolang {
+
 std::string Escaped(const std::string& str) {
   // will print excape sequences e.g. instead of a tab character will print \t
   // instead of a newline \n
@@ -152,3 +154,5 @@ std::string TokenTypeSpecificStr(Token token, const std::string& separator) {
       },
       token);
 }
+
+}  // namespace coolang
