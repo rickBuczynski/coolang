@@ -6,7 +6,6 @@
 #include <vector>
 
 namespace coolang {
-namespace ast {
 
 class LineRange {
  public:
@@ -18,6 +17,8 @@ class LineRange {
   int start_line_num;
   int end_line_num;
 };
+
+namespace ast {
 
 class AstNode {
  public:

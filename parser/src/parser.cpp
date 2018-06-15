@@ -56,7 +56,7 @@ bool TokenIsBinOp(const Token& token) {
 }
 
 std::unique_ptr<coolang::ast::BinOpExpr> BinOpExprForToken(
-    const Token& token, ast::LineRange line_range,
+    const Token& token, LineRange line_range,
     std::unique_ptr<ast::Expr> lhs_expr, std::unique_ptr<ast::Expr> rhs_expr) {
   return std::visit(
       [line_range, &lhs_expr,
@@ -128,8 +128,7 @@ std::variant<ast::Program, ParseError> Parser::ParseProgram() const {
         classes.empty() ? eof_token.get_line_num()
                         : classes.back().GetLineRange().end_line_num;
 
-    return ast::Program(std::move(classes),
-                        ast::LineRange(1, program_end_line));
+    return ast::Program(std::move(classes), LineRange(1, program_end_line));
   } catch (const UnexpectedTokenExcpetion& e) {
     return ParseError(e.GetUnexpectedToken(),
                       lexer_->GetInputFile().filename().string());
@@ -159,7 +158,7 @@ ast::CoolClass Parser::ParseClass() const {
 
   return ast::CoolClass(
       type_id_token.get_data(), std::nullopt, std::move(features),
-      ast::LineRange(class_token.get_line_num(), rbrace_token.get_line_num()),
+      LineRange(class_token.get_line_num(), rbrace_token.get_line_num()),
       lexer_->GetInputFile().filename().string());
 }
 
@@ -201,8 +200,8 @@ std::unique_ptr<ast::MethodFeature> Parser::ParseMethodFeature() const {
   auto right_brace_token = ExpectToken<TokenRbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  const ast::LineRange line_range = ast::LineRange(
-      GetLineNum(object_id_token), GetLineNum(right_brace_token));
+  const LineRange line_range =
+      LineRange(GetLineNum(object_id_token), GetLineNum(right_brace_token));
 
   return std::make_unique<ast::MethodFeature>(
       line_range, object_id_token.get_data(), args, type_id_token.get_data(),
@@ -235,7 +234,7 @@ ast::Formal Parser::ParseFormal() const {
 
   return ast::Formal(
       object_id_token.get_data(), type_id_token.get_data(),
-      ast::LineRange(GetLineNum(object_id_token), GetLineNum(type_id_token)));
+      LineRange(GetLineNum(object_id_token), GetLineNum(type_id_token)));
 }
 
 std::unique_ptr<ast::Expr> Parser::ParseExpr(int min_precidence) const {
@@ -263,8 +262,8 @@ std::unique_ptr<ast::Expr> Parser::ParseExpr(int min_precidence) const {
     std::unique_ptr<ast::Expr> rhs_expr =
         ParseExpr(TokenBinOpPrecidence(binop_token) + 1);
 
-    const ast::LineRange line_range(lhs_expr->GetLineRange().start_line_num,
-                                    rhs_expr->GetLineRange().end_line_num);
+    const LineRange line_range(lhs_expr->GetLineRange().start_line_num,
+                               rhs_expr->GetLineRange().end_line_num);
 
     lhs_expr = BinOpExprForToken(binop_token, line_range, std::move(lhs_expr),
                                  std::move(rhs_expr));
@@ -281,7 +280,7 @@ std::unique_ptr<ast::IntExpr> Parser::ParseIntExpr() const {
   lexer_->PopToken();
 
   const auto line_range =
-      ast::LineRange(GetLineNum(int_const_token), GetLineNum(int_const_token));
+      LineRange(GetLineNum(int_const_token), GetLineNum(int_const_token));
 
   return std::make_unique<ast::IntExpr>(int_const_token.get_data(), line_range);
 }
@@ -297,8 +296,8 @@ std::unique_ptr<ast::LetExpr> Parser::ParseLetExpr() const {
 
   std::unique_ptr<ast::Expr> in_expr = ParseExpr(0);
 
-  const auto line_range = ast::LineRange(GetLineNum(let_token),
-                                         in_expr->GetLineRange().end_line_num);
+  const auto line_range =
+      LineRange(GetLineNum(let_token), in_expr->GetLineRange().end_line_num);
 
   // TODO init expr is empty default constructor
   return std::make_unique<ast::LetExpr>(line_range, f.GetId(), f.GetType(),
@@ -311,7 +310,7 @@ std::unique_ptr<ast::ObjectExpr> Parser::ParseObjectExpr() const {
   lexer_->PopToken();
 
   const auto line_range =
-      ast::LineRange(GetLineNum(object_id_token), GetLineNum(object_id_token));
+      LineRange(GetLineNum(object_id_token), GetLineNum(object_id_token));
 
   return std::make_unique<ast::ObjectExpr>(line_range,
                                            object_id_token.get_data());
@@ -333,7 +332,7 @@ std::unique_ptr<ast::BlockExpr> Parser::ParseBlockExpr() const {
   lexer_->PopToken();
 
   const auto line_range =
-      ast::LineRange(GetLineNum(lbrace_token), GetLineNum(rbrace_token));
+      LineRange(GetLineNum(lbrace_token), GetLineNum(rbrace_token));
 
   return std::make_unique<ast::BlockExpr>(line_range, std::move(exprs));
 }
@@ -348,8 +347,8 @@ std::unique_ptr<ast::AssignExpr> Parser::ParseAssignExpr() const {
   // TODO assign is consider a binop with low precidence in cool manual
   auto rhs_expr = ParseExpr(0);
 
-  const auto line_range = ast::LineRange(GetLineNum(object_id_token),
-                                         rhs_expr->GetLineRange().end_line_num);
+  const auto line_range = LineRange(GetLineNum(object_id_token),
+                                    rhs_expr->GetLineRange().end_line_num);
 
   return std::make_unique<ast::AssignExpr>(object_id_token.get_data(),
                                            std::move(rhs_expr), line_range);
