@@ -4,7 +4,7 @@
 
 namespace coolang {
 
-int TokenBinOpPrecidence(const Token& token) {
+int TokenBinOpPrecedence(const Token& token) {
   return std::visit(
       [](auto&& arg) -> int {
         using T = std::decay_t<decltype(arg)>;
@@ -238,7 +238,7 @@ Formal Parser::ParseFormal() const {
       LineRange(GetLineNum(object_id_token), GetLineNum(type_id_token)));
 }
 
-std::unique_ptr<Expr> Parser::ParseExpr(int min_precidence) const {
+std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
   std::unique_ptr<Expr> lhs_expr;
 
   if (std::holds_alternative<TokenIntConst>(lexer_->PeekToken())) {
@@ -256,12 +256,12 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precidence) const {
   }
 
   while (TokenIsBinOp(lexer_->PeekToken()) &&
-         TokenBinOpPrecidence(lexer_->PeekToken()) >= min_precidence) {
+         TokenBinOpPrecedence(lexer_->PeekToken()) >= min_precedence) {
     Token binop_token = lexer_->PeekToken();
     lexer_->PopToken();
 
     std::unique_ptr<Expr> rhs_expr =
-        ParseExpr(TokenBinOpPrecidence(binop_token) + 1);
+        ParseExpr(TokenBinOpPrecedence(binop_token) + 1);
 
     const LineRange line_range(lhs_expr->GetLineRange().start_line_num,
                                rhs_expr->GetLineRange().end_line_num);
@@ -343,7 +343,7 @@ std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {
   auto assign_token = ExpectToken<TokenAssign>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  // TODO assign is consider a binop with low precidence in cool manual
+  // TODO assign is consider a binop with low precedence in cool manual
   auto rhs_expr = ParseExpr(0);
 
   const auto line_range = LineRange(GetLineNum(object_id_token),

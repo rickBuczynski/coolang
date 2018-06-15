@@ -7,14 +7,14 @@
 
 namespace {
 
-std::string GetExpectedOutput(std::string expected_output_file) {
+std::string GetExpectedOutput(const std::string& expected_output_file) {
   std::ifstream t(expected_output_file);
   std::stringstream buffer;
   buffer << t.rdbuf();
   return buffer.str();
 }
 
-std::string GetLexerOutput(std::string input_file_name) {
+std::string GetLexerOutput(const std::string& input_file_name) {
   Lexer lexer(LEXER_TEST_DATA_PATH + input_file_name);
 
   std::string lexer_output = "#name \"" + input_file_name + "\"" + '\n';
@@ -28,8 +28,8 @@ std::string GetLexerOutput(std::string input_file_name) {
   return lexer_output;
 }
 
-void TestLexer(std::string lexer_input_file) {
-  std::string lexer_output = GetLexerOutput(lexer_input_file);
+void TestLexer(const std::string& lexer_input_file) {
+  const std::string lexer_output = GetLexerOutput(lexer_input_file);
   std::string expected_output =
       GetExpectedOutput(LEXER_TEST_DATA_PATH + lexer_input_file + ".out");
   EXPECT_EQ(expected_output, lexer_output);
