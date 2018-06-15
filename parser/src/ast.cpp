@@ -1,12 +1,14 @@
 #include <string>
 #include "coolang/parser/ast.h"
 
+namespace coolang {
+
 std::string Indentation(int indentation_level) {
   // each indent is 2 spaces
   return std::string(indentation_level * 2, ' ');
 }
 
-std::string coolang::ast::AssignExpr::ToString(int indent_depth) const {
+std::string ast::AssignExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -21,7 +23,7 @@ std::string coolang::ast::AssignExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::IntExpr::ToString(int indent_depth) const {
+std::string ast::IntExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -34,7 +36,7 @@ std::string coolang::ast::IntExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::LetExpr::ToString(int indent_depth) const {
+std::string ast::LetExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -58,7 +60,7 @@ std::string coolang::ast::LetExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::BinOpExpr::ToString(int indent_depth) const {
+std::string ast::BinOpExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -72,7 +74,7 @@ std::string coolang::ast::BinOpExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::ObjectExpr::ToString(int indent_depth) const {
+std::string ast::ObjectExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -85,7 +87,7 @@ std::string coolang::ast::ObjectExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::BlockExpr::ToString(int indent_depth) const {
+std::string ast::BlockExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -100,7 +102,7 @@ std::string coolang::ast::BlockExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::Formal::ToString(int indent_depth) const {
+std::string ast::Formal::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -112,7 +114,7 @@ std::string coolang::ast::Formal::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::MethodFeature::ToString(int indent_depth) const {
+std::string ast::MethodFeature::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -131,7 +133,7 @@ std::string coolang::ast::MethodFeature::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::AttributeFeature::ToString(int indent_depth) const {
+std::string ast::AttributeFeature::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -150,7 +152,7 @@ std::string coolang::ast::AttributeFeature::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::CoolClass::ToString(int indent_depth) const {
+std::string ast::CoolClass::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
@@ -171,7 +173,7 @@ std::string coolang::ast::CoolClass::ToString(int indent_depth) const {
   return str;
 }
 
-std::string coolang::ast::Program::ToString(int indent_depth) const {
+std::string ast::Program::ToString(int indent_depth) const {
   using namespace std::string_literals;
 
   std::string str;
@@ -185,3 +187,5 @@ std::string coolang::ast::Program::ToString(int indent_depth) const {
 
   return str;
 }
+
+}  // namespace coolang

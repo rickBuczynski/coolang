@@ -4,18 +4,18 @@
 
 namespace {
 
-std::string GetExpectedOutput(std::string expected_output_file) {
+std::string GetExpectedOutput(const std::string& expected_output_file) {
   std::ifstream t(expected_output_file);
   std::stringstream buffer;
   buffer << t.rdbuf();
   return buffer.str();
 }
 
-std::string GetParserOutput(std::string input_file_name) {
-  Parser parser(
+std::string GetParserOutput(const std::string& input_file_name) {
+  coolang::Parser parser(
       std::make_unique<Lexer>(PARSER_TEST_DATA_PATH + input_file_name));
 
-  std::variant<coolang::ast::Program, ParseError> program_or_error =
+  std::variant<coolang::ast::Program, coolang::ParseError> program_or_error =
       parser.ParseProgram();
 
   std::string parse_output =
@@ -25,8 +25,8 @@ std::string GetParserOutput(std::string input_file_name) {
   return parse_output;
 }
 
-void TestParser(std::string input_file) {
-  std::string parser_output = GetParserOutput(input_file);
+void TestParser(const std::string& input_file) {
+  const std::string parser_output = GetParserOutput(input_file);
   std::string expected_output =
       GetExpectedOutput(PARSER_TEST_DATA_PATH + input_file + ".out");
   EXPECT_EQ(expected_output, parser_output);

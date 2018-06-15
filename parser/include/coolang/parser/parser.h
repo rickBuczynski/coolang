@@ -5,6 +5,8 @@
 #include "coolang/lexer/token.h"
 #include "coolang/parser/ast.h"
 
+namespace coolang {
+
 class ParseError {
  public:
   ParseError(Token unexpected_token, std::string file_name)
@@ -29,27 +31,29 @@ class ParseError {
 
 class Parser {
  public:
-  Parser(std::unique_ptr<Lexer> lexer) : lexer_(std::move(lexer)){};
-  std::variant<coolang::ast::Program, ParseError> ParseProgram() const;
+  explicit Parser(std::unique_ptr<Lexer> lexer) : lexer_(std::move(lexer)){};
+  std::variant<ast::Program, ParseError> ParseProgram() const;
 
  private:
-  coolang::ast::CoolClass ParseClass() const;
+  ast::CoolClass ParseClass() const;
 
-  std::unique_ptr<coolang::ast::Feature> ParseFeature() const;
-  std::unique_ptr<coolang::ast::MethodFeature> ParseMethodFeature() const;
-  std::unique_ptr<coolang::ast::AttributeFeature> ParseAttributeFeature() const;
+  std::unique_ptr<ast::Feature> ParseFeature() const;
+  std::unique_ptr<ast::MethodFeature> ParseMethodFeature() const;
+  std::unique_ptr<ast::AttributeFeature> ParseAttributeFeature() const;
 
-  coolang::ast::Formal ParseFormal() const;
+  ast::Formal ParseFormal() const;
 
   // TODO maybe misspelled precedence
-  std::unique_ptr<coolang::ast::Expr> ParseExpr(int min_precidence) const;
-  std::unique_ptr<coolang::ast::AssignExpr> ParseAssignExpr() const;
-  std::unique_ptr<coolang::ast::IntExpr> ParseIntExpr() const;
-  std::unique_ptr<coolang::ast::LetExpr> ParseLetExpr() const;
-  std::unique_ptr<coolang::ast::ObjectExpr> ParseObjectExpr() const;
-  std::unique_ptr<coolang::ast::BlockExpr> ParseBlockExpr() const;
+  std::unique_ptr<ast::Expr> ParseExpr(int min_precidence) const;
+  std::unique_ptr<ast::AssignExpr> ParseAssignExpr() const;
+  std::unique_ptr<ast::IntExpr> ParseIntExpr() const;
+  std::unique_ptr<ast::LetExpr> ParseLetExpr() const;
+  std::unique_ptr<ast::ObjectExpr> ParseObjectExpr() const;
+  std::unique_ptr<ast::BlockExpr> ParseBlockExpr() const;
 
   std::unique_ptr<Lexer> lexer_;
 };
+
+}  // namespace coolang
 
 #endif  // COOLANG_PARSER_PARSER_H_
