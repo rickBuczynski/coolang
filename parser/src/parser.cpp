@@ -394,15 +394,6 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
 
   std::unique_ptr<Expr> in_expr = ParseExpr(0);
 
-  if (formals.size() == 1) {
-    const auto line_range =
-        LineRange(GetLineNum(let_token), in_expr->GetLineRange().end_line_num);
-    return std::make_unique<LetExpr>(
-        line_range, formals[0].GetId(), formals[0].GetType(),
-        std::move(initialization_exprs[0]), std::move(in_expr),
-        std::unique_ptr<LetExpr>{});
-  }
-
   auto let_expr = std::unique_ptr<LetExpr>{};
   for (int i = formals.size() - 1; i >= 0; i--) {
     const int start_line = i == 0 ? GetLineNum(let_token)
@@ -415,7 +406,6 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
     } else {
       end_line = formals[i].GetLineRange().end_line_num;
     }
-
     const auto line_range = LineRange(start_line, end_line);
 
     let_expr = std::make_unique<LetExpr>(
