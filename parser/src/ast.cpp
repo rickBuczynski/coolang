@@ -53,9 +53,9 @@ std::string StrExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
-  str += Indentation(indent_depth) + "_str" + '\n';
+  str += Indentation(indent_depth) + "_string" + '\n';
 
-  str += Indentation(indent_depth + 1) + val_ + '\n';
+  str += Indentation(indent_depth + 1) + '"' + val_ + '"' + '\n';
 
   str += Indentation(indent_depth) + ": _no_type" + '\n';
 
@@ -74,12 +74,17 @@ std::string LetExpr::ToString(int indent_depth) const {
   if (initialization_expr_) {
     str += initialization_expr_->ToString(indent_depth + 1);
   } else {
-    str += Indentation(indent_depth + 1) + GetLineRange().ToStringStartLine() + '\n';
+    str += Indentation(indent_depth + 1) + GetLineRange().ToStringStartLine() +
+           '\n';
     str += Indentation(indent_depth + 1) + "_no_expr" + '\n';
     str += Indentation(indent_depth + 1) + ": _no_type" + '\n';
   }
-
-  str += in_expr_->ToString(indent_depth + 1);
+  if (chained_let_) {
+    str += chained_let_->ToString(indent_depth + 1);
+  }
+  if (in_expr_) {
+    str += in_expr_->ToString(indent_depth + 1);
+  }
 
   str += Indentation(indent_depth) + ": _no_type" + '\n';
 

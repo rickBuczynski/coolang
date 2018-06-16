@@ -13,7 +13,9 @@ class LineRange {
       : start_line_num(start_line_num), end_line_num(end_line_num) {}
 
   std::string ToString() const { return "#" + std::to_string(end_line_num); }
-  std::string ToStringStartLine() const { return "#" + std::to_string(start_line_num); }
+  std::string ToStringStartLine() const {
+    return "#" + std::to_string(start_line_num);
+  }
 
   int start_line_num;
   int end_line_num;
@@ -92,22 +94,27 @@ class LetExpr : public Expr {
  public:
   LetExpr(LineRange line_range, std::string id, std::string type,
           std::unique_ptr<Expr> initialization_expr,
-          std::unique_ptr<Expr> in_expr)
+          std::unique_ptr<Expr> in_expr, std::unique_ptr<LetExpr> chained_let)
       : Expr(line_range),
         id_(std::move(id)),
         type_(std::move(type)),
         initialization_expr_(std::move(initialization_expr)),
-        in_expr_(std::move(in_expr)) {}
+        in_expr_(std::move(in_expr)),
+        chained_let_(std::move(chained_let)) {}
 
   std::string ToString(int indent_depth) const override;
 
  private:
-  // TODO make these vectors to allow multiple vars in one let
   std::string id_;
   std::string type_;
+  // null if no initialization_expr_
   std::unique_ptr<Expr> initialization_expr_;
-
+  // null if this is not the last let in chain e.g.
+  // let x:Int <- 5, y:String <- "biddle", z:Int in x
+  // only z:Int in x has non-null in_expr_
   std::unique_ptr<Expr> in_expr_;
+
+  std::unique_ptr<LetExpr> chained_let_;
 };
 
 class NegExpr : public Expr {

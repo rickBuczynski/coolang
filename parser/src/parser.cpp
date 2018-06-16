@@ -369,12 +369,24 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
   auto let_token = ExpectToken<TokenLet>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  Formal f = ParseFormal();
+  std::vector<Formal> formals;
+  std::vector<std::unique_ptr<Expr>> initialization_exprs;
 
-  std::unique_ptr<Expr> initialization_expr;
-  if (lexer_->PeekTokenTypeIs<TokenAssign>()) {
-    lexer_->PopToken();
-    initialization_expr = ParseExpr(0);
+  while (!lexer_->PeekTokenTypeIs<TokenIn>()) {
+    formals.push_back(ParseFormal());
+
+    std::unique_ptr<Expr> initialization_expr;
+    if (lexer_->PeekTokenTypeIs<TokenAssign>()) {
+      lexer_->PopToken();
+      initialization_exprs.push_back(ParseExpr(0));
+    } else {
+      initialization_exprs.push_back(std::unique_ptr<Expr>{});
+    }
+
+    if (!lexer_->PeekTokenTypeIs<TokenIn>()) {
+      ExpectToken<TokenComma>(lexer_->PeekToken());
+      lexer_->PopToken();
+    }
   }
 
   auto token_in = ExpectToken<TokenIn>(lexer_->PeekToken());
@@ -382,13 +394,38 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
 
   std::unique_ptr<Expr> in_expr = ParseExpr(0);
 
-  const auto line_range =
-      LineRange(GetLineNum(let_token), in_expr->GetLineRange().end_line_num);
+  if (formals.size() == 1) {
+    const auto line_range =
+        LineRange(GetLineNum(let_token), in_expr->GetLineRange().end_line_num);
+    return std::make_unique<LetExpr>(
+        line_range, formals[0].GetId(), formals[0].GetType(),
+        std::move(initialization_exprs[0]), std::move(in_expr),
+        std::unique_ptr<LetExpr>{});
+  }
 
-  // TODO init expr is empty default constructor
-  return std::make_unique<LetExpr>(line_range, f.GetId(), f.GetType(),
-                                   std::move(initialization_expr),
-                                   std::move(in_expr));
+  auto let_expr = std::unique_ptr<LetExpr>{};
+  for (int i = formals.size() - 1; i >= 0; i--) {
+    const int start_line = i == 0 ? GetLineNum(let_token)
+                                  : formals[i].GetLineRange().start_line_num;
+    int end_line;
+    if (i == formals.size() - 1) {
+      end_line = in_expr->GetLineRange().end_line_num;
+    } else if (initialization_exprs[i]) {
+      end_line = initialization_exprs[i]->GetLineRange().end_line_num;
+    } else {
+      end_line = formals[i].GetLineRange().end_line_num;
+    }
+
+    const auto line_range = LineRange(start_line, end_line);
+
+    let_expr = std::make_unique<LetExpr>(
+        line_range, formals[i].GetId(), formals[i].GetType(),
+        std::move(initialization_exprs[i]), std::move(in_expr),
+        std::move(let_expr));
+    in_expr = std::unique_ptr<Expr>{};
+  }
+
+  return let_expr;
 }
 
 std::unique_ptr<ObjectExpr> Parser::ParseObjectExpr() const {
