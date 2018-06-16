@@ -245,6 +245,8 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
     lhs_expr = ParseIntExpr();
   } else if (std::holds_alternative<TokenBoolConst>(lexer_->PeekToken())) {
     lhs_expr = ParseBoolExpr();
+  } else if (std::holds_alternative<TokenStrConst>(lexer_->PeekToken())) {
+    lhs_expr = ParseStrExpr();
   } else if (std::holds_alternative<TokenObjectId>(lexer_->PeekToken())) {
     if (std::holds_alternative<TokenAssign>(lexer_->LookAheadToken())) {
       lhs_expr = ParseAssignExpr();
@@ -339,6 +341,16 @@ std::unique_ptr<BoolExpr> Parser::ParseBoolExpr() const {
       LineRange(GetLineNum(bool_const_token), GetLineNum(bool_const_token));
 
   return std::make_unique<BoolExpr>(line_range, bool_const_token.get_data());
+}
+
+std::unique_ptr<StrExpr> Parser::ParseStrExpr() const {
+  auto str_const_token = ExpectToken<TokenStrConst>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  const auto line_range =
+      LineRange(GetLineNum(str_const_token), GetLineNum(str_const_token));
+
+  return std::make_unique<StrExpr>(line_range, str_const_token.get_data());
 }
 
 std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {

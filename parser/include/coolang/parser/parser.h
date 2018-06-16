@@ -50,6 +50,7 @@ class Parser {
   std::unique_ptr<AssignExpr> ParseAssignExpr() const;
   std::unique_ptr<IntExpr> ParseIntExpr() const;
   std::unique_ptr<BoolExpr> ParseBoolExpr() const;
+  std::unique_ptr<StrExpr> ParseStrExpr() const;
   std::unique_ptr<LetExpr> ParseLetExpr() const;
   std::unique_ptr<ObjectExpr> ParseObjectExpr() const;
   std::unique_ptr<BlockExpr> ParseBlockExpr() const;

@@ -76,6 +76,17 @@ class BoolExpr : public Expr {
   bool val_;
 };
 
+class StrExpr : public Expr {
+ public:
+  StrExpr(LineRange line_range, std::string val)
+      : Expr(line_range), val_(val) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::string val_;
+};
+
 class LetExpr : public Expr {
  public:
   LetExpr(LineRange line_range, std::string id, std::string type,
