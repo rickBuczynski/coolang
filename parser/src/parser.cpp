@@ -371,6 +371,12 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
 
   Formal f = ParseFormal();
 
+  std::unique_ptr<Expr> initialization_expr;
+  if (lexer_->PeekTokenTypeIs<TokenAssign>()) {
+    lexer_->PopToken();
+    initialization_expr = ParseExpr(0);
+  }
+
   auto token_in = ExpectToken<TokenIn>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -381,7 +387,8 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
 
   // TODO init expr is empty default constructor
   return std::make_unique<LetExpr>(line_range, f.GetId(), f.GetType(),
-                                   std::unique_ptr<Expr>(), std::move(in_expr));
+                                   std::move(initialization_expr),
+                                   std::move(in_expr));
 }
 
 std::unique_ptr<ObjectExpr> Parser::ParseObjectExpr() const {

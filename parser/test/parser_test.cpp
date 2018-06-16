@@ -12,8 +12,8 @@ std::string GetExpectedOutput(const std::string& expected_output_file) {
 }
 
 std::string GetParserOutput(const std::string& input_file_name) {
-  coolang::Parser parser(
-      std::make_unique<coolang::Lexer>(PARSER_TEST_DATA_PATH + input_file_name));
+  coolang::Parser parser(std::make_unique<coolang::Lexer>(
+      PARSER_TEST_DATA_PATH + input_file_name));
 
   std::variant<coolang::ProgramAst, coolang::ParseError> program_or_error =
       parser.ParseProgram();
@@ -32,23 +32,27 @@ void TestParser(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
-//TEST(ParserTest, classonefield) { TestParser("classonefield.test"); }
-//TEST(ParserTest, classnoname) { TestParser("classnoname.test"); }
-//TEST(ParserTest, classtwofields) { TestParser("classtwofields.test"); }
-//TEST(ParserTest, assignment) { TestParser("assignment.test"); }
-//TEST(ParserTest, addedlet) { TestParser("addedlet.test"); }
-//TEST(ParserTest, arithprecedence) { TestParser("arithprecedence.test"); }
-//TEST(ParserTest, associativityminus) { TestParser("associativity-.test"); }
-//TEST(ParserTest, assigngetstype) { TestParser("assigngetstype.test"); }
-//TEST(ParserTest, assignseq) { TestParser("assignseq.test"); }
-//TEST(ParserTest, associativityplus) { TestParser("associativity+.test"); }
-//TEST(ParserTest, associativitydiv) { TestParser("associativitydiv.test"); }
-//TEST(ParserTest, associativitytimes) { TestParser("associativity-times.test"); }
-//TEST(ParserTest, ifexpressionblock) { TestParser("ifexpressionblock.test"); }
-//TEST(ParserTest, atoi) { TestParser("atoi.test"); }
+TEST(ParserTest, classonefield) { TestParser("classonefield.test"); }
+TEST(ParserTest, classnoname) { TestParser("classnoname.test"); }
+TEST(ParserTest, classtwofields) { TestParser("classtwofields.test"); }
+TEST(ParserTest, assignment) { TestParser("assignment.test"); }
+TEST(ParserTest, addedlet) { TestParser("addedlet.test"); }
+TEST(ParserTest, arithprecedence) { TestParser("arithprecedence.test"); }
+TEST(ParserTest, associativityminus) { TestParser("associativity-.test"); }
+TEST(ParserTest, assigngetstype) { TestParser("assigngetstype.test"); }
+TEST(ParserTest, assignseq) { TestParser("assignseq.test"); }
+TEST(ParserTest, associativityplus) { TestParser("associativity+.test"); }
+TEST(ParserTest, associativitydiv) { TestParser("associativitydiv.test"); }
+TEST(ParserTest, associativitytimes) { TestParser("associativity-times.test"); }
+TEST(ParserTest, ifexpressionblock) { TestParser("ifexpressionblock.test"); }
 TEST(ParserTest, dispatcharglist) { TestParser("dispatcharglist.test"); }
 TEST(ParserTest, dispatchnoargs) { TestParser("dispatchnoargs.test"); }
 TEST(ParserTest, dispatchonearg) { TestParser("dispatchonearg.test"); }
+TEST(ParserTest, letnoinit) { TestParser("letnoinit.test"); }
+TEST(ParserTest, letinit) { TestParser("letinit.test"); }
 
+
+
+//TEST(ParserTest, atoi) { TestParser("atoi.test"); }
 
 }  // namespace
