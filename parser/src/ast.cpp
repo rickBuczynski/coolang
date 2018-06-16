@@ -141,6 +141,27 @@ std::string BlockExpr::ToString(int indent_depth) const {
   return str;
 }
 
+std::string MethodCallExpr::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_dispatch" + '\n';
+
+  str += lhs_expr_->ToString(indent_depth + 1);
+
+  str += Indentation(indent_depth + 1) + method_name_ + '\n';
+
+  str += Indentation(indent_depth + 1) + "(" + '\n';
+  for (const auto& arg : args_) {
+    str += arg->ToString(indent_depth + 1);
+  }
+  str += Indentation(indent_depth + 1) + ")" + '\n';
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
+  return str;
+}
+
 std::string IfExpr::ToString(int indent_depth) const {
   std::string str;
 

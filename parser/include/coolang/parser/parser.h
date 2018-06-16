@@ -55,6 +55,13 @@ class Parser {
   std::unique_ptr<ObjectExpr> ParseObjectExpr() const;
   std::unique_ptr<BlockExpr> ParseBlockExpr() const;
 
+  // parse MethodCallExpr from ID to )
+  // the lhs calling the method
+  // and the . should alread have been parsed
+  // if this is a call like DoThing() with no lhs then lhs should be empty
+  std::unique_ptr<MethodCallExpr> ParseMethodCallExprRhs(
+      std::unique_ptr<Expr> lhs) const;
+
   std::unique_ptr<Lexer> lexer_;
 };
 

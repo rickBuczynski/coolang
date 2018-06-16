@@ -216,6 +216,24 @@ class BlockExpr : public Expr {
   std::vector<std::unique_ptr<Expr>> exprs_;
 };
 
+class MethodCallExpr : public Expr {
+ public:
+  MethodCallExpr(LineRange line_range, std::unique_ptr<Expr> lhs_expr,
+                 std::string method_name,
+                 std::vector<std::unique_ptr<Expr>> unique_ptrs)
+      : Expr(line_range),
+        lhs_expr_(std::move(lhs_expr)),
+        method_name_(std::move(method_name)),
+        args_(std::move(unique_ptrs)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::unique_ptr<Expr> lhs_expr_;
+  std::string method_name_;
+  std::vector<std::unique_ptr<Expr>> args_;
+};
+
 class IfExpr : public Expr {
  public:
   IfExpr(LineRange line_range, std::unique_ptr<Expr> if_condition_expr,

@@ -182,6 +182,11 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
     args.push_back(ParseFormal());
 
     if (lexer_->PeekTokenTypeIs<TokenComma>()) lexer_->PopToken();
+    // TODO better solution:
+    // if (!lexer_->PeekTokenTypeIs<TokenRparen>()) {
+    //  ExpectToken<TokenComma>(lexer_->PeekToken());
+    //  lexer_->PopToken();
+    //}
   }
 
   auto right_paren_token = ExpectToken<TokenRparen>(lexer_->PeekToken());
@@ -250,6 +255,8 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
   } else if (std::holds_alternative<TokenObjectId>(lexer_->PeekToken())) {
     if (std::holds_alternative<TokenAssign>(lexer_->LookAheadToken())) {
       lhs_expr = ParseAssignExpr();
+    } else if (std::holds_alternative<TokenLparen>(lexer_->LookAheadToken())) {
+      lhs_expr = ParseMethodCallExprRhs(std::unique_ptr<Expr>{});
     } else {
       lhs_expr = ParseObjectExpr();
     }
@@ -266,6 +273,11 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
     lhs_expr = ParseNegExpr();
   } else if (std::holds_alternative<TokenIf>(lexer_->PeekToken())) {
     lhs_expr = ParseIfExpr();
+  }
+
+  while (lexer_->PeekTokenTypeIs<TokenDot>()) {
+    lexer_->PopToken();
+    lhs_expr = ParseMethodCallExprRhs(std::move(lhs_expr));
   }
 
   while (TokenIsBinOp(lexer_->PeekToken()) &&
@@ -401,6 +413,35 @@ std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() const {
       LineRange(GetLineNum(lbrace_token), GetLineNum(rbrace_token));
 
   return std::make_unique<BlockExpr>(line_range, std::move(exprs));
+}
+
+std::unique_ptr<MethodCallExpr> Parser::ParseMethodCallExprRhs(
+    std::unique_ptr<Expr> lhs) const {
+  auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  ExpectToken<TokenLparen>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  std::vector<std::unique_ptr<Expr>> args;
+  while (!lexer_->PeekTokenTypeIs<TokenRparen>()) {
+    args.push_back(ParseExpr(0));
+
+    if (!lexer_->PeekTokenTypeIs<TokenRparen>()) {
+      ExpectToken<TokenComma>(lexer_->PeekToken());
+      lexer_->PopToken();
+    }
+  }
+  const auto rparen_token = ExpectToken<TokenRparen>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  const int start_line_num =
+      lhs ? lhs->GetLineRange().start_line_num : GetLineNum(object_id_token);
+
+  const LineRange line_range(start_line_num, GetLineNum(rparen_token));
+
+  return std::make_unique<MethodCallExpr>(
+      line_range, std::move(lhs), object_id_token.get_data(), std::move(args));
 }
 
 std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {
