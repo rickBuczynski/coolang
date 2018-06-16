@@ -260,6 +260,8 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
     lexer_->PopToken();
   } else if (std::holds_alternative<TokenNeg>(lexer_->PeekToken())) {
     lhs_expr = ParseNegExpr();
+  } else if (std::holds_alternative<TokenIf>(lexer_->PeekToken())) {
+    lhs_expr = ParseIfExpr();
   }
 
   while (TokenIsBinOp(lexer_->PeekToken()) &&
@@ -281,6 +283,27 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
     return lhs_expr;
   }
   throw UnexpectedTokenExcpetion(lexer_->PeekToken());
+}
+
+std::unique_ptr<IfExpr> Parser::ParseIfExpr() const {
+  auto if_token = ExpectToken<TokenIf>(lexer_->PeekToken());
+  lexer_->PopToken();
+  auto if_condition_expr = ParseExpr(0);
+
+  ExpectToken<TokenThen>(lexer_->PeekToken());
+  lexer_->PopToken();
+  auto then_expr = ParseExpr(0);
+
+  ExpectToken<TokenElse>(lexer_->PeekToken());
+  lexer_->PopToken();
+  auto else_expr = ParseExpr(0);
+
+  auto fi_token = ExpectToken<TokenFi>(lexer_->PeekToken());
+
+  const LineRange line_range(GetLineNum(if_token), GetLineNum(fi_token));
+
+  return std::make_unique<IfExpr>(line_range, std::move(if_condition_expr),
+                                  std::move(then_expr), std::move(else_expr));
 }
 
 std::unique_ptr<NegExpr> Parser::ParseNegExpr() const {

@@ -115,6 +115,21 @@ std::string BlockExpr::ToString(int indent_depth) const {
   return str;
 }
 
+std::string IfExpr::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_cond" + '\n';
+
+  str += if_condition_expr_->ToString(indent_depth + 1);
+  str += then_expr_->ToString(indent_depth + 1);
+  str += else_expr_->ToString(indent_depth + 1);
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
+  return str;
+}
+
 std::string Formal::ToString(int indent_depth) const {
   std::string str;
 

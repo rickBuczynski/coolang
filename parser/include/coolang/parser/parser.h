@@ -45,6 +45,7 @@ class Parser {
 
   // TODO maybe misspelled precedence
   std::unique_ptr<Expr> ParseExpr(int min_precedence) const;
+  std::unique_ptr<IfExpr> ParseIfExpr() const;
   std::unique_ptr<NegExpr> ParseNegExpr() const;
   std::unique_ptr<AssignExpr> ParseAssignExpr() const;
   std::unique_ptr<IntExpr> ParseIntExpr() const;

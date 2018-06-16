@@ -195,6 +195,23 @@ class BlockExpr : public Expr {
   std::vector<std::unique_ptr<Expr>> exprs_;
 };
 
+class IfExpr : public Expr {
+ public:
+  IfExpr(LineRange line_range, std::unique_ptr<Expr> if_condition_expr,
+         std::unique_ptr<Expr> then_expr, std::unique_ptr<Expr> else_expr)
+      : Expr(line_range),
+        if_condition_expr_(std::move(if_condition_expr)),
+        then_expr_(std::move(then_expr)),
+        else_expr_(std::move(else_expr)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::unique_ptr<Expr> if_condition_expr_;
+  std::unique_ptr<Expr> then_expr_;
+  std::unique_ptr<Expr> else_expr_;
+};
+
 class Formal {
  public:
   Formal(std::string id, std::string type, LineRange line_range)

@@ -38,8 +38,14 @@ TEST(ParserTest, classtwofields) { TestParser("classtwofields.test"); }
 TEST(ParserTest, assignment) { TestParser("assignment.test"); }
 TEST(ParserTest, addedlet) { TestParser("addedlet.test"); }
 TEST(ParserTest, arithprecedence) { TestParser("arithprecedence.test"); }
-TEST(ParserTest, associativity) { TestParser("associativity-.test"); }
+TEST(ParserTest, associativityminus) { TestParser("associativity-.test"); }
 TEST(ParserTest, assigngetstype) { TestParser("assigngetstype.test"); }
 TEST(ParserTest, assignseq) { TestParser("assignseq.test"); }
+TEST(ParserTest, associativityplus) { TestParser("associativity+.test"); }
+TEST(ParserTest, associativitydiv) { TestParser("associativitydiv.test"); }
+TEST(ParserTest, associativitytimes) { TestParser("associativity-times.test"); }
+TEST(ParserTest, ifexpressionblock) { TestParser("ifexpressionblock.test"); }
+//TEST(ParserTest, atoi) { TestParser("atoi.test"); }
+
 
 }  // namespace
