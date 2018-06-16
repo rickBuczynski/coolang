@@ -13,6 +13,7 @@ class LineRange {
       : start_line_num(start_line_num), end_line_num(end_line_num) {}
 
   std::string ToString() const { return "#" + std::to_string(end_line_num); }
+  std::string ToStringStartLine() const { return "#" + std::to_string(start_line_num); }
 
   int start_line_num;
   int end_line_num;

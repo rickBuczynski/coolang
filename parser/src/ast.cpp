@@ -74,7 +74,7 @@ std::string LetExpr::ToString(int indent_depth) const {
   if (initialization_expr_) {
     str += initialization_expr_->ToString(indent_depth + 1);
   } else {
-    str += Indentation(indent_depth + 1) + GetLineRange().ToString() + '\n';
+    str += Indentation(indent_depth + 1) + GetLineRange().ToStringStartLine() + '\n';
     str += Indentation(indent_depth + 1) + "_no_expr" + '\n';
     str += Indentation(indent_depth + 1) + ": _no_type" + '\n';
   }

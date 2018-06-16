@@ -50,6 +50,8 @@ TEST(ParserTest, dispatchnoargs) { TestParser("dispatchnoargs.test"); }
 TEST(ParserTest, dispatchonearg) { TestParser("dispatchonearg.test"); }
 TEST(ParserTest, letnoinit) { TestParser("letnoinit.test"); }
 TEST(ParserTest, letinit) { TestParser("letinit.test"); }
+TEST(ParserTest, letparens) { TestParser("letparens.test"); }
+TEST(ParserTest, letassociativity) { TestParser("letassociativity.test"); }
 
 
 
