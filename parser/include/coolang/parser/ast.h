@@ -259,6 +259,21 @@ class IfExpr : public Expr {
   std::unique_ptr<Expr> else_expr_;
 };
 
+class WhileExpr : public Expr {
+ public:
+  WhileExpr(LineRange line_range, std::unique_ptr<Expr> condition_expr,
+            std::unique_ptr<Expr> loop_expr)
+      : Expr(line_range),
+        condition_expr_(std::move(condition_expr)),
+        loop_expr_(std::move(loop_expr)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::unique_ptr<Expr> condition_expr_;
+  std::unique_ptr<Expr> loop_expr_;
+};
+
 class Formal {
  public:
   Formal(std::string id, std::string type, LineRange line_range)

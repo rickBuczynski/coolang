@@ -53,6 +53,7 @@ TEST(ParserTest, letinit) { TestParser("letinit.test"); }
 TEST(ParserTest, letparens) { TestParser("letparens.test"); }
 TEST(ParserTest, letassociativity) { TestParser("letassociativity.test"); }
 TEST(ParserTest, letinitmultiplebindings) { TestParser("letinitmultiplebindings.test"); }
+TEST(ParserTest, whileoneexpression) { TestParser("whileoneexpression.test"); }
 
 //TEST(ParserTest, atoi) { TestParser("atoi.test"); }
 
