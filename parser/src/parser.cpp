@@ -275,6 +275,8 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
     lhs_expr = ParseIfExpr();
   } else if (std::holds_alternative<TokenWhile>(lexer_->PeekToken())) {
     lhs_expr = ParseWhileExpr();
+  } else if (std::holds_alternative<TokenNot>(lexer_->PeekToken())) {
+    lhs_expr = ParseNotExpr();
   }
 
   while (lexer_->PeekTokenTypeIs<TokenDot>()) {
@@ -341,6 +343,17 @@ std::unique_ptr<WhileExpr> Parser::ParseWhileExpr() const {
 
   return std::make_unique<WhileExpr>(line_range, std::move(condition_expr),
                                      std::move(loop_expr));
+}
+
+std::unique_ptr<NotExpr> Parser::ParseNotExpr() const {
+  auto not_token = ExpectToken<TokenNot>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  auto child = ParseExpr(0);
+
+  const LineRange line_range(GetLineNum(not_token),
+                             child->GetLineRange().end_line_num);
+  return std::make_unique<NotExpr>(line_range, std::move(child));
 }
 
 std::unique_ptr<NegExpr> Parser::ParseNegExpr() const {

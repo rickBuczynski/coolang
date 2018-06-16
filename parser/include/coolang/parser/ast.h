@@ -274,6 +274,17 @@ class WhileExpr : public Expr {
   std::unique_ptr<Expr> loop_expr_;
 };
 
+class NotExpr : public Expr {
+ public:
+  NotExpr(LineRange line_range, std::unique_ptr<Expr> child_expr)
+      : Expr(line_range), child_expr_(std::move(child_expr)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::unique_ptr<Expr> child_expr_;
+};
+
 class Formal {
  public:
   Formal(std::string id, std::string type, LineRange line_range)
