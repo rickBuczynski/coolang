@@ -60,6 +60,19 @@ std::string LetExpr::ToString(int indent_depth) const {
   return str;
 }
 
+std::string NegExpr::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_neg" + '\n';
+
+  str += child_expr_->ToString(indent_depth + 1);
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
+  return str;
+}
+
 std::string BinOpExpr::ToString(int indent_depth) const {
   std::string str;
 

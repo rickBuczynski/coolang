@@ -88,6 +88,17 @@ class LetExpr : public Expr {
   std::unique_ptr<Expr> in_expr_;
 };
 
+class NegExpr : public Expr {
+ public:
+  NegExpr(LineRange line_range, std::unique_ptr<Expr> child_expr)
+      : Expr(line_range), child_expr_(std::move(child_expr)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::unique_ptr<Expr> child_expr_;
+};
+
 class BinOpExpr : public Expr {
  public:
   BinOpExpr(LineRange line_range, std::unique_ptr<Expr> lhs_expr,

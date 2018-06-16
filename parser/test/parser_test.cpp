@@ -40,5 +40,6 @@ TEST(ParserTest, addedlet) { TestParser("addedlet.test"); }
 TEST(ParserTest, arithprecedence) { TestParser("arithprecedence.test"); }
 TEST(ParserTest, associativity) { TestParser("associativity-.test"); }
 TEST(ParserTest, assigngetstype) { TestParser("assigngetstype.test"); }
+TEST(ParserTest, assignseq) { TestParser("assignseq.test"); }
 
 }  // namespace
