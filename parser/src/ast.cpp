@@ -36,6 +36,19 @@ std::string IntExpr::ToString(int indent_depth) const {
   return str;
 }
 
+std::string BoolExpr::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_bool" + '\n';
+
+  str += Indentation(indent_depth + 1) + std::to_string(val_) + '\n';
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
+  return str;
+}
+
 std::string LetExpr::ToString(int indent_depth) const {
   std::string str;
 

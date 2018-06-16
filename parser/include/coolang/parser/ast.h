@@ -66,6 +66,16 @@ class IntExpr : public Expr {
   std::string val_;
 };
 
+class BoolExpr : public Expr {
+ public:
+  BoolExpr(LineRange line_range, bool val) : Expr(line_range), val_(val) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  bool val_;
+};
+
 class LetExpr : public Expr {
  public:
   LetExpr(LineRange line_range, std::string id, std::string type,
@@ -154,7 +164,7 @@ class EqCompareExpr : public BinOpExpr {
   using BinOpExpr::BinOpExpr;
 
  protected:
-  std::string OpName() const override { return "_eqTODO"; }
+  std::string OpName() const override { return "_eq"; }
 };
 
 class LessThanCompareExpr : public BinOpExpr {
