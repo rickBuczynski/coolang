@@ -33,6 +33,7 @@ class AstNode {
   AstNode& operator=(AstNode&& other) noexcept = default;
 
   LineRange GetLineRange() const { return line_range_; }
+  void SetLineRange(const LineRange line_range) { line_range_ = line_range; }
 
   virtual std::string ToString(int indent_depth) const = 0;
 
@@ -191,7 +192,7 @@ class LessThanCompareExpr : public BinOpExpr {
   using BinOpExpr::BinOpExpr;
 
  protected:
-  std::string OpName() const override { return "_ltTODO"; }
+  std::string OpName() const override { return "_lt"; }
 };
 
 class LessThanEqualCompareExpr : public BinOpExpr {

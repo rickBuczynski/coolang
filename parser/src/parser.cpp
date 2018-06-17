@@ -265,10 +265,18 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
   } else if (std::holds_alternative<TokenLbrace>(lexer_->PeekToken())) {
     lhs_expr = ParseBlockExpr();
   } else if (std::holds_alternative<TokenLparen>(lexer_->PeekToken())) {
+    auto lparen_token = ExpectToken<TokenLparen>(lexer_->PeekToken());
     lexer_->PopToken();
+
     lhs_expr = ParseExpr(0);
-    ExpectToken<TokenRparen>(lexer_->PeekToken());
+
+    auto rparen_token = ExpectToken<TokenRparen>(lexer_->PeekToken());
     lexer_->PopToken();
+
+    // change line range of expr to be line range of parens
+    const LineRange line_range(GetLineNum(lparen_token),
+                               GetLineNum(rparen_token));
+    lhs_expr->SetLineRange(line_range);
   } else if (std::holds_alternative<TokenNeg>(lexer_->PeekToken())) {
     lhs_expr = ParseNegExpr();
   } else if (std::holds_alternative<TokenIf>(lexer_->PeekToken())) {
