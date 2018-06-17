@@ -152,8 +152,14 @@ std::string MethodCallExpr::ToString(int indent_depth) const {
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
   str += Indentation(indent_depth) + "_dispatch" + '\n';
 
-  str += lhs_expr_->ToString(indent_depth + 1);
-
+  if (lhs_expr_) {
+    str += lhs_expr_->ToString(indent_depth + 1);
+  } else {
+    str += Indentation(indent_depth + 1) + GetLineRange().ToString() + '\n';
+    str += Indentation(indent_depth + 1) + "_object" + '\n';
+    str += Indentation(indent_depth + 2) + "self" + '\n';
+    str += Indentation(indent_depth + 1) + ": _no_type" + '\n';
+  }
   str += Indentation(indent_depth + 1) + method_name_ + '\n';
 
   str += Indentation(indent_depth + 1) + "(" + '\n';
