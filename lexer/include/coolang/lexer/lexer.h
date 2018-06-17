@@ -25,6 +25,13 @@ class Lexer {
     return std::holds_alternative<T>(PeekToken());
   }
 
+  template <class T>
+  void AdvanceToNext() {
+    while (!PeekTokenTypeIs<T>()) {
+      PopToken();
+    }
+  }
+
  private:
   Token GetNextToken();
 

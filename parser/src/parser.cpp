@@ -112,7 +112,8 @@ T ExpectToken(Token token) {
   }
 }
 
-std::variant<ProgramAst, ParseError> Parser::ParseProgram() const {
+std::variant<ProgramAst, std::vector<ParseError>> Parser::ParseProgram() {
+  std::optional<ProgramAst> program_ast;
   try {
     std::vector<ClassAst> classes;
 
@@ -129,14 +130,22 @@ std::variant<ProgramAst, ParseError> Parser::ParseProgram() const {
         classes.empty() ? eof_token.get_line_num()
                         : classes.back().GetLineRange().end_line_num;
 
-    return ProgramAst(std::move(classes), LineRange(1, program_end_line));
+    program_ast.emplace(
+        ProgramAst(std::move(classes), LineRange(1, program_end_line)));
   } catch (const UnexpectedTokenExcpetion& e) {
-    return ParseError(e.GetUnexpectedToken(),
-                      lexer_->GetInputFile().filename().string());
+    const auto parse_error = ParseError(
+        e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+    parse_errors_.push_back(parse_error);
+  }
+
+  if (!parse_errors_.empty()) {
+    return parse_errors_;
+  } else {
+    return std::move(program_ast.value());
   }
 }
 
-ClassAst Parser::ParseClass() const {
+ClassAst Parser::ParseClass() {
   auto class_token = ExpectToken<TokenClass>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -163,14 +172,14 @@ ClassAst Parser::ParseClass() const {
       lexer_->GetInputFile().filename().string());
 }
 
-std::unique_ptr<Feature> Parser::ParseFeature() const {
+std::unique_ptr<Feature> Parser::ParseFeature() {
   if (std::holds_alternative<TokenLparen>(lexer_->LookAheadToken())) {
     return ParseMethodFeature();
   }
   return ParseAttributeFeature();
 }
 
-std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
+std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -214,7 +223,7 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() const {
                                          std::move(expr));
 }
 
-std::unique_ptr<AttributeFeature> Parser::ParseAttributeFeature() const {
+std::unique_ptr<AttributeFeature> Parser::ParseAttributeFeature() {
   Formal f = ParseFormal();
 
   std::unique_ptr<Expr> initialization_expr;
@@ -243,7 +252,7 @@ Formal Parser::ParseFormal() const {
       LineRange(GetLineNum(object_id_token), GetLineNum(type_id_token)));
 }
 
-std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
+std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
   std::unique_ptr<Expr> lhs_expr;
 
   if (std::holds_alternative<TokenIntConst>(lexer_->PeekToken())) {
@@ -292,7 +301,7 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
     lhs_expr = ParseMethodCallExprRhs(std::move(lhs_expr));
   }
 
-  while (TokenIsBinOp(lexer_->PeekToken()) &&
+  while (lhs_expr && TokenIsBinOp(lexer_->PeekToken()) &&
          TokenBinOpPrecedence(lexer_->PeekToken()) >= min_precedence) {
     Token binop_token = lexer_->PeekToken();
     lexer_->PopToken();
@@ -313,7 +322,7 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) const {
   throw UnexpectedTokenExcpetion(lexer_->PeekToken());
 }
 
-std::unique_ptr<IfExpr> Parser::ParseIfExpr() const {
+std::unique_ptr<IfExpr> Parser::ParseIfExpr() {
   auto if_token = ExpectToken<TokenIf>(lexer_->PeekToken());
   lexer_->PopToken();
   auto if_condition_expr = ParseExpr(0);
@@ -335,7 +344,7 @@ std::unique_ptr<IfExpr> Parser::ParseIfExpr() const {
                                   std::move(then_expr), std::move(else_expr));
 }
 
-std::unique_ptr<WhileExpr> Parser::ParseWhileExpr() const {
+std::unique_ptr<WhileExpr> Parser::ParseWhileExpr() {
   auto while_token = ExpectToken<TokenWhile>(lexer_->PeekToken());
   lexer_->PopToken();
   auto condition_expr = ParseExpr(0);
@@ -353,7 +362,7 @@ std::unique_ptr<WhileExpr> Parser::ParseWhileExpr() const {
                                      std::move(loop_expr));
 }
 
-std::unique_ptr<NotExpr> Parser::ParseNotExpr() const {
+std::unique_ptr<NotExpr> Parser::ParseNotExpr() {
   auto not_token = ExpectToken<TokenNot>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -364,7 +373,7 @@ std::unique_ptr<NotExpr> Parser::ParseNotExpr() const {
   return std::make_unique<NotExpr>(line_range, std::move(child));
 }
 
-std::unique_ptr<NegExpr> Parser::ParseNegExpr() const {
+std::unique_ptr<NegExpr> Parser::ParseNegExpr() {
   auto neg_token = ExpectToken<TokenNeg>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -406,7 +415,7 @@ std::unique_ptr<StrExpr> Parser::ParseStrExpr() const {
   return std::make_unique<StrExpr>(line_range, str_const_token.get_data());
 }
 
-std::unique_ptr<LetExpr> Parser::ParseLetExpr() const {
+std::unique_ptr<LetExpr> Parser::ParseLetExpr() {
   auto let_token = ExpectToken<TokenLet>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -469,13 +478,20 @@ std::unique_ptr<ObjectExpr> Parser::ParseObjectExpr() const {
   return std::make_unique<ObjectExpr>(line_range, object_id_token.get_data());
 }
 
-std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() const {
+std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() {
   auto lbrace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
   std::vector<std::unique_ptr<Expr>> exprs;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
-    exprs.push_back(ParseExpr(0));
+    try {
+      exprs.push_back(ParseExpr(0));
+    } catch (const UnexpectedTokenExcpetion& e) {
+      const auto parse_error = ParseError(
+          e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+      parse_errors_.push_back(parse_error);
+      lexer_->AdvanceToNext<TokenSemi>();
+    }
 
     auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
     lexer_->PopToken();
@@ -491,7 +507,7 @@ std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() const {
 }
 
 std::unique_ptr<MethodCallExpr> Parser::ParseMethodCallExprRhs(
-    std::unique_ptr<Expr> lhs) const {
+    std::unique_ptr<Expr> lhs) {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -519,7 +535,7 @@ std::unique_ptr<MethodCallExpr> Parser::ParseMethodCallExprRhs(
       line_range, std::move(lhs), object_id_token.get_data(), std::move(args));
 }
 
-std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() const {
+std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 

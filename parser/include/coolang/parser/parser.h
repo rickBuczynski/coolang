@@ -20,8 +20,7 @@ class ParseError {
     return ""s + '"' + file_name_ + '"' + ", line " +
            std::to_string(GetLineNum(unexpected_token_)) +
            ": syntax error at or near " +
-           TokenTypeSpecificStr(unexpected_token_, " = ") + '\n' +
-           "Compilation halted due to lex and parse errors\n";
+           TokenTypeSpecificStr(unexpected_token_, " = ") + '\n';
   }
 
  private:
@@ -32,37 +31,38 @@ class ParseError {
 class Parser {
  public:
   explicit Parser(std::unique_ptr<Lexer> lexer) : lexer_(std::move(lexer)){};
-  std::variant<ProgramAst, ParseError> ParseProgram() const;
+  std::variant<ProgramAst, std::vector<ParseError>> ParseProgram();
 
  private:
-  ClassAst ParseClass() const;
+  ClassAst ParseClass();
 
-  std::unique_ptr<Feature> ParseFeature() const;
-  std::unique_ptr<MethodFeature> ParseMethodFeature() const;
-  std::unique_ptr<AttributeFeature> ParseAttributeFeature() const;
+  std::unique_ptr<Feature> ParseFeature();
+  std::unique_ptr<MethodFeature> ParseMethodFeature();
+  std::unique_ptr<AttributeFeature> ParseAttributeFeature();
 
   Formal ParseFormal() const;
 
-  std::unique_ptr<Expr> ParseExpr(int min_precedence) const;
-  std::unique_ptr<IfExpr> ParseIfExpr() const;
-  std::unique_ptr<WhileExpr> ParseWhileExpr() const;
-  std::unique_ptr<NotExpr> ParseNotExpr() const;
-  std::unique_ptr<NegExpr> ParseNegExpr() const;
-  std::unique_ptr<AssignExpr> ParseAssignExpr() const;
+  std::unique_ptr<Expr> ParseExpr(int min_precedence);
+  std::unique_ptr<IfExpr> ParseIfExpr();
+  std::unique_ptr<WhileExpr> ParseWhileExpr();
+  std::unique_ptr<NotExpr> ParseNotExpr();
+  std::unique_ptr<NegExpr> ParseNegExpr();
+  std::unique_ptr<AssignExpr> ParseAssignExpr();
   std::unique_ptr<IntExpr> ParseIntExpr() const;
   std::unique_ptr<BoolExpr> ParseBoolExpr() const;
   std::unique_ptr<StrExpr> ParseStrExpr() const;
-  std::unique_ptr<LetExpr> ParseLetExpr() const;
+  std::unique_ptr<LetExpr> ParseLetExpr();
   std::unique_ptr<ObjectExpr> ParseObjectExpr() const;
-  std::unique_ptr<BlockExpr> ParseBlockExpr() const;
+  std::unique_ptr<BlockExpr> ParseBlockExpr();
 
   // parse MethodCallExpr from ID to )
   // the lhs calling the method
   // and the . should alread have been parsed
   // if this is a call like DoThing() with no lhs then lhs should be empty
   std::unique_ptr<MethodCallExpr> ParseMethodCallExprRhs(
-      std::unique_ptr<Expr> lhs) const;
+      std::unique_ptr<Expr> lhs);
 
+  std::vector<ParseError> parse_errors_;
   std::unique_ptr<Lexer> lexer_;
 };
 

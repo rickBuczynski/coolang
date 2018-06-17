@@ -15,11 +15,28 @@ std::string GetParserOutput(const std::string& input_file_name) {
   coolang::Parser parser(std::make_unique<coolang::Lexer>(
       PARSER_TEST_DATA_PATH + input_file_name));
 
-  std::variant<coolang::ProgramAst, coolang::ParseError> program_or_error =
-      parser.ParseProgram();
+  std::variant<coolang::ProgramAst, std::vector<coolang::ParseError>>
+      program_or_error = parser.ParseProgram();
 
-  std::string parse_output =
-      std::visit([](auto&& e) { return e.ToString(0); }, program_or_error);
+  std::string parse_output = std::visit(
+      [](auto&& arg) -> std::string {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, coolang::ProgramAst>) {
+          return arg.ToString(0);
+        } else if constexpr (std::is_same_v<T,
+                                            std::vector<coolang::ParseError>>) {
+          std::string str;
+          for (const auto& err : arg) {
+            str += err.ToString(0);
+          }
+          str += "Compilation halted due to lex and parse errors\n";
+          return str;
+        }
+
+        return "sfsfa";
+      },
+      program_or_error);
+
   std::cout << parse_output;
 
   return parse_output;
@@ -52,9 +69,13 @@ TEST(ParserTest, letnoinit) { TestParser("letnoinit.test"); }
 TEST(ParserTest, letinit) { TestParser("letinit.test"); }
 TEST(ParserTest, letparens) { TestParser("letparens.test"); }
 TEST(ParserTest, letassociativity) { TestParser("letassociativity.test"); }
-TEST(ParserTest, letinitmultiplebindings) { TestParser("letinitmultiplebindings.test"); }
+TEST(ParserTest, letinitmultiplebindings) {
+  TestParser("letinitmultiplebindings.test");
+}
 TEST(ParserTest, whileoneexpression) { TestParser("whileoneexpression.test"); }
 
 TEST(ParserTest, atoi) { TestParser("atoi.test"); }
+TEST(ParserTest, attrcapitalname) { TestParser("attrcapitalname.test"); }
+TEST(ParserTest, badblock) { TestParser("badblock.test"); }
 
 }  // namespace
