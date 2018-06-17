@@ -77,5 +77,6 @@ TEST(ParserTest, whileoneexpression) { TestParser("whileoneexpression.test"); }
 TEST(ParserTest, atoi) { TestParser("atoi.test"); }
 TEST(ParserTest, attrcapitalname) { TestParser("attrcapitalname.test"); }
 TEST(ParserTest, badblock) { TestParser("badblock.test"); }
+TEST(ParserTest, baddispatch1) { TestParser("baddispatch1.test"); }
 
 }  // namespace

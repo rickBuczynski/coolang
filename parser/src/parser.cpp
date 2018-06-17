@@ -521,6 +521,10 @@ std::unique_ptr<MethodCallExpr> Parser::ParseMethodCallExprRhs(
     if (!lexer_->PeekTokenTypeIs<TokenRparen>()) {
       ExpectToken<TokenComma>(lexer_->PeekToken());
       lexer_->PopToken();
+      // comma after last arg is an error
+      if (lexer_->PeekTokenTypeIs<TokenRparen>()) {
+        throw UnexpectedTokenExcpetion(lexer_->PeekToken());
+      }
     }
   }
   const auto rparen_token = ExpectToken<TokenRparen>(lexer_->PeekToken());
