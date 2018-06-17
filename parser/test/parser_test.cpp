@@ -78,5 +78,9 @@ TEST(ParserTest, atoi) { TestParser("atoi.test"); }
 TEST(ParserTest, attrcapitalname) { TestParser("attrcapitalname.test"); }
 TEST(ParserTest, badblock) { TestParser("badblock.test"); }
 TEST(ParserTest, baddispatch1) { TestParser("baddispatch1.test"); }
+TEST(ParserTest, baddispatch2) { TestParser("baddispatch2.test"); }
+TEST(ParserTest, baddispatch3) { TestParser("baddispatch3.test"); }
+TEST(ParserTest, baddispatch4) { TestParser("baddispatch4.test"); }
+TEST(ParserTest, badexprlist) { TestParser("badexprlist.test"); }
 
 }  // namespace

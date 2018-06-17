@@ -157,8 +157,14 @@ ClassAst Parser::ParseClass() {
 
   std::vector<std::unique_ptr<Feature>> features;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
-    features.push_back(ParseFeature());
-
+    try {
+      features.push_back(ParseFeature());
+    } catch (const UnexpectedTokenExcpetion& e) {
+      const auto parse_error = ParseError(
+          e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+      parse_errors_.push_back(parse_error);
+      lexer_->AdvanceToNext<TokenSemi>();
+    }
     auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
     lexer_->PopToken();
   }
@@ -174,7 +180,12 @@ ClassAst Parser::ParseClass() {
 
 std::unique_ptr<Feature> Parser::ParseFeature() {
   if (std::holds_alternative<TokenLparen>(lexer_->LookAheadToken())) {
-    return ParseMethodFeature();
+    try {
+      return ParseMethodFeature();
+    } catch (const UnexpectedTokenExcpetion& e) {
+      lexer_->AdvanceToNext<TokenRbrace>();
+      throw e;
+    }
   }
   return ParseAttributeFeature();
 }
@@ -481,6 +492,11 @@ std::unique_ptr<ObjectExpr> Parser::ParseObjectExpr() const {
 std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() {
   auto lbrace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
+
+  if (lexer_->PeekTokenTypeIs<TokenRbrace>()) {
+    // empty expr list is not valid
+    throw UnexpectedTokenExcpetion(lexer_->PeekToken());
+  }
 
   std::vector<std::unique_ptr<Expr>> exprs;
   while (!lexer_->PeekTokenTypeIs<TokenRbrace>()) {
