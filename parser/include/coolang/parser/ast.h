@@ -260,6 +260,28 @@ class IfExpr : public Expr {
   std::unique_ptr<Expr> else_expr_;
 };
 
+class CaseExpr : public Expr {
+ public:
+  CaseExpr(LineRange line_range, std::unique_ptr<Expr> case_expr,
+           std::vector<std::string> branch_ids,
+           std::vector<std::string> branch_types,
+           std::vector<std::unique_ptr<Expr>> branch_exprs)
+      : Expr(line_range),
+        case_expr_(std::move(case_expr)),
+        branch_ids_(std::move(branch_ids)),
+        branch_types_(std::move(branch_types)),
+        branch_exprs_(std::move(branch_exprs)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::unique_ptr<Expr> case_expr_;
+
+  std::vector<std::string> branch_ids_;
+  std::vector<std::string> branch_types_;
+  std::vector<std::unique_ptr<Expr>> branch_exprs_;
+};
+
 class WhileExpr : public Expr {
  public:
   WhileExpr(LineRange line_range, std::unique_ptr<Expr> condition_expr,

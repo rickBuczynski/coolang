@@ -155,7 +155,8 @@ std::string MethodCallExpr::ToString(int indent_depth) const {
   if (lhs_expr_) {
     str += lhs_expr_->ToString(indent_depth + 1);
   } else {
-    str += Indentation(indent_depth + 1) + GetLineRange().ToStringStartLine() + '\n';
+    str += Indentation(indent_depth + 1) + GetLineRange().ToStringStartLine() +
+           '\n';
     str += Indentation(indent_depth + 1) + "_object" + '\n';
     str += Indentation(indent_depth + 2) + "self" + '\n';
     str += Indentation(indent_depth + 1) + ": _no_type" + '\n';
@@ -187,6 +188,8 @@ std::string IfExpr::ToString(int indent_depth) const {
 
   return str;
 }
+
+std::string CaseExpr::ToString(int indent_depth) const { return "TODO\n"; }
 
 std::string WhileExpr::ToString(int indent_depth) const {
   std::string str;

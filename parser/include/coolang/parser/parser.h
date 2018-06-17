@@ -44,6 +44,7 @@ class Parser {
 
   std::unique_ptr<Expr> ParseExpr(int min_precedence);
   std::unique_ptr<IfExpr> ParseIfExpr();
+  std::unique_ptr<CaseExpr> ParseCaseExpr();
   std::unique_ptr<WhileExpr> ParseWhileExpr();
   std::unique_ptr<NotExpr> ParseNotExpr();
   std::unique_ptr<NegExpr> ParseNegExpr();

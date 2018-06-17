@@ -83,4 +83,6 @@ TEST(ParserTest, baddispatch3) { TestParser("baddispatch3.test"); }
 TEST(ParserTest, baddispatch4) { TestParser("baddispatch4.test"); }
 TEST(ParserTest, badexprlist) { TestParser("badexprlist.test"); }
 
+TEST(ParserTest, casemultiplebranch) { TestParser("casemultiplebranch.test"); }
+
 }  // namespace

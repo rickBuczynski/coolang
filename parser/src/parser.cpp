@@ -303,6 +303,8 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
     lhs_expr = ParseIfExpr();
   } else if (std::holds_alternative<TokenWhile>(lexer_->PeekToken())) {
     lhs_expr = ParseWhileExpr();
+  } else if (std::holds_alternative<TokenCase>(lexer_->PeekToken())) {
+    lhs_expr = ParseCaseExpr();
   } else if (std::holds_alternative<TokenNot>(lexer_->PeekToken())) {
     lhs_expr = ParseNotExpr();
   }
@@ -353,6 +355,48 @@ std::unique_ptr<IfExpr> Parser::ParseIfExpr() {
 
   return std::make_unique<IfExpr>(line_range, std::move(if_condition_expr),
                                   std::move(then_expr), std::move(else_expr));
+}
+
+std::unique_ptr<CaseExpr> Parser::ParseCaseExpr() {
+  auto case_token = ExpectToken<TokenCase>(lexer_->PeekToken());
+  lexer_->PopToken();
+  auto case_expr = ParseExpr(0);
+
+  ExpectToken<TokenOf>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  std::vector<std::string> branch_ids;
+  std::vector<std::string> branch_types;
+  std::vector<std::unique_ptr<Expr>> branch_exprs;
+  while (!lexer_->PeekTokenTypeIs<TokenEsac>()) {
+    try {
+      Formal f = ParseFormal();
+      branch_ids.push_back(f.GetId());
+      branch_types.push_back(f.GetType());
+
+      ExpectToken<TokenDarrow>(lexer_->PeekToken());
+      lexer_->PopToken();
+
+      branch_exprs.push_back(ParseExpr(0));
+    } catch (const UnexpectedTokenExcpetion& e) {
+      const auto parse_error = ParseError(
+          e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+      parse_errors_.push_back(parse_error);
+      lexer_->AdvanceToNext<TokenSemi>();
+    }
+
+    auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
+    lexer_->PopToken();
+  }
+
+  auto esac_token = ExpectToken<TokenEsac>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  const LineRange line_range(GetLineNum(case_token), GetLineNum(esac_token));
+
+  return std::make_unique<CaseExpr>(
+      line_range, std::move(case_expr), std::move(branch_ids),
+      std::move(branch_types), std::move(branch_exprs));
 }
 
 std::unique_ptr<WhileExpr> Parser::ParseWhileExpr() {
