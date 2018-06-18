@@ -189,7 +189,35 @@ std::string IfExpr::ToString(int indent_depth) const {
   return str;
 }
 
-std::string CaseExpr::ToString(int indent_depth) const { return "TODO\n"; }
+std::string CaseBranch::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_branch" + '\n';
+
+  str += Indentation(indent_depth + 1) + id_ + '\n';
+  str += Indentation(indent_depth + 1) + type_ + '\n';
+  str += expr_->ToString(indent_depth + 1);
+
+  return str;
+}
+
+std::string CaseExpr::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_typcase" + '\n';
+
+  str += case_expr_->ToString(indent_depth + 1);
+
+  for (const auto& branch : branches_) {
+    str += branch.ToString(indent_depth + 1);
+  }
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
+  return str;
+}
 
 std::string WhileExpr::ToString(int indent_depth) const {
   std::string str;

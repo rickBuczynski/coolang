@@ -365,19 +365,21 @@ std::unique_ptr<CaseExpr> Parser::ParseCaseExpr() {
   ExpectToken<TokenOf>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  std::vector<std::string> branch_ids;
-  std::vector<std::string> branch_types;
-  std::vector<std::unique_ptr<Expr>> branch_exprs;
+  std::vector<CaseBranch> branches;
   while (!lexer_->PeekTokenTypeIs<TokenEsac>()) {
     try {
       Formal f = ParseFormal();
-      branch_ids.push_back(f.GetId());
-      branch_types.push_back(f.GetType());
 
       ExpectToken<TokenDarrow>(lexer_->PeekToken());
       lexer_->PopToken();
 
-      branch_exprs.push_back(ParseExpr(0));
+      std::unique_ptr<Expr> expr = ParseExpr(0);
+
+      const LineRange line_range(f.GetLineRange().start_line_num,
+                                 expr->GetLineRange().end_line_num);
+
+      branches.emplace_back(line_range, f.GetId(), f.GetType(),
+                            std::move(expr));
     } catch (const UnexpectedTokenExcpetion& e) {
       const auto parse_error = ParseError(
           e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
@@ -394,9 +396,8 @@ std::unique_ptr<CaseExpr> Parser::ParseCaseExpr() {
 
   const LineRange line_range(GetLineNum(case_token), GetLineNum(esac_token));
 
-  return std::make_unique<CaseExpr>(
-      line_range, std::move(case_expr), std::move(branch_ids),
-      std::move(branch_types), std::move(branch_exprs));
+  return std::make_unique<CaseExpr>(line_range, std::move(case_expr),
+                                    std::move(branches));
 }
 
 std::unique_ptr<WhileExpr> Parser::ParseWhileExpr() {
