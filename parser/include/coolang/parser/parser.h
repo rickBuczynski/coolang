@@ -63,7 +63,8 @@ class Parser {
   // and the . should alread have been parsed
   // if this is a call like DoThing() with no lhs then lhs should be empty
   std::unique_ptr<MethodCallExpr> ParseMethodCallExprRhs(
-      std::unique_ptr<Expr> lhs);
+      std::unique_ptr<Expr> lhs,
+      std::optional<std::string> static_dispatch_type);
 
   std::vector<ParseError> parse_errors_;
   std::unique_ptr<Lexer> lexer_;

@@ -1,6 +1,6 @@
 #include <string>
-#include "coolang/parser/ast.h"
 #include "coolang/lexer/token.h"
+#include "coolang/parser/ast.h"
 
 namespace coolang {
 
@@ -151,7 +151,12 @@ std::string MethodCallExpr::ToString(int indent_depth) const {
   std::string str;
 
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
-  str += Indentation(indent_depth) + "_dispatch" + '\n';
+
+  if (this->static_dispatch_type_.has_value()) {
+    str += Indentation(indent_depth) + "_static_dispatch" + '\n';
+  } else {
+    str += Indentation(indent_depth) + "_dispatch" + '\n';
+  }
 
   if (lhs_expr_) {
     str += lhs_expr_->ToString(indent_depth + 1);
@@ -161,6 +166,10 @@ std::string MethodCallExpr::ToString(int indent_depth) const {
     str += Indentation(indent_depth + 1) + "_object" + '\n';
     str += Indentation(indent_depth + 2) + "self" + '\n';
     str += Indentation(indent_depth + 1) + ": _no_type" + '\n';
+  }
+
+  if (this->static_dispatch_type_.has_value()) {
+    str += Indentation(indent_depth + 1) + static_dispatch_type_.value() + '\n';
   }
   str += Indentation(indent_depth + 1) + method_name_ + '\n';
 

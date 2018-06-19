@@ -228,10 +228,12 @@ class BlockExpr : public Expr {
 class MethodCallExpr : public Expr {
  public:
   MethodCallExpr(LineRange line_range, std::unique_ptr<Expr> lhs_expr,
+                 std::optional<std::string> static_dispatch_type,
                  std::string method_name,
                  std::vector<std::unique_ptr<Expr>> unique_ptrs)
       : Expr(line_range),
         lhs_expr_(std::move(lhs_expr)),
+        static_dispatch_type_(std::move(static_dispatch_type)),
         method_name_(std::move(method_name)),
         args_(std::move(unique_ptrs)) {}
 
@@ -239,6 +241,7 @@ class MethodCallExpr : public Expr {
 
  private:
   std::unique_ptr<Expr> lhs_expr_;
+  std::optional<std::string> static_dispatch_type_;
   std::string method_name_;
   std::vector<std::unique_ptr<Expr>> args_;
 };

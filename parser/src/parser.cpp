@@ -289,7 +289,7 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
     if (std::holds_alternative<TokenAssign>(lexer_->LookAheadToken())) {
       lhs_expr = ParseAssignExpr();
     } else if (std::holds_alternative<TokenLparen>(lexer_->LookAheadToken())) {
-      lhs_expr = ParseMethodCallExprRhs(std::unique_ptr<Expr>{});
+      lhs_expr = ParseMethodCallExprRhs(std::unique_ptr<Expr>{}, std::nullopt);
     } else {
       lhs_expr = ParseObjectExpr();
     }
@@ -326,9 +326,19 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
     lhs_expr = ParseNewExpr();
   }
 
-  while (lexer_->PeekTokenTypeIs<TokenDot>()) {
+  while (lexer_->PeekTokenTypeIs<TokenDot>() ||
+         lexer_->PeekTokenTypeIs<TokenAt>()) {
+    std::optional<std::string> static_dispatch_type;
+    if (lexer_->PeekTokenTypeIs<TokenAt>()) {
+      lexer_->PopToken();
+      auto token_static_dispatch_type = ExpectToken<TokenTypeId>(lexer_->PeekToken());
+      static_dispatch_type = token_static_dispatch_type.get_data();
+      lexer_->PopToken();
+    }
+
     lexer_->PopToken();
-    lhs_expr = ParseMethodCallExprRhs(std::move(lhs_expr));
+    lhs_expr = ParseMethodCallExprRhs(std::move(lhs_expr),
+                                      std::move(static_dispatch_type));
   }
 
   while (lhs_expr && TokenIsBinOp(lexer_->PeekToken()) &&
@@ -608,7 +618,8 @@ std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() {
 }
 
 std::unique_ptr<MethodCallExpr> Parser::ParseMethodCallExprRhs(
-    std::unique_ptr<Expr> lhs) {
+    std::unique_ptr<Expr> lhs,
+    std::optional<std::string> static_dispatch_type) {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -637,7 +648,8 @@ std::unique_ptr<MethodCallExpr> Parser::ParseMethodCallExprRhs(
   const LineRange line_range(start_line_num, GetLineNum(rparen_token));
 
   return std::make_unique<MethodCallExpr>(
-      line_range, std::move(lhs), object_id_token.get_data(), std::move(args));
+      line_range, std::move(lhs), std::move(static_dispatch_type),
+      object_id_token.get_data(), std::move(args));
 }
 
 std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() {
