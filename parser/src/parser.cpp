@@ -307,6 +307,10 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
     lhs_expr = ParseCaseExpr();
   } else if (std::holds_alternative<TokenNot>(lexer_->PeekToken())) {
     lhs_expr = ParseNotExpr();
+  } else if (std::holds_alternative<TokenIsVoid>(lexer_->PeekToken())) {
+    lhs_expr = ParseIsVoidExpr();
+  } else if (std::holds_alternative<TokenNew>(lexer_->PeekToken())) {
+    lhs_expr = ParseNewExpr();
   }
 
   while (lexer_->PeekTokenTypeIs<TokenDot>()) {
@@ -427,6 +431,29 @@ std::unique_ptr<NotExpr> Parser::ParseNotExpr() {
   const LineRange line_range(GetLineNum(not_token),
                              child->GetLineRange().end_line_num);
   return std::make_unique<NotExpr>(line_range, std::move(child));
+}
+
+std::unique_ptr<IsVoidExpr> Parser::ParseIsVoidExpr() {
+  auto not_token = ExpectToken<TokenIsVoid>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  auto child = ParseExpr(0);
+
+  const LineRange line_range(GetLineNum(not_token),
+                             child->GetLineRange().end_line_num);
+  return std::make_unique<IsVoidExpr>(line_range, std::move(child));
+}
+
+std::unique_ptr<NewExpr> Parser::ParseNewExpr() {
+  auto new_token = ExpectToken<TokenNew>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  auto type_id_token = ExpectToken<TokenTypeId>(lexer_->PeekToken());
+  lexer_->PopToken();
+
+  const LineRange line_range(GetLineNum(new_token), GetLineNum(type_id_token));
+
+  return std::make_unique<NewExpr>(line_range, type_id_token.get_data());
 }
 
 std::unique_ptr<NegExpr> Parser::ParseNegExpr() {

@@ -245,6 +245,33 @@ std::string NotExpr::ToString(int indent_depth) const {
 
   return str;
 }
+
+std::string IsVoidExpr::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_isvoid" + '\n';
+
+  str += child_expr_->ToString(indent_depth + 1);
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
+  return str;
+}
+
+std::string NewExpr::ToString(int indent_depth) const {
+  std::string str;
+
+  str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
+  str += Indentation(indent_depth) + "_new" + '\n';
+
+  str += Indentation(indent_depth + 1) + type_ + '\n';
+
+  str += Indentation(indent_depth) + ": _no_type" + '\n';
+
+  return str;
+}
+
 std::string Formal::ToString(int indent_depth) const {
   std::string str;
 

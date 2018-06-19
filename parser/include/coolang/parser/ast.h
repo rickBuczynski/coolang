@@ -319,6 +319,28 @@ class NotExpr : public Expr {
   std::unique_ptr<Expr> child_expr_;
 };
 
+class IsVoidExpr : public Expr {
+ public:
+  IsVoidExpr(LineRange line_range, std::unique_ptr<Expr> child_expr)
+      : Expr(line_range), child_expr_(std::move(child_expr)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::unique_ptr<Expr> child_expr_;
+};
+
+class NewExpr : public Expr {
+ public:
+  NewExpr(LineRange line_range, std::string type)
+      : Expr(line_range), type_(std::move(type)) {}
+
+  std::string ToString(int indent_depth) const override;
+
+ private:
+  std::string type_;
+};
+
 class Formal {
  public:
   Formal(std::string id, std::string type, LineRange line_range)

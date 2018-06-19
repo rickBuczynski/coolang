@@ -47,6 +47,8 @@ class Parser {
   std::unique_ptr<CaseExpr> ParseCaseExpr();
   std::unique_ptr<WhileExpr> ParseWhileExpr();
   std::unique_ptr<NotExpr> ParseNotExpr();
+  std::unique_ptr<IsVoidExpr> ParseIsVoidExpr();
+  std::unique_ptr<NewExpr> ParseNewExpr();
   std::unique_ptr<NegExpr> ParseNegExpr();
   std::unique_ptr<AssignExpr> ParseAssignExpr();
   std::unique_ptr<IntExpr> ParseIntExpr() const;
