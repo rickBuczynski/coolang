@@ -557,14 +557,23 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() {
   std::vector<std::unique_ptr<Expr>> initialization_exprs;
 
   while (!lexer_->PeekTokenTypeIs<TokenIn>()) {
-    formals.push_back(ParseFormal());
+    try {
+      const Formal formal = ParseFormal();
+      std::unique_ptr<Expr> initialization_expr;
 
-    std::unique_ptr<Expr> initialization_expr;
-    if (lexer_->PeekTokenTypeIs<TokenAssign>()) {
-      lexer_->PopToken();
-      initialization_exprs.push_back(ParseExpr(0));
-    } else {
-      initialization_exprs.push_back(std::unique_ptr<Expr>{});
+      if (lexer_->PeekTokenTypeIs<TokenAssign>()) {
+        lexer_->PopToken();
+        initialization_expr = ParseExpr(0);
+      }
+
+      initialization_exprs.push_back(std::move(initialization_expr));
+      formals.push_back(formal);
+    } catch (const UnexpectedTokenExcpetion& e) {
+      const auto parse_error = ParseError(
+          e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+      parse_errors_.push_back(parse_error);
+      // TODO what if the error is in the last binding with no comma after?
+      lexer_->AdvanceToNext<TokenComma>();
     }
 
     if (!lexer_->PeekTokenTypeIs<TokenIn>()) {
