@@ -117,6 +117,10 @@ std::variant<ProgramAst, std::vector<ParseError>> Parser::ParseProgram() {
   try {
     std::vector<ClassAst> classes;
 
+    // force empty program to trigger an error
+    // instead of just empty AST
+    ExpectToken<TokenClass>(lexer_->PeekToken());
+
     while (!lexer_->PeekTokenTypeIs<TokenEndOfFile>()) {
       classes.push_back(ParseClass());
 
