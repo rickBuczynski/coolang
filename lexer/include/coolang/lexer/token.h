@@ -219,6 +219,7 @@ int GetLineNum(Token token);
 std::string TokenToString(const Token& token);
 std::string TokenTypeSpecificStr(Token token,
                                  const std::string& separator = " ");
+std::string Escaped(const std::string& str);
 
 }  // namespace coolang
 

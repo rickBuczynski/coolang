@@ -1,5 +1,6 @@
 #include <string>
 #include "coolang/parser/ast.h"
+#include "coolang/lexer/token.h"
 
 namespace coolang {
 
@@ -55,7 +56,7 @@ std::string StrExpr::ToString(int indent_depth) const {
   str += Indentation(indent_depth) + GetLineRange().ToString() + '\n';
   str += Indentation(indent_depth) + "_string" + '\n';
 
-  str += Indentation(indent_depth + 1) + '"' + val_ + '"' + '\n';
+  str += Indentation(indent_depth + 1) + '"' + Escaped(val_) + '"' + '\n';
 
   str += Indentation(indent_depth) + ": _no_type" + '\n';
 
