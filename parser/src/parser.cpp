@@ -55,6 +55,25 @@ bool TokenIsBinOp(const Token& token) {
       token);
 }
 
+bool TokenIsAssociativeBinOp(const Token& token) {
+  return std::visit(
+      [](auto&& arg) -> bool {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, TokenPlus>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenDiv>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenMinus>) {
+          return true;
+        } else if constexpr (std::is_same_v<T, TokenMult>) {
+          return true;
+        } else {
+          return false;
+        }
+      },
+      token);
+}
+
 std::unique_ptr<BinOpExpr> BinOpExprForToken(const Token& token,
                                              LineRange line_range,
                                              std::unique_ptr<Expr> lhs_expr,
@@ -331,7 +350,8 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
     std::optional<std::string> static_dispatch_type;
     if (lexer_->PeekTokenTypeIs<TokenAt>()) {
       lexer_->PopToken();
-      auto token_static_dispatch_type = ExpectToken<TokenTypeId>(lexer_->PeekToken());
+      auto token_static_dispatch_type =
+          ExpectToken<TokenTypeId>(lexer_->PeekToken());
       static_dispatch_type = token_static_dispatch_type.get_data();
       lexer_->PopToken();
     }
@@ -341,10 +361,18 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
                                       std::move(static_dispatch_type));
   }
 
+  std::optional<Token> prev_binop_token;
   while (lhs_expr && TokenIsBinOp(lexer_->PeekToken()) &&
          TokenBinOpPrecedence(lexer_->PeekToken()) >= min_precedence) {
     Token binop_token = lexer_->PeekToken();
+
+    if (prev_binop_token.has_value() &&
+        prev_binop_token->index() == binop_token.index() &&
+        !TokenIsAssociativeBinOp(binop_token)) {
+      throw UnexpectedTokenExcpetion(binop_token);
+    }
     lexer_->PopToken();
+    prev_binop_token = binop_token;
 
     std::unique_ptr<Expr> rhs_expr =
         ParseExpr(TokenBinOpPrecedence(binop_token) + 1);
