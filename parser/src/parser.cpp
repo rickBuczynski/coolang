@@ -152,6 +152,15 @@ ClassAst Parser::ParseClass() {
   auto type_id_token = ExpectToken<TokenTypeId>(lexer_->PeekToken());
   lexer_->PopToken();
 
+  std::optional<std::string> inherits_type;
+  if (lexer_->PeekTokenTypeIs<TokenInherits>()) {
+    lexer_->PopToken();
+    auto inherits_type_token = ExpectToken<TokenTypeId>(lexer_->PeekToken());
+    lexer_->PopToken();
+
+    inherits_type = inherits_type_token.get_data();
+  }
+
   auto lbrace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
@@ -173,7 +182,7 @@ ClassAst Parser::ParseClass() {
   lexer_->PopToken();
 
   return ClassAst(
-      type_id_token.get_data(), std::nullopt, std::move(features),
+      type_id_token.get_data(), inherits_type, std::move(features),
       LineRange(class_token.get_line_num(), rbrace_token.get_line_num()),
       lexer_->GetInputFile().filename().string());
 }
