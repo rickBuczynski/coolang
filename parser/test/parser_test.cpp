@@ -32,8 +32,6 @@ std::string GetParserOutput(const std::string& input_file_name) {
           str += "Compilation halted due to lex and parse errors\n";
           return str;
         }
-
-        return "sfsfa";
       },
       program_or_error);
 
