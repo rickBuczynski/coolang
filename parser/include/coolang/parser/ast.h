@@ -200,7 +200,7 @@ class LessThanEqualCompareExpr : public BinOpExpr {
   using BinOpExpr::BinOpExpr;
 
  protected:
-  std::string OpName() const override { return "_leTODO"; }
+  std::string OpName() const override { return "_le"; }
 };
 
 class ObjectExpr : public Expr {

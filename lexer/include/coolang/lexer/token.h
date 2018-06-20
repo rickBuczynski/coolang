@@ -51,8 +51,6 @@ class TokenError : public TokenWith<std::string> {
   using TokenWith::TokenWith;
 };
 
-// TODO there was a lower case "error" token to be used later in the parser
-
 class TokenClass : public TokenBase {
   using TokenBase::TokenBase;
 };

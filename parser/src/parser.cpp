@@ -247,12 +247,10 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() {
   while (!lexer_->PeekTokenTypeIs<TokenRparen>()) {
     args.push_back(ParseFormal());
 
-    if (lexer_->PeekTokenTypeIs<TokenComma>()) lexer_->PopToken();
-    // TODO better solution:
-    // if (!lexer_->PeekTokenTypeIs<TokenRparen>()) {
-    //  ExpectToken<TokenComma>(lexer_->PeekToken());
-    //  lexer_->PopToken();
-    //}
+    if (!lexer_->PeekTokenTypeIs<TokenRparen>()) {
+      ExpectToken<TokenComma>(lexer_->PeekToken());
+      lexer_->PopToken();
+    }
   }
 
   auto right_paren_token = ExpectToken<TokenRparen>(lexer_->PeekToken());

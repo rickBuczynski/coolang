@@ -14,8 +14,6 @@ class ParseError {
         file_name_(std::move(file_name)) {}
 
   std::string ToString(int indent_depth) const {
-    // TODO either use indent_depth or refactor to get rid of it as unneeded
-
     using namespace std::string_literals;
     return ""s + '"' + file_name_ + '"' + ", line " +
            std::to_string(GetLineNum(unexpected_token_)) +
