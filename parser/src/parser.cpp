@@ -593,19 +593,12 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() {
   lexer_->PopToken();
 
   std::unique_ptr<Expr> in_expr = ParseExpr(0);
+  const int end_line = in_expr->GetLineRange().end_line_num;
 
   auto let_expr = std::unique_ptr<LetExpr>{};
   for (int i = formals.size() - 1; i >= 0; i--) {
     const int start_line = i == 0 ? GetLineNum(let_token)
                                   : formals[i].GetLineRange().start_line_num;
-    int end_line;
-    if (i == formals.size() - 1) {
-      end_line = in_expr->GetLineRange().end_line_num;
-    } else if (initialization_exprs[i]) {
-      end_line = initialization_exprs[i]->GetLineRange().end_line_num;
-    } else {
-      end_line = formals[i].GetLineRange().end_line_num;
-    }
     const auto line_range = LineRange(start_line, end_line);
 
     let_expr = std::make_unique<LetExpr>(
