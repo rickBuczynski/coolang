@@ -4,24 +4,31 @@
 
 namespace coolang {
 
-int TokenBinOpPrecedence(const Token& token) {
+int TokenOpPrecedence(const Token& token) {
   return std::visit(
       [](auto&& arg) -> int {
         using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, TokenDiv>) {
-          return 3;
+
+        if constexpr (std::is_same_v<T, TokenNeg>) {
+          return 7;
+        } else if constexpr (std::is_same_v<T, TokenIsVoid>) {
+          return 6;
+        } else if constexpr (std::is_same_v<T, TokenDiv>) {
+          return 5;
         } else if constexpr (std::is_same_v<T, TokenMult>) {
-          return 3;
+          return 5;
         } else if constexpr (std::is_same_v<T, TokenPlus>) {
-          return 2;
+          return 4;
         } else if constexpr (std::is_same_v<T, TokenMinus>) {
-          return 2;
+          return 4;
         } else if constexpr (std::is_same_v<T, TokenEq>) {
-          return 1;
+          return 3;
         } else if constexpr (std::is_same_v<T, TokenLt>) {
-          return 1;
+          return 3;
         } else if constexpr (std::is_same_v<T, TokenLe>) {
-          return 1;
+          return 3;
+        } else if constexpr (std::is_same_v<T, TokenNot>) {
+          return 2;
         } else {
           throw std::invalid_argument(TokenToString(arg) +
                                       " is not a binary operator");
@@ -370,7 +377,7 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
 
   std::optional<Token> prev_binop_token;
   while (lhs_expr && TokenIsBinOp(lexer_->PeekToken()) &&
-         TokenBinOpPrecedence(lexer_->PeekToken()) >= min_precedence) {
+         TokenOpPrecedence(lexer_->PeekToken()) >= min_precedence) {
     Token binop_token = lexer_->PeekToken();
 
     if (prev_binop_token.has_value() &&
@@ -382,7 +389,7 @@ std::unique_ptr<Expr> Parser::ParseExpr(int min_precedence) {
     prev_binop_token = binop_token;
 
     std::unique_ptr<Expr> rhs_expr =
-        ParseExpr(TokenBinOpPrecedence(binop_token) + 1);
+        ParseExpr(TokenOpPrecedence(binop_token) + 1);
 
     const LineRange line_range(lhs_expr->GetLineRange().start_line_num,
                                rhs_expr->GetLineRange().end_line_num);
@@ -484,7 +491,7 @@ std::unique_ptr<NotExpr> Parser::ParseNotExpr() {
   auto not_token = ExpectToken<TokenNot>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  auto child = ParseExpr(0);
+  auto child = ParseExpr(TokenOpPrecedence(not_token) + 1);
 
   const LineRange line_range(GetLineNum(not_token),
                              child->GetLineRange().end_line_num);
@@ -492,12 +499,12 @@ std::unique_ptr<NotExpr> Parser::ParseNotExpr() {
 }
 
 std::unique_ptr<IsVoidExpr> Parser::ParseIsVoidExpr() {
-  auto not_token = ExpectToken<TokenIsVoid>(lexer_->PeekToken());
+  auto isvoid_token = ExpectToken<TokenIsVoid>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  auto child = ParseExpr(0);
+  auto child = ParseExpr(TokenOpPrecedence(isvoid_token) + 1);
 
-  const LineRange line_range(GetLineNum(not_token),
+  const LineRange line_range(GetLineNum(isvoid_token),
                              child->GetLineRange().end_line_num);
   return std::make_unique<IsVoidExpr>(line_range, std::move(child));
 }
@@ -518,7 +525,7 @@ std::unique_ptr<NegExpr> Parser::ParseNegExpr() {
   auto neg_token = ExpectToken<TokenNeg>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  std::unique_ptr<Expr> child = ParseExpr(0);
+  auto child = ParseExpr(TokenOpPrecedence(neg_token) + 1);
 
   const LineRange line_range(GetLineNum(neg_token),
                              child->GetLineRange().end_line_num);
