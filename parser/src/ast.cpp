@@ -323,7 +323,7 @@ std::string AttributeFeature::ToString(int indent_depth) const {
   str += Indentation(indent_depth + 1) + type_ + '\n';
 
   if (initialization_expr_) {
-    // TODO
+    str += initialization_expr_->ToString(indent_depth + 1);
   } else {
     str += Indentation(indent_depth + 1) + GetLineRange().ToString() + '\n';
     str += Indentation(indent_depth + 1) + "_no_expr" + '\n';

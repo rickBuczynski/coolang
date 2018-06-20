@@ -701,7 +701,6 @@ std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() {
   auto assign_token = ExpectToken<TokenAssign>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  // TODO assign is consider a binop with low precedence in cool manual
   auto rhs_expr = ParseExpr(0);
 
   const auto line_range = LineRange(GetLineNum(object_id_token),
