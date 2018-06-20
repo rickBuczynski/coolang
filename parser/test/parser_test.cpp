@@ -34,9 +34,7 @@ std::string GetParserOutput(const std::string& input_file_name) {
         }
       },
       program_or_error);
-
-  std::cout << parse_output;
-
+  //std::cout << parse_output;
   return parse_output;
 }
 
