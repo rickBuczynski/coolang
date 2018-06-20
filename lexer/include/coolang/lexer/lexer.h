@@ -27,7 +27,7 @@ class Lexer {
 
   template <class T>
   void AdvanceToNext() {
-    while (!PeekTokenTypeIs<T>()) {
+    while (!PeekTokenTypeIs<T>() && !PeekTokenTypeIs<TokenEndOfFile>()) {
       PopToken();
     }
   }

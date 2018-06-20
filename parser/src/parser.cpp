@@ -141,10 +141,17 @@ std::variant<ProgramAst, std::vector<ParseError>> Parser::ParseProgram() {
     ExpectToken<TokenClass>(lexer_->PeekToken());
 
     while (!lexer_->PeekTokenTypeIs<TokenEndOfFile>()) {
-      classes.push_back(ParseClass());
+      try {
+        classes.push_back(ParseClass());
 
-      auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
-      lexer_->PopToken();
+        auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
+        lexer_->PopToken();
+      } catch (const UnexpectedTokenExcpetion& e) {
+        const auto parse_error = ParseError(
+            e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+        parse_errors_.push_back(parse_error);
+        lexer_->AdvanceToNext<TokenClass>();
+      }
     }
 
     auto eof_token = ExpectToken<TokenEndOfFile>(lexer_->PeekToken());
