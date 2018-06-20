@@ -584,8 +584,7 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() {
       const auto parse_error = ParseError(
           e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
       parse_errors_.push_back(parse_error);
-      // TODO what if the error is in the last binding with no comma after?
-      lexer_->AdvanceToNext<TokenComma>();
+      lexer_->AdvanceToNext<TokenComma, TokenIn>();
     }
 
     if (!lexer_->PeekTokenTypeIs<TokenIn>()) {
