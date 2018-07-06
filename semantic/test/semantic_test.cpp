@@ -37,7 +37,12 @@ std::string GetSemanticOutput(const std::string& input_file_name) {
 
         } else if constexpr (std::is_same_v<
                                  T, std::vector<coolang::SemanticError>>) {
-          return "TODO";
+          std::string str;
+          for (const auto& err : arg) {
+            str += err.ToString(0);
+          }
+          str += "Compilation halted due to static semantic errors.\n";
+          return str;
         }
       },
       program_or_error);
@@ -53,5 +58,6 @@ void TestSemantic(const std::string& input_file) {
 }
 
 TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
+TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
 
 }  // namespace

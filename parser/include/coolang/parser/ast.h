@@ -415,9 +415,15 @@ class ClassAst : public AstNode {
 
   std::string ToString(int indent_depth) const override;
 
+  const std::string& GetContainingFileName() const {
+    return containing_file_name_;
+  }
+
   std::string InheritsTypeAsString() const {
     return inherits_type_.value_or("Object");
   }
+
+  const std::string& GetType() const { return type_; }
 
  private:
   std::string type_;
@@ -430,6 +436,8 @@ class ProgramAst : public AstNode {
  public:
   ProgramAst(std::vector<ClassAst>&& cool_classes, LineRange line_range)
       : AstNode(line_range), classes_(std::move(cool_classes)) {}
+
+  const std::vector<ClassAst>& GetClasses() const { return classes_; }
 
   std::string ToString(int indent_depth) const override;
 
