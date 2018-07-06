@@ -24,6 +24,7 @@ class InheritanceGraph {
 
       if (inherits_type == "Bool") {
         errors.emplace_back(
+            cool_class.GetLineRange().end_line_num,
             "Class " + cool_class.GetType() + " cannot inherit class Bool.",
             cool_class.GetContainingFileName());
       }
