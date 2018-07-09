@@ -1,7 +1,7 @@
 #ifndef COOLANG_SEMANTIC_SEMANTIC_H
 #define COOLANG_SEMANTIC_SEMANTIC_H
 
-#include <optional>
+#include <unordered_map>
 #include <vector>
 #include "coolang/parser/parser.h"
 #include "coolang/semantic/semantic_error.h"
@@ -17,6 +17,11 @@ class Semantic {
   CheckProgramSemantics() const;
 
  private:
+  std::vector<SemanticError> CheckVariableScope(
+      const ProgramAst& program_ast) const;
+  void CheckVariableScope(Expr* expr, std::string file_name,
+                          std::unordered_map<std::string, int>& in_scope_vars,
+                          std::vector<SemanticError>& errors) const;
   std::unique_ptr<Parser> parser_;
 };
 

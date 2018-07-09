@@ -57,7 +57,8 @@ void TestSemantic(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
-TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
-TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
+//TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
+//TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
+TEST(SemanticTest, outofscope) { TestSemantic("outofscope.test"); }
 
 }  // namespace

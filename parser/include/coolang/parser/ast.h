@@ -1,6 +1,7 @@
 #ifndef COOLANG_PARSER_AST_H
 #define COOLANG_PARSER_AST_H
 
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <vector>
@@ -43,6 +44,9 @@ class AstNode {
 
 class Expr : public AstNode {
  public:
+  virtual std::vector<Expr*> GetChildExprs() const {
+    return std::vector<Expr*>{};
+  }
   explicit Expr(LineRange line_range) : AstNode(line_range) {}
 };
 
@@ -53,6 +57,9 @@ class AssignExpr : public Expr {
       : Expr(line_range), id_(std::move(id)), rhs_expr_(std::move(rhs_expr)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    return {rhs_expr_.get()};
+  }
 
  private:
   std::string id_;
@@ -105,6 +112,13 @@ class LetExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  const std::string& GetId() const { return id_; }
+  const std::unique_ptr<Expr>& GetInitializationExpr() const {
+    return initialization_expr_;
+  }
+  const std::unique_ptr<Expr>& GetInExpr() const { return in_expr_; }
+  const std::unique_ptr<LetExpr>& GetChainedLet() const { return chained_let_; }
+
  private:
   std::string id_;
   std::string type_;
@@ -124,6 +138,9 @@ class NegExpr : public Expr {
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    return {child_expr_.get()};
+  }
 
  private:
   std::unique_ptr<Expr> child_expr_;
@@ -138,6 +155,9 @@ class BinOpExpr : public Expr {
         rhs_expr_(std::move(rhs_expr)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    return {lhs_expr_.get(), rhs_expr_.get()};
+  }
 
  protected:
   virtual std::string OpName() const = 0;
@@ -210,9 +230,19 @@ class ObjectExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  const std::string& GetId() const { return id_; }
+
  private:
   std::string id_;
 };
+
+inline std::vector<Expr*> UniqueToRaw(
+    const std::vector<std::unique_ptr<Expr>>& exprs) {
+  std::vector<Expr*> exprs_raw;
+  std::transform(exprs.begin(), exprs.end(), std::back_inserter(exprs_raw),
+                 [](const auto& expr) { return expr.get(); });
+  return exprs_raw;
+}
 
 class BlockExpr : public Expr {
  public:
@@ -220,6 +250,9 @@ class BlockExpr : public Expr {
       : Expr(line_range), exprs_(std::move(exprs)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    return UniqueToRaw(exprs_);
+  }
 
  private:
   std::vector<std::unique_ptr<Expr>> exprs_;
@@ -238,6 +271,11 @@ class MethodCallExpr : public Expr {
         args_(std::move(unique_ptrs)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    std::vector<Expr*> child_exprs = UniqueToRaw(args_);
+    child_exprs.push_back(lhs_expr_.get());
+    return child_exprs;
+  }
 
  private:
   std::unique_ptr<Expr> lhs_expr_;
@@ -256,6 +294,9 @@ class IfExpr : public Expr {
         else_expr_(std::move(else_expr)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    return {if_condition_expr_.get(), then_expr_.get(), else_expr_.get()};
+  }
 
  private:
   std::unique_ptr<Expr> if_condition_expr_;
@@ -305,6 +346,9 @@ class WhileExpr : public Expr {
         loop_expr_(std::move(loop_expr)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    return {condition_expr_.get(), loop_expr_.get()};
+  }
 
  private:
   std::unique_ptr<Expr> condition_expr_;
@@ -317,6 +361,9 @@ class NotExpr : public Expr {
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    return {child_expr_.get()};
+  }
 
  private:
   std::unique_ptr<Expr> child_expr_;
@@ -328,6 +375,9 @@ class IsVoidExpr : public Expr {
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::vector<Expr*> GetChildExprs() const override {
+    return {child_expr_.get()};
+  }
 
  private:
   std::unique_ptr<Expr> child_expr_;
@@ -364,6 +414,7 @@ class Formal {
 class Feature : public AstNode {
  public:
   Feature(LineRange line_range) : AstNode(line_range) {}
+  virtual const std::unique_ptr<Expr>& GetRootExpr() const = 0;
 };
 
 class MethodFeature : public Feature {
@@ -375,6 +426,8 @@ class MethodFeature : public Feature {
         args_(std::move(args)),
         return_type_(std::move(return_type)),
         body_(std::move(body)) {}
+
+  const std::unique_ptr<Expr>& GetRootExpr() const override { return body_; }
 
   std::string ToString(int indent_depth) const override;
 
@@ -393,6 +446,10 @@ class AttributeFeature : public Feature {
         id_(std::move(id)),
         type_(std::move(type)),
         initialization_expr_(std::move(initialization_expr)) {}
+
+  const std::unique_ptr<Expr>& GetRootExpr() const override {
+    return initialization_expr_;
+  }
 
   std::string ToString(int indent_depth) const override;
 
@@ -424,6 +481,9 @@ class ClassAst : public AstNode {
   }
 
   const std::string& GetType() const { return type_; }
+  const std::vector<std::unique_ptr<Feature>>& GetFeatures() const {
+    return features_;
+  }
 
  private:
   std::string type_;
