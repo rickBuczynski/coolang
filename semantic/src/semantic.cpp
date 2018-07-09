@@ -55,7 +55,8 @@ void Semantic::CheckVariableScope(
   if (auto* obj_expr = dynamic_cast<ObjectExpr*>(expr)) {
     if (in_scope_vars.find(obj_expr->GetId()) == in_scope_vars.end()) {
       errors.emplace_back(obj_expr->GetLineRange().end_line_num,
-                          "error variable not in scopeTODO", file_name);
+                          "Undeclared identifier " + obj_expr->GetId() + ".",
+                          file_name);
     }
   } else if (auto* let_expr = dynamic_cast<LetExpr*>(expr)) {
     if (let_expr->GetInitializationExpr()) {
