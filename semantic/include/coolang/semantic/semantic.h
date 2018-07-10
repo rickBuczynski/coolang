@@ -17,11 +17,6 @@ class Semantic {
   CheckProgramSemantics() const;
 
  private:
-  std::vector<SemanticError> CheckVariableScope(
-      const ProgramAst& program_ast) const;
-  void CheckVariableScope(Expr* expr, std::string file_name,
-                          std::unordered_map<std::string, int>& in_scope_vars,
-                          std::vector<SemanticError>& errors) const;
   std::unique_ptr<Parser> parser_;
 };
 
