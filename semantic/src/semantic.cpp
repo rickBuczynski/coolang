@@ -41,8 +41,10 @@ std::vector<SemanticError> Semantic::CheckVariableScope(
       const auto& root_expr = feature->GetRootExpr();
 
       std::unordered_map<std::string, int> in_scope_vars;
-      CheckVariableScope(root_expr.get(), cool_class.GetContainingFileName(),
-                         in_scope_vars, errors);
+      if (root_expr) {
+        CheckVariableScope(root_expr.get(), cool_class.GetContainingFileName(),
+                           in_scope_vars, errors);
+      }
     }
   }
   return errors;
