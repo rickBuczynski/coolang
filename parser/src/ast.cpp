@@ -19,7 +19,7 @@ std::string AssignExpr::ToString(int indent_depth) const {
 
   str += rhs_expr_->ToString(indent_depth + 1);
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -32,7 +32,7 @@ std::string IntExpr::ToString(int indent_depth) const {
 
   str += Indentation(indent_depth + 1) + val_ + '\n';
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -45,7 +45,7 @@ std::string BoolExpr::ToString(int indent_depth) const {
 
   str += Indentation(indent_depth + 1) + std::to_string(val_) + '\n';
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -58,7 +58,7 @@ std::string StrExpr::ToString(int indent_depth) const {
 
   str += Indentation(indent_depth + 1) + '"' + Escaped(val_) + '"' + '\n';
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -78,7 +78,7 @@ std::string LetExpr::ToString(int indent_depth) const {
     str += Indentation(indent_depth + 1) + GetLineRange().ToStringStartLine() +
            '\n';
     str += Indentation(indent_depth + 1) + "_no_expr" + '\n';
-    str += Indentation(indent_depth + 1) + ": _no_type" + '\n';
+    str += Indentation(indent_depth + 1) + ": " + expr_type_ + '\n';
   }
   if (chained_let_) {
     str += chained_let_->ToString(indent_depth + 1);
@@ -87,7 +87,7 @@ std::string LetExpr::ToString(int indent_depth) const {
     str += in_expr_->ToString(indent_depth + 1);
   }
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -100,7 +100,7 @@ std::string NegExpr::ToString(int indent_depth) const {
 
   str += child_expr_->ToString(indent_depth + 1);
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -114,7 +114,7 @@ std::string BinOpExpr::ToString(int indent_depth) const {
   str += lhs_expr_->ToString(indent_depth + 1);
   str += rhs_expr_->ToString(indent_depth + 1);
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -127,7 +127,7 @@ std::string ObjectExpr::ToString(int indent_depth) const {
 
   str += Indentation(indent_depth + 1) + id_ + '\n';
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -142,7 +142,7 @@ std::string BlockExpr::ToString(int indent_depth) const {
     str += expr->ToString(indent_depth + 1);
   }
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -165,7 +165,7 @@ std::string MethodCallExpr::ToString(int indent_depth) const {
            '\n';
     str += Indentation(indent_depth + 1) + "_object" + '\n';
     str += Indentation(indent_depth + 2) + "self" + '\n';
-    str += Indentation(indent_depth + 1) + ": _no_type" + '\n';
+    str += Indentation(indent_depth + 1) + ": " + expr_type_ + '\n';
   }
 
   if (this->static_dispatch_type_.has_value()) {
@@ -179,7 +179,7 @@ std::string MethodCallExpr::ToString(int indent_depth) const {
   }
   str += Indentation(indent_depth + 1) + ")" + '\n';
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -194,7 +194,7 @@ std::string IfExpr::ToString(int indent_depth) const {
   str += then_expr_->ToString(indent_depth + 1);
   str += else_expr_->ToString(indent_depth + 1);
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -224,7 +224,7 @@ std::string CaseExpr::ToString(int indent_depth) const {
     str += branch.ToString(indent_depth + 1);
   }
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -238,7 +238,7 @@ std::string WhileExpr::ToString(int indent_depth) const {
   str += condition_expr_->ToString(indent_depth + 1);
   str += loop_expr_->ToString(indent_depth + 1);
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -251,7 +251,7 @@ std::string NotExpr::ToString(int indent_depth) const {
 
   str += child_expr_->ToString(indent_depth + 1);
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -264,7 +264,7 @@ std::string IsVoidExpr::ToString(int indent_depth) const {
 
   str += child_expr_->ToString(indent_depth + 1);
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }
@@ -277,7 +277,7 @@ std::string NewExpr::ToString(int indent_depth) const {
 
   str += Indentation(indent_depth + 1) + type_ + '\n';
 
-  str += Indentation(indent_depth) + ": _no_type" + '\n';
+  str += Indentation(indent_depth) + ": " + expr_type_ + '\n';
 
   return str;
 }

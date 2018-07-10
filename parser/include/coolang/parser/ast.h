@@ -48,6 +48,11 @@ class Expr : public AstNode {
     return std::vector<Expr*>{};
   }
   explicit Expr(LineRange line_range) : AstNode(line_range) {}
+
+  virtual std::string InferType() { return expr_type_; }
+
+ protected:
+  std::string expr_type_ = "_no_type";
 };
 
 class AssignExpr : public Expr {
@@ -59,6 +64,9 @@ class AssignExpr : public Expr {
   std::string ToString(int indent_depth) const override;
   std::vector<Expr*> GetChildExprs() const override {
     return {rhs_expr_.get()};
+  }
+  std::string InferType() override {
+    return expr_type_ = rhs_expr_->InferType();
   }
 
  private:
@@ -72,6 +80,7 @@ class IntExpr : public Expr {
       : Expr(line_range), val_(std::move(val)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::string InferType() override { return expr_type_ = "Int"; }
 
  private:
   std::string val_;
@@ -82,6 +91,7 @@ class BoolExpr : public Expr {
   BoolExpr(LineRange line_range, bool val) : Expr(line_range), val_(val) {}
 
   std::string ToString(int indent_depth) const override;
+  std::string InferType() override { return expr_type_ = "BoolTODO"; }
 
  private:
   bool val_;
@@ -90,9 +100,10 @@ class BoolExpr : public Expr {
 class StrExpr : public Expr {
  public:
   StrExpr(LineRange line_range, std::string val)
-      : Expr(line_range), val_(val) {}
+      : Expr(line_range), val_(std::move(val)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::string InferType() override { return expr_type_ = "String"; }
 
  private:
   std::string val_;
@@ -253,6 +264,12 @@ class BlockExpr : public Expr {
   std::vector<Expr*> GetChildExprs() const override {
     return UniqueToRaw(exprs_);
   }
+  std::string InferType() override {
+    for (const auto& sub_expr : exprs_) {
+      expr_type_ = sub_expr->InferType();
+    }
+    return expr_type_;
+  }
 
  private:
   std::vector<std::unique_ptr<Expr>> exprs_;
@@ -389,6 +406,7 @@ class NewExpr : public Expr {
       : Expr(line_range), type_(std::move(type)) {}
 
   std::string ToString(int indent_depth) const override;
+  std::string InferType() override { return expr_type_ = type_; }
 
  private:
   std::string type_;

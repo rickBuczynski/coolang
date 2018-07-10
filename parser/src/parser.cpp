@@ -218,10 +218,14 @@ ClassAst Parser::ParseClass() {
   auto rbrace_token = ExpectToken<TokenRbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  return ClassAst(
-      type_id_token.get_data(), inherits_type, std::move(features),
-      LineRange(class_token.get_line_num(), rbrace_token.get_line_num()),
-      lexer_->GetInputFile().filename().string());
+  auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
+  // don't PopToken since semi_token is part of the Program production not the
+  // class production but we need to peek it to get the correct end line num
+  // expected by test output
+
+  return ClassAst(type_id_token.get_data(), inherits_type, std::move(features),
+                  LineRange(class_token.get_line_num(), GetLineNum(semi_token)),
+                  lexer_->GetInputFile().filename().string());
 }
 
 std::unique_ptr<Feature> Parser::ParseFeature() {

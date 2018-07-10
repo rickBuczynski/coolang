@@ -46,7 +46,7 @@ std::string GetSemanticOutput(const std::string& input_file_name) {
         }
       },
       program_or_error);
-  // std::cout << parse_output;
+  std::cout << parse_output;
   return parse_output;
 }
 
@@ -57,7 +57,7 @@ void TestSemantic(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
-//TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
+TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
 TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
 TEST(SemanticTest, outofscope) { TestSemantic("outofscope.test"); }
 

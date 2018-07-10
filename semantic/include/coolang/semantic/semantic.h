@@ -1,7 +1,6 @@
 #ifndef COOLANG_SEMANTIC_SEMANTIC_H
 #define COOLANG_SEMANTIC_SEMANTIC_H
 
-#include <unordered_map>
 #include <vector>
 #include "coolang/parser/parser.h"
 #include "coolang/semantic/semantic_error.h"

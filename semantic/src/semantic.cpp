@@ -2,6 +2,7 @@
 #include "coolang/semantic/inheritance_graph.h"
 #include "coolang/semantic/scope_checker.h"
 #include "coolang/semantic/semantic.h"
+#include "coolang/semantic/type_checker.h"
 
 namespace coolang {
 
@@ -28,6 +29,8 @@ Semantic::CheckProgramSemantics() const {
   if (!variable_scope_errors.empty()) {
     return variable_scope_errors;
   }
+
+  TypeChecker::CheckTypes(program_ast);
 
   return program_ast;
 }
