@@ -24,13 +24,11 @@ Semantic::CheckProgramSemantics() const {
         inheritance_graph_or_semantic_error);
   }
 
-  std::vector<SemanticError> variable_scope_errors =
-      ScopeChecker::CheckVariableScope(program_ast);
-  if (!variable_scope_errors.empty()) {
-    return variable_scope_errors;
+  std::vector<SemanticError> type_check_errors =
+      TypeChecker::CheckTypes(program_ast);
+  if (!type_check_errors.empty()) {
+    return type_check_errors;
   }
-
-  TypeChecker::CheckTypes(program_ast);
 
   return program_ast;
 }
