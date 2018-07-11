@@ -1,6 +1,5 @@
 #include <unordered_map>
 #include "coolang/semantic/inheritance_graph.h"
-#include "coolang/semantic/scope_checker.h"
 #include "coolang/semantic/semantic.h"
 #include "coolang/semantic/type_checker.h"
 
