@@ -61,4 +61,7 @@ TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
 TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
 TEST(SemanticTest, outofscope) { TestSemantic("outofscope.test"); }
 
+TEST(SemanticTest, anattributenamedself) { TestSemantic("anattributenamedself.test"); }
+
+
 }  // namespace

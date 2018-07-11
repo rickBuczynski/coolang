@@ -8,6 +8,13 @@ std::vector<SemanticError> ScopeChecker::CheckVariableScope(
   std::vector<SemanticError> errors;
   for (const auto& cool_class : program_ast.GetClasses()) {
     for (const auto& feature : cool_class.GetFeatures()) {
+      if (auto* attr = dynamic_cast<AttributeFeature*>(feature.get())) {
+        if (attr->GetId() == "self") {
+          errors.emplace_back(attr->GetLineRange().end_line_num,
+                              "'self' cannot be the name of an attribute.",
+                              cool_class.GetContainingFileName());
+        }
+      }
       // TODO handle class attributes
       // TODO handle method parameters
       const auto& root_expr = feature->GetRootExpr();

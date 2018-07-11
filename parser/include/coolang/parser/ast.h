@@ -468,6 +468,7 @@ class AttributeFeature : public Feature {
   const std::unique_ptr<Expr>& GetRootExpr() const override {
     return initialization_expr_;
   }
+  const std::string& GetId() const { return id_; }
 
   std::string ToString(int indent_depth) const override;
 
