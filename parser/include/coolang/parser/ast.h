@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -51,7 +52,7 @@ class Expr : public AstNode {
 
   virtual std::string CheckType(
       std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, int>& in_scope_vars,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
       std::string file_name) {
     return expr_type_;
   }
@@ -67,11 +68,13 @@ class AssignExpr : public Expr {
       : Expr(line_range), id_(std::move(id)), rhs_expr_(std::move(rhs_expr)) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(std::vector<SemanticError>& errors,
-                        std::unordered_map<std::string, int>& in_scope_vars,
-                        std::string file_name) override {
-    return expr_type_ = rhs_expr_->CheckType(errors, in_scope_vars, file_name);
-  }
+
+  const std::string& GetId() const { return id_; }
+
+  std::string CheckType(
+      std::vector<SemanticError>& errors,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+      std::string file_name) override;
 
  private:
   std::string id_;
@@ -84,9 +87,10 @@ class IntExpr : public Expr {
       : Expr(line_range), val_(std::move(val)) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(std::vector<SemanticError>& errors,
-                        std::unordered_map<std::string, int>& in_scope_vars,
-                        std::string file_name) override {
+  std::string CheckType(
+      std::vector<SemanticError>& errors,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+      std::string file_name) override {
     return expr_type_ = "Int";
   }
 
@@ -99,9 +103,10 @@ class BoolExpr : public Expr {
   BoolExpr(LineRange line_range, bool val) : Expr(line_range), val_(val) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(std::vector<SemanticError>& errors,
-                        std::unordered_map<std::string, int>& in_scope_vars,
-                        std::string file_name) override {
+  std::string CheckType(
+      std::vector<SemanticError>& errors,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+      std::string file_name) override {
     return expr_type_ = "BoolTODO";
   }
 
@@ -115,9 +120,10 @@ class StrExpr : public Expr {
       : Expr(line_range), val_(std::move(val)) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(std::vector<SemanticError>& errors,
-                        std::unordered_map<std::string, int>& in_scope_vars,
-                        std::string file_name) override {
+  std::string CheckType(
+      std::vector<SemanticError>& errors,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+      std::string file_name) override {
     return expr_type_ = "String";
   }
 
@@ -146,9 +152,10 @@ class LetExpr : public Expr {
   const std::unique_ptr<Expr>& GetInExpr() const { return in_expr_; }
   const std::unique_ptr<LetExpr>& GetChainedLet() const { return chained_let_; }
 
-  std::string CheckType(std::vector<SemanticError>& errors,
-                        std::unordered_map<std::string, int>& in_scope_vars,
-                        std::string file_name) override;
+  std::string CheckType(
+      std::vector<SemanticError>& errors,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+      std::string file_name) override;
 
  private:
   std::string id_;
@@ -257,9 +264,10 @@ class ObjectExpr : public Expr {
 
   const std::string& GetId() const { return id_; }
 
-  std::string CheckType(std::vector<SemanticError>& errors,
-                        std::unordered_map<std::string, int>& in_scope_vars,
-                        std::string file_name) override;
+  std::string CheckType(
+      std::vector<SemanticError>& errors,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+      std::string file_name) override;
 
  private:
   std::string id_;
@@ -271,9 +279,10 @@ class BlockExpr : public Expr {
       : Expr(line_range), exprs_(std::move(exprs)) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(std::vector<SemanticError>& errors,
-                        std::unordered_map<std::string, int>& in_scope_vars,
-                        std::string file_name) override {
+  std::string CheckType(
+      std::vector<SemanticError>& errors,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+      std::string file_name) override {
     for (const auto& sub_expr : exprs_) {
       expr_type_ = sub_expr->CheckType(errors, in_scope_vars, file_name);
     }
@@ -398,9 +407,10 @@ class NewExpr : public Expr {
       : Expr(line_range), type_(std::move(type)) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(std::vector<SemanticError>& errors,
-                        std::unordered_map<std::string, int>& in_scope_vars,
-                        std::string file_name) override {
+  std::string CheckType(
+      std::vector<SemanticError>& errors,
+      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+      std::string file_name) override {
     return expr_type_ = type_;
   }
 
@@ -465,6 +475,7 @@ class AttributeFeature : public Feature {
     return initialization_expr_;
   }
   const std::string& GetId() const { return id_; }
+  const std::string& GetType() const { return type_; }
 
   std::string ToString(int indent_depth) const override;
 
