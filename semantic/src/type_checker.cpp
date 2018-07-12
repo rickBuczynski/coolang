@@ -4,6 +4,15 @@
 
 namespace coolang {
 
+void PopAndEraseIfEmpty(
+    std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
+    const std::string& id) {
+  in_scope_vars[id].pop();
+  if (in_scope_vars[id].empty()) {
+    in_scope_vars.erase(id);
+  }
+}
+
 std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
   std::vector<SemanticError> errors;
   std::unordered_map<std::string, std::stack<std::string>> in_scope_vars;
@@ -33,7 +42,7 @@ std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
     // remove all attributes frome scope
     for (const auto& feature : cool_class.GetFeatures()) {
       if (auto* attr = dynamic_cast<AttributeFeature*>(feature.get())) {
-        in_scope_vars[attr->GetId()].pop();
+        PopAndEraseIfEmpty(in_scope_vars, attr->GetId());
       }
     }
   }
@@ -69,10 +78,7 @@ std::string LetExpr::CheckType(
     GetChainedLet()->CheckType(errors, in_scope_vars, file_name);
   }
 
-  in_scope_vars[id_].pop();
-  if (in_scope_vars[id_].empty()) {
-    in_scope_vars.erase(id_);
-  }
+  PopAndEraseIfEmpty(in_scope_vars, id_);
 
   return "TODOLetExpr";
 }
