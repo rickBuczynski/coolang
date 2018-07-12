@@ -64,6 +64,7 @@ TEST(SemanticTest, anattributenamedself) { TestSemantic("anattributenamedself.te
 TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
 TEST(SemanticTest, assignnoconform) { TestSemantic("assignnoconform.test"); }
 TEST(SemanticTest, attrbadinit) { TestSemantic("attrbadinit.test"); }
+TEST(SemanticTest, attroverride) { TestSemantic("attroverride.test"); }
 
 
 }  // namespace

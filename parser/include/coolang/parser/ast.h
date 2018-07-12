@@ -510,6 +510,15 @@ class ClassAst : public AstNode {
   const std::vector<std::unique_ptr<Feature>>& GetFeatures() const {
     return features_;
   }
+  std::vector<const AttributeFeature*> GetAttributeFeatures() const {
+    std::vector<const AttributeFeature*> attribute_features;
+    for (const auto& feature : GetFeatures()) {
+      if (auto* attr = dynamic_cast<AttributeFeature*>(feature.get())) {
+        attribute_features.push_back(attr);
+      }
+    }
+    return attribute_features;
+  }
 
  private:
   std::string type_;
@@ -521,13 +530,21 @@ class ClassAst : public AstNode {
 class ProgramAst : public AstNode {
  public:
   ProgramAst(std::vector<ClassAst>&& cool_classes, LineRange line_range)
-      : AstNode(line_range), classes_(std::move(cool_classes)) {}
+      : AstNode(line_range), classes_(std::move(cool_classes)) {
+    for (const auto& cool_class : classes_) {
+      classes_by_name_[cool_class.GetType()] = &cool_class;
+    }
+  }
 
   const std::vector<ClassAst>& GetClasses() const { return classes_; }
+  const ClassAst& GetClassByName(const std::string& name) const {
+    return *classes_by_name_.at(name);
+  }
 
   std::string ToString(int indent_depth) const override;
 
  private:
+  std::unordered_map<std::string, const ClassAst*> classes_by_name_;
   std::vector<ClassAst> classes_;
 };
 

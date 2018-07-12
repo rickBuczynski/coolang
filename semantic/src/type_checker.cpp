@@ -1,5 +1,6 @@
 #include <stack>
 #include "coolang/parser/ast.h"
+#include "coolang/semantic/inheritance_graph.h"
 #include "coolang/semantic/type_checker.h"
 
 namespace coolang {
@@ -13,22 +14,40 @@ void PopAndEraseIfEmpty(
   }
 }
 
-std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
+std::vector<SemanticError> TypeChecker::CheckTypes(
+    ProgramAst& program_ast, const InheritanceGraph& inheritance_graph) {
   std::vector<SemanticError> errors;
   std::unordered_map<std::string, std::stack<std::string>> in_scope_vars;
   for (const auto& cool_class : program_ast.GetClasses()) {
     // add all attributes to scope before diving into expressions since these
     // attributes are visible throughout the class
-    for (const auto& feature : cool_class.GetFeatures()) {
-      if (auto* attr = dynamic_cast<AttributeFeature*>(feature.get())) {
-        if (attr->GetId() == "self") {
-          errors.emplace_back(attr->GetLineRange().end_line_num,
-                              "'self' cannot be the name of an attribute.",
-                              cool_class.GetContainingFileName());
-          return errors;
-        }
-        in_scope_vars[attr->GetId()].push(attr->GetType());
+    for (const auto* attr : cool_class.GetAttributeFeatures()) {
+      if (attr->GetId() == "self") {
+        errors.emplace_back(attr->GetLineRange().end_line_num,
+                            "'self' cannot be the name of an attribute.",
+                            cool_class.GetContainingFileName());
+        return errors;
       }
+      std::vector<const ClassAst*> super_classes =
+          GetSuperClasses(program_ast, cool_class.GetType(), inheritance_graph);
+      for (const auto* super_class : super_classes) {
+        // TODO this is slow, could be faster
+        for (const auto super_attr : super_class->GetAttributeFeatures()) {
+          if (super_attr->GetId() == attr->GetId()) {
+            errors.emplace_back(
+                attr->GetLineRange().end_line_num,
+                "Attribute " + cool_class.GetType() + "." + attr->GetId() +
+                    " is already defined in class " + super_class->GetType() +
+                    " at " + super_class->GetContainingFileName() + ":" +
+                    std::to_string(super_attr->GetLineRange().end_line_num) +
+                    ".",
+                cool_class.GetContainingFileName());
+            return errors;
+          }
+        }
+      }
+
+      in_scope_vars[attr->GetId()].push(attr->GetType());
     }
 
     for (const auto& feature : cool_class.GetFeatures()) {
@@ -47,6 +66,19 @@ std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
     }
   }
   return errors;
+}
+
+std::vector<const ClassAst*> TypeChecker::GetSuperClasses(
+    const ProgramAst& program_ast, const std::string& type,
+    const InheritanceGraph& inheritance_graph) {
+  std::vector<const ClassAst*> super_classes;
+  std::string super_type = inheritance_graph.GetSuperType(type);
+  while (super_type != "Object" && super_type != "IO") {
+    const auto& cool_class = program_ast.GetClassByName(super_type);
+    super_classes.push_back(&cool_class);
+    super_type = inheritance_graph.GetSuperType(super_type);
+  }
+  return super_classes;
 }
 
 std::string ObjectExpr::CheckType(

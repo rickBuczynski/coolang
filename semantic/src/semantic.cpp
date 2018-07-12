@@ -22,9 +22,11 @@ Semantic::CheckProgramSemantics() const {
     return std::get<std::vector<SemanticError>>(
         inheritance_graph_or_semantic_error);
   }
+  const InheritanceGraph inheritance_graph =
+      std::get<InheritanceGraph>(inheritance_graph_or_semantic_error);
 
   std::vector<SemanticError> type_check_errors =
-      TypeChecker::CheckTypes(program_ast);
+      TypeChecker::CheckTypes(program_ast, inheritance_graph);
   if (!type_check_errors.empty()) {
     return type_check_errors;
   }

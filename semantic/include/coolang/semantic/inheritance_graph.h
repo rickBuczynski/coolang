@@ -37,6 +37,10 @@ class InheritanceGraph {
     return InheritanceGraph(type_to_super);
   }
 
+  std::string GetSuperType(const std::string& type) const {
+    return type_to_super_.at(type);
+  }
+
  private:
   std::unordered_map<std::string, std::string> type_to_super_;
 };  // namespace coolang
