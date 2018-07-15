@@ -88,7 +88,6 @@ class AstVisitor {
   AstVisitor& operator=(const AstVisitor& other) = default;
   AstVisitor& operator=(AstVisitor&& other) noexcept = default;
 
-  virtual void Visit(Expr& node) = 0;
   virtual void Visit(CaseExpr& node) = 0;
   virtual void Visit(StrExpr& node) = 0;
   virtual void Visit(WhileExpr& node) = 0;
@@ -123,8 +122,6 @@ class AstVisitor {
 class Expr : public AstNode {
  public:
   explicit Expr(LineRange line_range) : AstNode(line_range) {}
-
-  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
   const std::string& GetExprType() const { return expr_type_; }
   void SetExprType(const std::string& expr_type) { expr_type_ = expr_type; }

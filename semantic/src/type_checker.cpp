@@ -37,7 +37,6 @@ class TypeCheckVisitor : public AstVisitor {
 
   const std::vector<SemanticError>& GetErrors() const { return errors_; }
 
-  void Visit(Expr& node) override { node.Accept(*this); }
   void Visit(CaseExpr& node) override { node.SetExprType("TODO"); }
   void Visit(StrExpr& node) override { node.SetExprType("String"); }
   void Visit(WhileExpr& node) override { node.SetExprType("TODO"); }
@@ -49,8 +48,8 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(IfExpr& node) override { node.SetExprType("TODO"); }
   void Visit(NegExpr& node) override { node.SetExprType("TODO"); }
   void Visit(BlockExpr& node) override {
-    for (const auto& sub_expr : node.GetExprs()) {
-      Visit(*sub_expr);
+    for (auto& sub_expr : node.GetExprs()) {
+      sub_expr->Accept(*this);
     }
     node.SetExprType(node.GetExprs().back()->GetExprType());
   }
@@ -92,17 +91,17 @@ void TypeCheckVisitor::Visit(ObjectExpr& node) {
 
 void TypeCheckVisitor::Visit(LetExpr& node) {
   if (node.GetInitializationExpr()) {
-    Visit(*node.GetInitializationExpr());
+    node.GetInitializationExpr()->Accept(*this);
   }
 
   in_scope_vars_[node.GetId()].push(node.GetType());
 
   if (node.GetInExpr()) {
-    Visit(*node.GetInExpr());
+    node.GetInExpr()->Accept(*this);
   } else if (node.GetChainedLet()) {
     // TODO can you use a variable from earlier in the chain in an init
     // expression within the chain?
-    Visit(*node.GetChainedLet());
+    node.GetChainedLet()->Accept(*this);
   }
 
   PopAndEraseIfEmpty(in_scope_vars_, node.GetId());
@@ -111,7 +110,7 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
 }
 
 void TypeCheckVisitor::Visit(AssignExpr& node) {
-  Visit(*node.GetRhsExpr());
+  node.GetRhsExpr()->Accept(*this);
 
   const std::string rhs_type = node.GetRhsExpr()->GetExprType();
   const std::string lhs_type = in_scope_vars_[node.GetId()].top();
@@ -169,7 +168,7 @@ std::vector<SemanticError> TypeChecker::CheckTypes(
       if (feature->GetRootExpr()) {
         TypeCheckVisitor type_check_visitor(in_scope_vars,
                                             cool_class.GetContainingFileName());
-        type_check_visitor.Visit(*feature->GetRootExpr());
+        feature->GetRootExpr()->Accept(type_check_visitor);
         errors.insert(errors.end(), type_check_visitor.GetErrors().begin(),
                       type_check_visitor.GetErrors().end());
       }
