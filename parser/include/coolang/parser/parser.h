@@ -64,6 +64,8 @@ class Parser {
       std::unique_ptr<Expr> lhs,
       std::optional<std::string> static_dispatch_type);
 
+  std::vector<std::unique_ptr<ClassAst>> dummy_classes_;
+
   std::vector<ParseError> parse_errors_;
   std::unique_ptr<Lexer> lexer_;
 };

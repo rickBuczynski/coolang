@@ -14,6 +14,120 @@ void PopAndEraseIfEmpty(
   }
 }
 
+std::vector<const ClassAst*> TypeChecker::GetSuperClasses(
+    const ProgramAst& program_ast, const std::string& type,
+    const InheritanceGraph& inheritance_graph) {
+  std::vector<const ClassAst*> super_classes;
+  std::string super_type = inheritance_graph.GetSuperType(type);
+  while (super_type != "Object" && super_type != "IO") {
+    const auto& cool_class = program_ast.GetClassByName(super_type);
+    super_classes.push_back(&cool_class);
+    super_type = inheritance_graph.GetSuperType(super_type);
+  }
+  return super_classes;
+}
+
+class TypeCheckVisitor : public AstVisitor {
+ public:
+  TypeCheckVisitor(
+      std::unordered_map<std::string, std::stack<std::string>> in_scope_vars,
+      std::string file_name)
+      : in_scope_vars_(std::move(in_scope_vars)),
+        file_name_(std::move(file_name)) {}
+
+  const std::vector<SemanticError>& GetErrors() const { return errors_; }
+
+  void Visit(Expr& node) override { node.Accept(*this); }
+  void Visit(CaseExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(StrExpr& node) override { node.SetExprType("String"); }
+  void Visit(WhileExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(LetExpr& node) override;
+  void Visit(IntExpr& node) override { node.SetExprType("Int"); }
+  void Visit(IsVoidExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(MethodCallExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(NotExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(IfExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(NegExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(BlockExpr& node) override {
+    for (const auto& sub_expr : node.GetExprs()) {
+      Visit(*sub_expr);
+    }
+    node.SetExprType(node.GetExprs().back()->GetExprType());
+  }
+  void Visit(ObjectExpr& node) override;
+  void Visit(BinOpExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(MultiplyExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(LessThanEqualCompareExpr& node) override {
+    node.SetExprType("TODO");
+  }
+  void Visit(SubtractExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(AddExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(EqCompareExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(DivideExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(LessThanCompareExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(NewExpr& node) override { node.SetExprType(node.GetType()); }
+  void Visit(AssignExpr& node) override;
+  void Visit(BoolExpr& node) override { node.SetExprType("BoolTODO"); }
+  void Visit(ClassAst& node) override {}
+  void Visit(CaseBranch& node) override {}
+  void Visit(Feature& node) override {}
+  void Visit(MethodFeature& node) override {}
+  void Visit(AttributeFeature& node) override {}
+  void Visit(ProgramAst& node) override {}
+
+ private:
+  std::vector<SemanticError> errors_;
+  std::unordered_map<std::string, std::stack<std::string>> in_scope_vars_;
+  std::string file_name_;
+};
+
+void TypeCheckVisitor::Visit(ObjectExpr& node) {
+  if (in_scope_vars_.find(node.GetId()) == in_scope_vars_.end()) {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "Undeclared identifier " + node.GetId() + ".",
+                         file_name_);
+  }
+  node.SetExprType("TODOObjectExpr");
+}
+
+void TypeCheckVisitor::Visit(LetExpr& node) {
+  if (node.GetInitializationExpr()) {
+    Visit(*node.GetInitializationExpr());
+  }
+
+  in_scope_vars_[node.GetId()].push(node.GetType());
+
+  if (node.GetInExpr()) {
+    Visit(*node.GetInExpr());
+  } else if (node.GetChainedLet()) {
+    // TODO can you use a variable from earlier in the chain in an init
+    // expression within the chain?
+    Visit(*node.GetChainedLet());
+  }
+
+  PopAndEraseIfEmpty(in_scope_vars_, node.GetId());
+
+  node.SetExprType("TODOLetExpr");
+}
+
+void TypeCheckVisitor::Visit(AssignExpr& node) {
+  Visit(*node.GetRhsExpr());
+
+  const std::string rhs_type = node.GetRhsExpr()->GetExprType();
+  const std::string lhs_type = in_scope_vars_[node.GetId()].top();
+
+  if (rhs_type != lhs_type) {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "Type " + rhs_type +
+                             " of assigned expression does not conform to "
+                             "declared type " +
+                             lhs_type + " of identifier " + node.GetId() + ".",
+                         file_name_);
+  }
+
+  node.SetExprType(rhs_type);
+}
+
 std::vector<SemanticError> TypeChecker::CheckTypes(
     ProgramAst& program_ast, const InheritanceGraph& inheritance_graph) {
   std::vector<SemanticError> errors;
@@ -53,8 +167,11 @@ std::vector<SemanticError> TypeChecker::CheckTypes(
     for (const auto& feature : cool_class.GetFeatures()) {
       // TODO handle scope for method parameters
       if (feature->GetRootExpr()) {
-        feature->GetRootExpr()->CheckType(errors, in_scope_vars,
-                                          cool_class.GetContainingFileName());
+        TypeCheckVisitor type_check_visitor(in_scope_vars,
+                                            cool_class.GetContainingFileName());
+        type_check_visitor.Visit(*feature->GetRootExpr());
+        errors.insert(errors.end(), type_check_visitor.GetErrors().begin(),
+                      type_check_visitor.GetErrors().end());
       }
     }
 
@@ -66,72 +183,6 @@ std::vector<SemanticError> TypeChecker::CheckTypes(
     }
   }
   return errors;
-}
-
-std::vector<const ClassAst*> TypeChecker::GetSuperClasses(
-    const ProgramAst& program_ast, const std::string& type,
-    const InheritanceGraph& inheritance_graph) {
-  std::vector<const ClassAst*> super_classes;
-  std::string super_type = inheritance_graph.GetSuperType(type);
-  while (super_type != "Object" && super_type != "IO") {
-    const auto& cool_class = program_ast.GetClassByName(super_type);
-    super_classes.push_back(&cool_class);
-    super_type = inheritance_graph.GetSuperType(super_type);
-  }
-  return super_classes;
-}
-
-std::string ObjectExpr::CheckType(
-    std::vector<SemanticError>& errors,
-    std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-    std::string file_name) {
-  if (in_scope_vars.find(id_) == in_scope_vars.end()) {
-    errors.emplace_back(GetLineRange().end_line_num,
-                        "Undeclared identifier " + id_ + ".", file_name);
-  }
-  return "TODOObjectExpr";
-}
-
-std::string LetExpr::CheckType(
-    std::vector<SemanticError>& errors,
-    std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-    std::string file_name) {
-  if (GetInitializationExpr()) {
-    GetInitializationExpr()->CheckType(errors, in_scope_vars, file_name);
-  }
-
-  in_scope_vars[id_].push(type_);
-
-  if (GetInExpr()) {
-    GetInExpr()->CheckType(errors, in_scope_vars, file_name);
-  } else if (GetChainedLet()) {
-    // TODO can you use a variable from earlier in the chain in an init
-    // expression within the chain?
-    GetChainedLet()->CheckType(errors, in_scope_vars, file_name);
-  }
-
-  PopAndEraseIfEmpty(in_scope_vars, id_);
-
-  return "TODOLetExpr";
-}
-
-std::string AssignExpr::CheckType(
-    std::vector<SemanticError>& errors,
-    std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-    std::string file_name) {
-  auto rhs_type = rhs_expr_->CheckType(errors, in_scope_vars, file_name);
-  auto lhs_type = in_scope_vars[GetId()].top();
-
-  if (rhs_type != lhs_type) {
-    errors.emplace_back(GetLineRange().end_line_num,
-                        "Type " + rhs_type +
-                            " of assigned expression does not conform to "
-                            "declared type " +
-                            lhs_type + " of identifier " + GetId() + ".",
-                        file_name);
-  }
-
-  return expr_type_ = rhs_type;
 }
 
 }  // namespace coolang

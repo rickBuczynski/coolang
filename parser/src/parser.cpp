@@ -223,7 +223,12 @@ ClassAst Parser::ParseClass() {
   // class production but we need to peek it to get the correct end line num
   // expected by test output
 
-  return ClassAst(type_id_token.get_data(), inherits_type, std::move(features),
+  dummy_classes_.push_back(std::make_unique<ClassAst>(
+      inherits_type.value_or("Object"), nullptr,
+      std::vector<std::unique_ptr<Feature>>{}, LineRange(0, 0),
+      lexer_->GetInputFile().filename().string()));
+
+  return ClassAst(type_id_token.get_data(), dummy_classes_.back().get(), std::move(features),
                   LineRange(class_token.get_line_num(), GetLineNum(semi_token)),
                   lexer_->GetInputFile().filename().string());
 }

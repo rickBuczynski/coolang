@@ -10,8 +10,6 @@
 
 namespace coolang {
 
-class SemanticError;
-
 class LineRange {
  public:
   LineRange(int start_line_num, int end_line_num)
@@ -25,6 +23,8 @@ class LineRange {
   int start_line_num;
   int end_line_num;
 };
+
+class AstVisitor;
 
 class AstNode {
  public:
@@ -42,22 +42,94 @@ class AstNode {
 
   virtual std::string ToString(int indent_depth) const = 0;
 
+  virtual void Accept(AstVisitor& ast_visitor) = 0;
+
  private:
   LineRange line_range_;
+};
+
+class Expr;
+class CaseExpr;
+class StrExpr;
+class WhileExpr;
+class LetExpr;
+class IntExpr;
+class IsVoidExpr;
+class MethodCallExpr;
+class NotExpr;
+class IfExpr;
+class NegExpr;
+class BlockExpr;
+class ObjectExpr;
+class BinOpExpr;
+class MultiplyExpr;
+class LessThanEqualCompareExpr;
+class SubtractExpr;
+class AddExpr;
+class EqCompareExpr;
+class DivideExpr;
+class LessThanCompareExpr;
+class NewExpr;
+class AssignExpr;
+class BoolExpr;
+class ClassAst;
+class CaseBranch;
+class Feature;
+class MethodFeature;
+class AttributeFeature;
+class ProgramAst;
+
+class AstVisitor {
+ public:
+  AstVisitor() = default;
+  virtual ~AstVisitor() = default;
+  AstVisitor(const AstVisitor& other) = default;
+  AstVisitor(AstVisitor&& other) noexcept = default;
+  AstVisitor& operator=(const AstVisitor& other) = default;
+  AstVisitor& operator=(AstVisitor&& other) noexcept = default;
+
+  virtual void Visit(Expr& node) = 0;
+  virtual void Visit(CaseExpr& node) = 0;
+  virtual void Visit(StrExpr& node) = 0;
+  virtual void Visit(WhileExpr& node) = 0;
+  virtual void Visit(LetExpr& node) = 0;
+  virtual void Visit(IntExpr& node) = 0;
+  virtual void Visit(IsVoidExpr& node) = 0;
+  virtual void Visit(MethodCallExpr& node) = 0;
+  virtual void Visit(NotExpr& node) = 0;
+  virtual void Visit(IfExpr& node) = 0;
+  virtual void Visit(NegExpr& node) = 0;
+  virtual void Visit(BlockExpr& node) = 0;
+  virtual void Visit(ObjectExpr& node) = 0;
+  virtual void Visit(BinOpExpr& node) = 0;
+  virtual void Visit(MultiplyExpr& node) = 0;
+  virtual void Visit(LessThanEqualCompareExpr& node) = 0;
+  virtual void Visit(SubtractExpr& node) = 0;
+  virtual void Visit(AddExpr& node) = 0;
+  virtual void Visit(EqCompareExpr& node) = 0;
+  virtual void Visit(DivideExpr& node) = 0;
+  virtual void Visit(LessThanCompareExpr& node) = 0;
+  virtual void Visit(NewExpr& node) = 0;
+  virtual void Visit(AssignExpr& node) = 0;
+  virtual void Visit(BoolExpr& node) = 0;
+  virtual void Visit(ClassAst& node) = 0;
+  virtual void Visit(CaseBranch& node) = 0;
+  virtual void Visit(Feature& node) = 0;
+  virtual void Visit(MethodFeature& node) = 0;
+  virtual void Visit(AttributeFeature& node) = 0;
+  virtual void Visit(ProgramAst& node) = 0;
 };
 
 class Expr : public AstNode {
  public:
   explicit Expr(LineRange line_range) : AstNode(line_range) {}
 
-  virtual std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) {
-    return expr_type_;
-  }
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
- protected:
+  const std::string& GetExprType() const { return expr_type_; }
+  void SetExprType(const std::string& expr_type) { expr_type_ = expr_type; }
+
+ private:
   std::string expr_type_ = "_no_type";
 };
 
@@ -70,11 +142,9 @@ class AssignExpr : public Expr {
   std::string ToString(int indent_depth) const override;
 
   const std::string& GetId() const { return id_; }
+  Expr* GetRhsExpr() const { return rhs_expr_.get(); }
 
-  std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) override;
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::string id_;
@@ -87,12 +157,8 @@ class IntExpr : public Expr {
       : Expr(line_range), val_(std::move(val)) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) override {
-    return expr_type_ = "Int";
-  }
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::string val_;
@@ -103,12 +169,8 @@ class BoolExpr : public Expr {
   BoolExpr(LineRange line_range, bool val) : Expr(line_range), val_(val) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) override {
-    return expr_type_ = "BoolTODO";
-  }
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   bool val_;
@@ -120,12 +182,8 @@ class StrExpr : public Expr {
       : Expr(line_range), val_(std::move(val)) {}
 
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) override {
-    return expr_type_ = "String";
-  }
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::string val_;
@@ -146,16 +204,14 @@ class LetExpr : public Expr {
   std::string ToString(int indent_depth) const override;
 
   const std::string& GetId() const { return id_; }
+  const std::string& GetType() const { return type_; }
   const std::unique_ptr<Expr>& GetInitializationExpr() const {
     return initialization_expr_;
   }
   const std::unique_ptr<Expr>& GetInExpr() const { return in_expr_; }
   const std::unique_ptr<LetExpr>& GetChainedLet() const { return chained_let_; }
 
-  std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) override;
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::string id_;
@@ -177,6 +233,8 @@ class NegExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::unique_ptr<Expr> child_expr_;
 };
@@ -191,6 +249,8 @@ class BinOpExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  protected:
   virtual std::string OpName() const = 0;
 
@@ -203,6 +263,8 @@ class DivideExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  protected:
   std::string OpName() const override { return "_divide"; }
 };
@@ -210,6 +272,8 @@ class DivideExpr : public BinOpExpr {
 class MultiplyExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  protected:
   std::string OpName() const override { return "_mul"; }
@@ -219,6 +283,8 @@ class AddExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  protected:
   std::string OpName() const override { return "_plus"; }
 };
@@ -226,6 +292,8 @@ class AddExpr : public BinOpExpr {
 class SubtractExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  protected:
   std::string OpName() const override { return "_sub"; }
@@ -235,6 +303,8 @@ class EqCompareExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  protected:
   std::string OpName() const override { return "_eq"; }
 };
@@ -243,6 +313,8 @@ class LessThanCompareExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  protected:
   std::string OpName() const override { return "_lt"; }
 };
@@ -250,6 +322,8 @@ class LessThanCompareExpr : public BinOpExpr {
 class LessThanEqualCompareExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  protected:
   std::string OpName() const override { return "_le"; }
@@ -264,10 +338,7 @@ class ObjectExpr : public Expr {
 
   const std::string& GetId() const { return id_; }
 
-  std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) override;
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::string id_;
@@ -278,16 +349,11 @@ class BlockExpr : public Expr {
   BlockExpr(LineRange line_range, std::vector<std::unique_ptr<Expr>> exprs)
       : Expr(line_range), exprs_(std::move(exprs)) {}
 
+  const std::vector<std::unique_ptr<Expr>>& GetExprs() const { return exprs_; }
+
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) override {
-    for (const auto& sub_expr : exprs_) {
-      expr_type_ = sub_expr->CheckType(errors, in_scope_vars, file_name);
-    }
-    return expr_type_;
-  }
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::vector<std::unique_ptr<Expr>> exprs_;
@@ -307,6 +373,8 @@ class MethodCallExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::unique_ptr<Expr> lhs_expr_;
   std::optional<std::string> static_dispatch_type_;
@@ -325,6 +393,8 @@ class IfExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::unique_ptr<Expr> if_condition_expr_;
   std::unique_ptr<Expr> then_expr_;
@@ -342,6 +412,8 @@ class CaseBranch : public AstNode {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::string id_;
   std::string type_;
@@ -357,6 +429,8 @@ class CaseExpr : public Expr {
         branches_(std::move(case_branches)) {}
 
   std::string ToString(int indent_depth) const override;
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::unique_ptr<Expr> case_expr_;
@@ -374,6 +448,8 @@ class WhileExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::unique_ptr<Expr> condition_expr_;
   std::unique_ptr<Expr> loop_expr_;
@@ -386,6 +462,8 @@ class NotExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::unique_ptr<Expr> child_expr_;
 };
@@ -397,6 +475,8 @@ class IsVoidExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::unique_ptr<Expr> child_expr_;
 };
@@ -406,13 +486,11 @@ class NewExpr : public Expr {
   NewExpr(LineRange line_range, std::string type)
       : Expr(line_range), type_(std::move(type)) {}
 
+  const std::string& GetType() const { return type_; }
+
   std::string ToString(int indent_depth) const override;
-  std::string CheckType(
-      std::vector<SemanticError>& errors,
-      std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-      std::string file_name) override {
-    return expr_type_ = type_;
-  }
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::string type_;
@@ -439,6 +517,7 @@ class Feature : public AstNode {
  public:
   Feature(LineRange line_range) : AstNode(line_range) {}
   virtual const std::unique_ptr<Expr>& GetRootExpr() const = 0;
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 };
 
 class MethodFeature : public Feature {
@@ -454,6 +533,8 @@ class MethodFeature : public Feature {
   const std::unique_ptr<Expr>& GetRootExpr() const override { return body_; }
 
   std::string ToString(int indent_depth) const override;
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::string id_;
@@ -479,6 +560,8 @@ class AttributeFeature : public Feature {
 
   std::string ToString(int indent_depth) const override;
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::string id_;
   std::string type_;
@@ -487,12 +570,12 @@ class AttributeFeature : public Feature {
 
 class ClassAst : public AstNode {
  public:
-  ClassAst(std::string type, std::optional<std::string> inherits_type,
+  ClassAst(std::string type, ClassAst* super_class,
            std::vector<std::unique_ptr<Feature>>&& features,
            LineRange line_range, std::string containing_file_name)
       : AstNode(line_range),
         type_(std::move(type)),
-        inherits_type_(std::move(inherits_type)),
+        super_class_(super_class),
         features_(std::move(features)),
         containing_file_name_(std::move(containing_file_name)) {}
 
@@ -502,9 +585,7 @@ class ClassAst : public AstNode {
     return containing_file_name_;
   }
 
-  std::string InheritsTypeAsString() const {
-    return inherits_type_.value_or("Object");
-  }
+  std::string InheritsTypeAsString() const { return super_class_->GetType(); }
 
   const std::string& GetType() const { return type_; }
   const std::vector<std::unique_ptr<Feature>>& GetFeatures() const {
@@ -520,9 +601,11 @@ class ClassAst : public AstNode {
     return attribute_features;
   }
 
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
+
  private:
   std::string type_;
-  std::optional<std::string> inherits_type_;
+  ClassAst* super_class_;
   std::vector<std::unique_ptr<Feature>> features_;
   std::string containing_file_name_;
 };
@@ -542,6 +625,8 @@ class ProgramAst : public AstNode {
   }
 
   std::string ToString(int indent_depth) const override;
+
+  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
   std::unordered_map<std::string, const ClassAst*> classes_by_name_;
