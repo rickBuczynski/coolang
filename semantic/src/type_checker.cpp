@@ -21,7 +21,7 @@ std::vector<const ClassAst*> TypeChecker::GetSuperClasses(
   std::string super_type = inheritance_graph.GetSuperType(type);
   while (super_type != "Object" && super_type != "IO") {
     const auto& cool_class = program_ast.GetClassByName(super_type);
-    super_classes.push_back(&cool_class);
+    super_classes.push_back(cool_class);
     super_type = inheritance_graph.GetSuperType(super_type);
   }
   return super_classes;

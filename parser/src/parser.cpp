@@ -167,8 +167,9 @@ std::variant<ProgramAst, std::vector<ParseError>> Parser::ParseProgram() {
         classes.empty() ? eof_token.get_line_num()
                         : classes.back().GetLineRange().end_line_num;
 
-    program_ast.emplace(
-        ProgramAst(std::move(classes), LineRange(1, program_end_line)));
+    program_ast.emplace(ProgramAst(lexer_->GetInputFile().filename().string(),
+                                   std::move(classes),
+                                   LineRange(1, program_end_line)));
   } catch (const UnexpectedTokenExcpetion& e) {
     const auto parse_error = ParseError(
         e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
@@ -223,12 +224,14 @@ ClassAst Parser::ParseClass() {
   // class production but we need to peek it to get the correct end line num
   // expected by test output
 
+  // TODO this is inefficient, it will push object many times
   dummy_classes_.push_back(std::make_unique<ClassAst>(
       inherits_type.value_or("Object"), nullptr,
       std::vector<std::unique_ptr<Feature>>{}, LineRange(0, 0),
       lexer_->GetInputFile().filename().string()));
 
-  return ClassAst(type_id_token.get_data(), dummy_classes_.back().get(), std::move(features),
+  return ClassAst(type_id_token.get_data(), dummy_classes_.back().get(),
+                  std::move(features),
                   LineRange(class_token.get_line_num(), GetLineNum(semi_token)),
                   lexer_->GetInputFile().filename().string());
 }

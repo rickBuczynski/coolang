@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <optional>
-#include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -584,6 +583,11 @@ class ClassAst : public AstNode {
 
   std::string InheritsTypeAsString() const { return super_class_->GetType(); }
 
+  const ClassAst* GetSuperClass() const { return super_class_; }
+
+  void SetSuperClass(const ClassAst* super_class) {
+    super_class_ = super_class;
+  }
   const std::string& GetType() const { return type_; }
   const std::vector<std::unique_ptr<Feature>>& GetFeatures() const {
     return features_;
@@ -602,23 +606,34 @@ class ClassAst : public AstNode {
 
  private:
   std::string type_;
-  ClassAst* super_class_;
+  const ClassAst* super_class_;
   std::vector<std::unique_ptr<Feature>> features_;
   std::string containing_file_name_;
 };
 
 class ProgramAst : public AstNode {
  public:
-  ProgramAst(std::vector<ClassAst>&& cool_classes, LineRange line_range)
-      : AstNode(line_range), classes_(std::move(cool_classes)) {
+  ProgramAst(const std::string& file_name, std::vector<ClassAst>&& cool_classes,
+             LineRange line_range)
+      : AstNode(line_range),
+        classes_(std::move(cool_classes)),
+        object_class_(std::make_unique<ClassAst>(
+            "Object", nullptr, std::vector<std::unique_ptr<Feature>>{},
+            LineRange(0, 0), file_name)),
+        io_class_(std::make_unique<ClassAst>(
+            "IO", nullptr, std::vector<std::unique_ptr<Feature>>{},
+            LineRange(0, 0), file_name)) {
     for (const auto& cool_class : classes_) {
       classes_by_name_[cool_class.GetType()] = &cool_class;
     }
+    classes_by_name_[object_class_->GetType()] = object_class_.get();
+    classes_by_name_[io_class_->GetType()] = io_class_.get();
   }
 
   const std::vector<ClassAst>& GetClasses() const { return classes_; }
-  const ClassAst& GetClassByName(const std::string& name) const {
-    return *classes_by_name_.at(name);
+  std::vector<ClassAst>& MutableClasses() { return classes_; }
+  const ClassAst* GetClassByName(const std::string& name) const {
+    return classes_by_name_.at(name);
   }
 
   std::string ToString(int indent_depth) const override;
@@ -626,8 +641,12 @@ class ProgramAst : public AstNode {
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
-  std::unordered_map<std::string, const ClassAst*> classes_by_name_;
   std::vector<ClassAst> classes_;
+  std::unique_ptr<ClassAst> object_class_;
+  std::unique_ptr<ClassAst> io_class_;
+  // all classes this points to need to be dynamically allocated
+  // or else all the pointers become invalid when this class is moved
+  std::unordered_map<std::string, const ClassAst*> classes_by_name_;
 };
 
 }  // namespace coolang

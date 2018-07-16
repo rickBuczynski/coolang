@@ -16,19 +16,24 @@ class InheritanceGraph {
       : type_to_super_(std::move(type_to_super)) {}
 
   static std::variant<InheritanceGraph, std::vector<SemanticError>>
-  BuildInheritanceGraph(const ProgramAst& program_ast) {
+  BuildInheritanceGraph(ProgramAst& program_ast) {
     std::vector<SemanticError> errors;
     std::unordered_map<std::string, std::string> type_to_super;
-    for (const auto& cool_class : program_ast.GetClasses()) {
-      const std::string inherits_type = cool_class.InheritsTypeAsString();
+    for (ClassAst& cool_class : program_ast.MutableClasses()) {
+      const std::string inherits_type_string =
+          cool_class.InheritsTypeAsString();
 
-      if (inherits_type == "Bool") {
+      if (inherits_type_string == "Bool") {
         errors.emplace_back(
             cool_class.GetLineRange().end_line_num,
             "Class " + cool_class.GetType() + " cannot inherit class Bool.",
             cool_class.GetContainingFileName());
+      } else {
+        type_to_super[cool_class.GetType()] = inherits_type_string;
+
+        cool_class.SetSuperClass(
+            program_ast.GetClassByName(inherits_type_string));
       }
-      type_to_super[cool_class.GetType()] = inherits_type;
     }
 
     if (!errors.empty()) {
