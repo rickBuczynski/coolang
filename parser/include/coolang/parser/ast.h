@@ -585,6 +585,15 @@ class ClassAst : public AstNode {
 
   const ClassAst* GetSuperClass() const { return super_class_; }
 
+  std::vector<const ClassAst*> GetAllSuperClasses() const {
+    std::vector<const ClassAst*> super_classes;
+    super_classes.push_back(GetSuperClass());
+    while (super_classes.back()->GetSuperClass() != nullptr) {
+      super_classes.push_back(super_classes.back()->GetSuperClass());
+    }
+    return super_classes;
+  }
+
   void SetSuperClass(const ClassAst* super_class) {
     super_class_ = super_class;
   }

@@ -14,19 +14,6 @@ void PopAndEraseIfEmpty(
   }
 }
 
-std::vector<const ClassAst*> TypeChecker::GetSuperClasses(
-    const ProgramAst& program_ast, const std::string& type,
-    const InheritanceGraph& inheritance_graph) {
-  std::vector<const ClassAst*> super_classes;
-  std::string super_type = inheritance_graph.GetSuperType(type);
-  while (super_type != "Object" && super_type != "IO") {
-    const auto& cool_class = program_ast.GetClassByName(super_type);
-    super_classes.push_back(cool_class);
-    super_type = inheritance_graph.GetSuperType(super_type);
-  }
-  return super_classes;
-}
-
 class TypeCheckVisitor : public AstVisitor {
  public:
   TypeCheckVisitor(
@@ -127,8 +114,7 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
   node.SetExprType(rhs_type);
 }
 
-std::vector<SemanticError> TypeChecker::CheckTypes(
-    ProgramAst& program_ast, const InheritanceGraph& inheritance_graph) {
+std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
   std::vector<SemanticError> errors;
   std::unordered_map<std::string, std::stack<std::string>> in_scope_vars;
   for (const auto& cool_class : program_ast.GetClasses()) {
@@ -141,8 +127,8 @@ std::vector<SemanticError> TypeChecker::CheckTypes(
                             cool_class.GetContainingFileName());
         return errors;
       }
-      std::vector<const ClassAst*> super_classes =
-          GetSuperClasses(program_ast, cool_class.GetType(), inheritance_graph);
+      const std::vector<const ClassAst*>& super_classes =
+          cool_class.GetAllSuperClasses();
       for (const auto* super_class : super_classes) {
         // TODO this is slow, could be faster
         for (const auto super_attr : super_class->GetAttributeFeatures()) {

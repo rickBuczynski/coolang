@@ -14,19 +14,14 @@ Semantic::CheckProgramSemantics() const {
   }
   auto program_ast = std::get<ProgramAst>(std::move(ast_or_parse_errors));
 
-  auto inheritance_graph_or_semantic_error =
+  auto inheritance_graph_errors =
       InheritanceGraph::BuildInheritanceGraph(program_ast);
-
-  if (std::holds_alternative<std::vector<SemanticError>>(
-          inheritance_graph_or_semantic_error)) {
-    return std::get<std::vector<SemanticError>>(
-        inheritance_graph_or_semantic_error);
+  if (!inheritance_graph_errors.empty()) {
+    return inheritance_graph_errors;
   }
-  const InheritanceGraph inheritance_graph =
-      std::get<InheritanceGraph>(inheritance_graph_or_semantic_error);
 
   std::vector<SemanticError> type_check_errors =
-      TypeChecker::CheckTypes(program_ast, inheritance_graph);
+      TypeChecker::CheckTypes(program_ast);
   if (!type_check_errors.empty()) {
     return type_check_errors;
   }

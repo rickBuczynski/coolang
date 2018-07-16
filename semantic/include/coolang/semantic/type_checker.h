@@ -10,13 +10,7 @@ namespace coolang {
 
 class TypeChecker {
  public:
-  static std::vector<SemanticError> CheckTypes(
-      ProgramAst& program_ast, const InheritanceGraph& inheritance_graph);
-
- private:
-  static std::vector<const ClassAst*> GetSuperClasses(
-      const ProgramAst& program_ast, const std::string& type,
-      const InheritanceGraph& inheritance_graph);
+  static std::vector<SemanticError> CheckTypes(ProgramAst& program_ast);
 };
 
 }  // namespace coolang
