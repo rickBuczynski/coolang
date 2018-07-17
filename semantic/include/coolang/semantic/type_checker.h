@@ -3,7 +3,6 @@
 
 #include <vector>
 #include "coolang/parser/ast.h"
-#include "coolang/semantic/inheritance_graph.h"
 #include "semantic_error.h"
 
 namespace coolang {

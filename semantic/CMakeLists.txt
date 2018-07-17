@@ -7,7 +7,7 @@ set(SOURCES
 
 set(HEADERS
   include/coolang/semantic/semantic.h
-  include/coolang/semantic/inheritance_graph.h
+  include/coolang/semantic/inheritance_checker.h
   include/coolang/semantic/semantic_error.h
   include/coolang/semantic/type_checker.h
 )

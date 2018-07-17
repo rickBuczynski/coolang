@@ -1,6 +1,5 @@
 #include <stack>
 #include "coolang/parser/ast.h"
-#include "coolang/semantic/inheritance_graph.h"
 #include "coolang/semantic/type_checker.h"
 
 namespace coolang {
