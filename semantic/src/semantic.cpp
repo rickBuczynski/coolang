@@ -15,7 +15,7 @@ Semantic::CheckProgramSemantics() const {
   auto program_ast = std::get<ProgramAst>(std::move(ast_or_parse_errors));
 
   auto inheritance_graph_errors =
-      InheritanceGraph::BuildInheritanceGraph(program_ast);
+      InheritanceChecker::SetInheritanceRelations(program_ast);
   if (!inheritance_graph_errors.empty()) {
     return inheritance_graph_errors;
   }

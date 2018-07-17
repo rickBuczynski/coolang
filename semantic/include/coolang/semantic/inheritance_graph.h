@@ -9,9 +9,9 @@
 
 namespace coolang {
 
-class InheritanceGraph {
+class InheritanceChecker {
  public:
-  static std::vector<SemanticError> BuildInheritanceGraph(
+  static std::vector<SemanticError> SetInheritanceRelations(
       ProgramAst& program_ast) {
     std::vector<SemanticError> errors;
 
