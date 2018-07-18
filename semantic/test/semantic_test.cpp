@@ -65,6 +65,7 @@ TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
 TEST(SemanticTest, assignnoconform) { TestSemantic("assignnoconform.test"); }
 TEST(SemanticTest, attrbadinit) { TestSemantic("attrbadinit.test"); }
 TEST(SemanticTest, attroverride) { TestSemantic("attroverride.test"); }
+TEST(SemanticTest, badargs1) { TestSemantic("badargs1.test"); }
 
 
 }  // namespace

@@ -368,6 +368,12 @@ class MethodCallExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
+  const std::string& GetMethodName() const { return method_name_; }
+  const Expr* GetLhsExpr() const { return lhs_expr_.get(); }
+  Expr* MutableLhsExpr() { return lhs_expr_.get(); }
+  const std::vector<std::unique_ptr<Expr>>& GetArgs() const { return args_; }
+  std::vector<std::unique_ptr<Expr>> const& MutableArgs() { return args_; }
+
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
@@ -525,6 +531,8 @@ class MethodFeature : public Feature {
         body_(std::move(body)) {}
 
   const std::unique_ptr<Expr>& GetRootExpr() const override { return body_; }
+  const std::string& GetId() const { return id_; }
+  const std::vector<Formal>& GetArgs() const { return args_; }
 
   std::string ToString(int indent_depth) const override;
 
@@ -605,6 +613,25 @@ class ClassAst : public AstNode {
       }
     }
     return attribute_features;
+  }
+  std::vector<const MethodFeature*> GetMethodFeatures() const {
+    std::vector<const MethodFeature*> method_features;
+    for (const auto& feature : GetFeatures()) {
+      if (auto* method_feature = dynamic_cast<MethodFeature*>(feature.get())) {
+        method_features.push_back(method_feature);
+      }
+    }
+    return method_features;
+  }
+
+  const MethodFeature* GetMethodFeatureByName(
+      const std::string& method_name) const {
+    for (const auto* method_feature : GetMethodFeatures()) {
+      if (method_feature->GetId() == method_name) {
+        return method_feature;
+      }
+    }
+    return nullptr;
   }
 
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }

@@ -15,7 +15,7 @@ void PopAndEraseIfEmpty(
 
 class TypeCheckVisitor : public AstVisitor {
  public:
-  TypeCheckVisitor(std::string file_name) : file_name_(std::move(file_name)) {}
+  TypeCheckVisitor(ProgramAst& program_ast) : program_ast_(&program_ast) {}
 
   const std::vector<SemanticError>& GetErrors() const { return errors_; }
 
@@ -25,7 +25,7 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(LetExpr& node) override;
   void Visit(IntExpr& node) override { node.SetExprType("Int"); }
   void Visit(IsVoidExpr& node) override { node.SetExprType("TODO"); }
-  void Visit(MethodCallExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(MethodCallExpr& node) override;
   void Visit(NotExpr& node) override { node.SetExprType("TODO"); }
   void Visit(IfExpr& node) override { node.SetExprType("TODO"); }
   void Visit(NegExpr& node) override { node.SetExprType("TODO"); }
@@ -51,21 +51,28 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(BoolExpr& node) override { node.SetExprType("BoolTODO"); }
   void Visit(ClassAst& node) override;
   void Visit(CaseBranch& node) override {}
-  void Visit(MethodFeature& node) override {} // not needed, handled by class visitor
-  void Visit(AttributeFeature& node) override {} // not needed, handled by class visitor
+  void Visit(MethodFeature& node) override {
+  }  // not needed, handled by class visitor
+  void Visit(AttributeFeature& node) override {
+  }  // not needed, handled by class visitor
   void Visit(ProgramAst& node) override;
 
  private:
   std::vector<SemanticError> errors_;
   std::unordered_map<std::string, std::stack<std::string>> in_scope_vars_;
-  std::string file_name_;
+  ProgramAst* program_ast_;
 };
 
 void TypeCheckVisitor::Visit(ObjectExpr& node) {
+  if (node.GetId() == "self") {
+    node.SetExprType("SELF_TYPE");
+    return;
+  }
+
   if (in_scope_vars_.find(node.GetId()) == in_scope_vars_.end()) {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Undeclared identifier " + node.GetId() + ".",
-                         file_name_);
+                         program_ast_->GetFileName());
   }
   node.SetExprType("TODOObjectExpr");
 }
@@ -90,6 +97,34 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
   node.SetExprType("TODOLetExpr");
 }
 
+void TypeCheckVisitor::Visit(MethodCallExpr& node) {
+  node.MutableLhsExpr()->Accept(*this);
+  std::string caller_type = node.GetLhsExpr()->GetExprType();
+
+  const MethodFeature* method_feature =
+      program_ast_->GetClassByName(caller_type)
+          ->GetMethodFeatureByName(node.GetMethodName());
+  // TODO method_feature could be null if that method is not defined
+
+  auto expected_args = method_feature->GetArgs();
+  auto& args = node.MutableArgs();
+  // TODO check incorrect number of method call args
+
+  for (auto i = 0; i < args.size(); i++) {
+    args[i]->Accept(*this);
+    // TODO need to account for inheritance
+    if (args[i]->GetExprType() != expected_args[i].GetType()) {
+      errors_.emplace_back(node.GetLineRange().end_line_num,
+                           "In call of method " + node.GetMethodName() +
+                               ", type " + args[i]->GetExprType() +
+                               " of parameter " + expected_args[i].GetId() +
+                               " does not conform to declared type " +
+                               expected_args[i].GetType() + ".",
+                           program_ast_->GetFileName());
+    }
+  }
+}
+
 void TypeCheckVisitor::Visit(AssignExpr& node) {
   node.GetRhsExpr()->Accept(*this);
 
@@ -102,7 +137,7 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
                              " of assigned expression does not conform to "
                              "declared type " +
                              lhs_type + " of identifier " + node.GetId() + ".",
-                         file_name_);
+                         program_ast_->GetFileName());
   }
 
   node.SetExprType(rhs_type);
@@ -161,7 +196,7 @@ void TypeCheckVisitor::Visit(ProgramAst& node) {
 }
 
 std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
-  TypeCheckVisitor type_check_visitor(program_ast.GetFileName());
+  TypeCheckVisitor type_check_visitor(program_ast);
   program_ast.Accept(type_check_visitor);
   return type_check_visitor.GetErrors();
 }
