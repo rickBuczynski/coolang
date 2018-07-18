@@ -112,7 +112,6 @@ class AstVisitor {
   virtual void Visit(BoolExpr& node) = 0;
   virtual void Visit(ClassAst& node) = 0;
   virtual void Visit(CaseBranch& node) = 0;
-  virtual void Visit(Feature& node) = 0;
   virtual void Visit(MethodFeature& node) = 0;
   virtual void Visit(AttributeFeature& node) = 0;
   virtual void Visit(ProgramAst& node) = 0;
@@ -513,7 +512,6 @@ class Feature : public AstNode {
  public:
   Feature(LineRange line_range) : AstNode(line_range) {}
   virtual const std::unique_ptr<Expr>& GetRootExpr() const = 0;
-  void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 };
 
 class MethodFeature : public Feature {

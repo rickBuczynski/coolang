@@ -51,10 +51,9 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(BoolExpr& node) override { node.SetExprType("BoolTODO"); }
   void Visit(ClassAst& node) override;
   void Visit(CaseBranch& node) override {}
-  void Visit(Feature& node) override {}
-  void Visit(MethodFeature& node) override {}
-  void Visit(AttributeFeature& node) override {}
-  void Visit(ProgramAst& node) override {}
+  void Visit(MethodFeature& node) override {} // not needed, handled by class visitor
+  void Visit(AttributeFeature& node) override {} // not needed, handled by class visitor
+  void Visit(ProgramAst& node) override;
 
  private:
   std::vector<SemanticError> errors_;
@@ -133,7 +132,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
                   std::to_string(super_attr->GetLineRange().end_line_num) + ".",
               node.GetContainingFileName());
           return;
-        } 
+        }
       }
     }
 
@@ -155,11 +154,15 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
   }
 }
 
+void TypeCheckVisitor::Visit(ProgramAst& node) {
+  for (auto& cool_class : node.MutableClasses()) {
+    cool_class.Accept(*this);
+  }
+}
+
 std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
   TypeCheckVisitor type_check_visitor(program_ast.GetFileName());
-  for (auto& cool_class : program_ast.MutableClasses()) {
-    cool_class.Accept(type_check_visitor);
-  }
+  program_ast.Accept(type_check_visitor);
   return type_check_visitor.GetErrors();
 }
 
