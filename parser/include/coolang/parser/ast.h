@@ -581,8 +581,6 @@ class ClassAst : public AstNode {
     return containing_file_name_;
   }
 
-  std::string InheritsTypeAsString() const { return super_class_->GetType(); }
-
   const ClassAst* GetSuperClass() const { return super_class_; }
 
   std::vector<const ClassAst*> GetAllSuperClasses() const {
@@ -625,6 +623,7 @@ class ProgramAst : public AstNode {
   ProgramAst(const std::string& file_name, std::vector<ClassAst>&& cool_classes,
              LineRange line_range)
       : AstNode(line_range),
+        file_name_(file_name),
         classes_(std::move(cool_classes)),
         object_class_(std::make_unique<ClassAst>(
             "Object", nullptr, std::vector<std::unique_ptr<Feature>>{},
@@ -644,12 +643,14 @@ class ProgramAst : public AstNode {
   const ClassAst* GetClassByName(const std::string& name) const {
     return classes_by_name_.at(name);
   }
+  const std::string& GetFileName() const { return file_name_; }
 
   std::string ToString(int indent_depth) const override;
 
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
+  std::string file_name_;
   std::vector<ClassAst> classes_;
   std::unique_ptr<ClassAst> object_class_;
   std::unique_ptr<ClassAst> io_class_;

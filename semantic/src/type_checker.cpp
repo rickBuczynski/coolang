@@ -15,11 +15,7 @@ void PopAndEraseIfEmpty(
 
 class TypeCheckVisitor : public AstVisitor {
  public:
-  TypeCheckVisitor(
-      std::unordered_map<std::string, std::stack<std::string>> in_scope_vars,
-      std::string file_name)
-      : in_scope_vars_(std::move(in_scope_vars)),
-        file_name_(std::move(file_name)) {}
+  TypeCheckVisitor(std::string file_name) : file_name_(std::move(file_name)) {}
 
   const std::vector<SemanticError>& GetErrors() const { return errors_; }
 
@@ -53,7 +49,7 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(NewExpr& node) override { node.SetExprType(node.GetType()); }
   void Visit(AssignExpr& node) override;
   void Visit(BoolExpr& node) override { node.SetExprType("BoolTODO"); }
-  void Visit(ClassAst& node) override {}
+  void Visit(ClassAst& node) override;
   void Visit(CaseBranch& node) override {}
   void Visit(Feature& node) override {}
   void Visit(MethodFeature& node) override {}
@@ -113,60 +109,58 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
   node.SetExprType(rhs_type);
 }
 
-std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
-  std::vector<SemanticError> errors;
-  std::unordered_map<std::string, std::stack<std::string>> in_scope_vars;
-  for (const auto& cool_class : program_ast.GetClasses()) {
-    // add all attributes to scope before diving into expressions since these
-    // attributes are visible throughout the class
-    for (const auto* attr : cool_class.GetAttributeFeatures()) {
-      if (attr->GetId() == "self") {
-        errors.emplace_back(attr->GetLineRange().end_line_num,
-                            "'self' cannot be the name of an attribute.",
-                            cool_class.GetContainingFileName());
-        return errors;
-      }
-      const std::vector<const ClassAst*>& super_classes =
-          cool_class.GetAllSuperClasses();
-      for (const auto* super_class : super_classes) {
-        // TODO this is slow, could be faster
-        for (const auto super_attr : super_class->GetAttributeFeatures()) {
-          if (super_attr->GetId() == attr->GetId()) {
-            errors.emplace_back(
-                attr->GetLineRange().end_line_num,
-                "Attribute " + cool_class.GetType() + "." + attr->GetId() +
-                    " is already defined in class " + super_class->GetType() +
-                    " at " + super_class->GetContainingFileName() + ":" +
-                    std::to_string(super_attr->GetLineRange().end_line_num) +
-                    ".",
-                cool_class.GetContainingFileName());
-            return errors;
-          }
-        }
-      }
-
-      in_scope_vars[attr->GetId()].push(attr->GetType());
+void TypeCheckVisitor::Visit(ClassAst& node) {
+  // add all attributes to scope before diving into expressions since these
+  // attributes are visible throughout the class
+  for (const auto* attr : node.GetAttributeFeatures()) {
+    if (attr->GetId() == "self") {
+      errors_.emplace_back(attr->GetLineRange().end_line_num,
+                           "'self' cannot be the name of an attribute.",
+                           node.GetContainingFileName());
+      return;
     }
-
-    for (const auto& feature : cool_class.GetFeatures()) {
-      // TODO handle scope for method parameters
-      if (feature->GetRootExpr()) {
-        TypeCheckVisitor type_check_visitor(in_scope_vars,
-                                            cool_class.GetContainingFileName());
-        feature->GetRootExpr()->Accept(type_check_visitor);
-        errors.insert(errors.end(), type_check_visitor.GetErrors().begin(),
-                      type_check_visitor.GetErrors().end());
+    const std::vector<const ClassAst*>& super_classes =
+        node.GetAllSuperClasses();
+    for (const auto* super_class : super_classes) {
+      // TODO this is slow, could be faster
+      for (const auto super_attr : super_class->GetAttributeFeatures()) {
+        if (super_attr->GetId() == attr->GetId()) {
+          errors_.emplace_back(
+              attr->GetLineRange().end_line_num,
+              "Attribute " + node.GetType() + "." + attr->GetId() +
+                  " is already defined in class " + super_class->GetType() +
+                  " at " + super_class->GetContainingFileName() + ":" +
+                  std::to_string(super_attr->GetLineRange().end_line_num) + ".",
+              node.GetContainingFileName());
+          return;
+        } 
       }
     }
 
-    // remove all attributes frome scope
-    for (const auto& feature : cool_class.GetFeatures()) {
-      if (auto* attr = dynamic_cast<AttributeFeature*>(feature.get())) {
-        PopAndEraseIfEmpty(in_scope_vars, attr->GetId());
-      }
+    in_scope_vars_[attr->GetId()].push(attr->GetType());
+  }
+
+  for (const auto& feature : node.GetFeatures()) {
+    // TODO handle scope for method parameters
+    if (feature->GetRootExpr()) {
+      feature->GetRootExpr()->Accept(*this);
     }
   }
-  return errors;
+
+  // remove all attributes frome scope
+  for (const auto& feature : node.GetFeatures()) {
+    if (auto* attr = dynamic_cast<AttributeFeature*>(feature.get())) {
+      PopAndEraseIfEmpty(in_scope_vars_, attr->GetId());
+    }
+  }
+}
+
+std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
+  TypeCheckVisitor type_check_visitor(program_ast.GetFileName());
+  for (auto& cool_class : program_ast.MutableClasses()) {
+    cool_class.Accept(type_check_visitor);
+  }
+  return type_check_visitor.GetErrors();
 }
 
 }  // namespace coolang

@@ -17,7 +17,7 @@ class InheritanceChecker {
 
     for (ClassAst& cool_class : program_ast.MutableClasses()) {
       const std::string inherits_type_string =
-          cool_class.InheritsTypeAsString();
+          cool_class.GetSuperClass()->GetType();
 
       if (inherits_type_string == "Bool") {
         errors.emplace_back(

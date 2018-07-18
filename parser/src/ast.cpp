@@ -339,7 +339,7 @@ std::string ClassAst::ToString(int indent_depth) const {
   str += Indentation(indent_depth) + "_class" + '\n';
 
   str += Indentation(indent_depth + 1) + type_ + '\n';
-  str += Indentation(indent_depth + 1) + InheritsTypeAsString() + '\n';
+  str += Indentation(indent_depth + 1) + GetSuperClass()->GetType() + '\n';
   str +=
       Indentation(indent_depth + 1) + '"' + containing_file_name_ + '"' + '\n';
   str += Indentation(indent_depth + 1) + '(' + '\n';
