@@ -36,13 +36,13 @@ class TypeCheckVisitor : public AstVisitor {
     node.SetExprType(node.GetExprs().back()->GetExprType());
   }
   void Visit(ObjectExpr& node) override;
-  void Visit(BinOpExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(BinOpExpr& node) override;
   void Visit(MultiplyExpr& node) override { node.SetExprType("TODO"); }
   void Visit(LessThanEqualCompareExpr& node) override {
     node.SetExprType("TODO");
   }
   void Visit(SubtractExpr& node) override { node.SetExprType("TODO"); }
-  void Visit(AddExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(AddExpr& node) override { Visit(static_cast<BinOpExpr&>(node)); }
   void Visit(EqCompareExpr& node) override { node.SetExprType("TODO"); }
   void Visit(DivideExpr& node) override { node.SetExprType("TODO"); }
   void Visit(LessThanCompareExpr& node) override { node.SetExprType("TODO"); }
@@ -75,6 +75,24 @@ void TypeCheckVisitor::Visit(ObjectExpr& node) {
                          program_ast_->GetFileName());
   }
   node.SetExprType("TODOObjectExpr");
+}
+
+void TypeCheckVisitor::Visit(BinOpExpr& node) {
+  node.MutableLhsExpr()->Accept(*this);
+  node.MutableRhsExpr()->Accept(*this);
+
+  const std::string lhs_type = node.GetLhsExpr()->GetExprType();
+  const std::string rhs_type = node.GetRhsExpr()->GetExprType();
+
+  // TODO do all BinOps require ints?
+  // Even EqCompareExpr?
+  if (lhs_type != "Int" || rhs_type != "Int") {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "non-Int arguments: " + lhs_type + " + " + rhs_type,
+                         program_ast_->GetFileName());
+  }
+
+  node.SetExprType("TODOBinOpExpr");
 }
 
 void TypeCheckVisitor::Visit(LetExpr& node) {

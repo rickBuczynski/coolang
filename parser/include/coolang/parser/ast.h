@@ -242,6 +242,11 @@ class BinOpExpr : public Expr {
         lhs_expr_(std::move(lhs_expr)),
         rhs_expr_(std::move(rhs_expr)) {}
 
+  const std::unique_ptr<Expr>& GetLhsExpr() const { return lhs_expr_; }
+  const std::unique_ptr<Expr>& GetRhsExpr() const { return rhs_expr_; }
+  Expr* MutableLhsExpr() { return lhs_expr_.get(); }
+  Expr* MutableRhsExpr() { return rhs_expr_.get(); }
+
   std::string ToString(int indent_depth) const override;
 
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
