@@ -51,7 +51,7 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(LessThanCompareExpr& node) override { node.SetExprType("TODO"); }
   void Visit(NewExpr& node) override { node.SetExprType(node.GetType()); }
   void Visit(AssignExpr& node) override;
-  void Visit(BoolExpr& node) override { node.SetExprType("BoolTODO"); }
+  void Visit(BoolExpr& node) override { node.SetExprType("Bool"); }
   void Visit(ClassAst& node) override;
   void Visit(CaseBranch& node) override {}
   void Visit(MethodFeature& node) override {
@@ -72,12 +72,14 @@ void TypeCheckVisitor::Visit(ObjectExpr& node) {
     return;
   }
 
-  if (in_scope_vars_.find(node.GetId()) == in_scope_vars_.end()) {
+  const auto vars_find_result = in_scope_vars_.find(node.GetId());
+  if (vars_find_result == in_scope_vars_.end()) {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Undeclared identifier " + node.GetId() + ".",
                          program_ast_->GetFileName());
+  } else {
+    node.SetExprType(vars_find_result->second.top());
   }
-  node.SetExprType("TODOObjectExpr");
 }
 
 void TypeCheckVisitor::Visit(BinOpExpr& node) {
@@ -118,7 +120,7 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
 
 void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   node.MutableLhsExpr()->Accept(*this);
-  std::string caller_type = node.GetLhsExpr()->GetExprType();
+  const std::string caller_type = node.GetLhsExpr()->GetExprType();
 
   const MethodFeature* method_feature =
       program_ast_->GetClassByName(caller_type)
@@ -213,9 +215,22 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
   }
 
   for (const auto& feature : node.GetFeatures()) {
-    // TODO handle scope for method parameters
+    if (auto* method_feature = dynamic_cast<MethodFeature*>(feature.get())) {
+      auto& args = method_feature->GetArgs();
+      for (const auto& arg : args) {
+        in_scope_vars_[arg.GetId()].push(arg.GetType());
+      }
+    }
+
     if (feature->GetRootExpr()) {
       feature->GetRootExpr()->Accept(*this);
+    }
+
+    if (auto* method_feature = dynamic_cast<MethodFeature*>(feature.get())) {
+      auto& args = method_feature->GetArgs();
+      for (const auto& arg : args) {
+        PopAndEraseIfEmpty(in_scope_vars_, arg.GetId());
+      }
     }
   }
 

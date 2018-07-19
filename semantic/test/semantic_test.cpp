@@ -68,6 +68,7 @@ TEST(SemanticTest, attroverride) { TestSemantic("attroverride.test"); }
 TEST(SemanticTest, badargs1) { TestSemantic("badargs1.test"); }
 TEST(SemanticTest, badarith) { TestSemantic("badarith.test"); }
 TEST(SemanticTest, badequalitytest) { TestSemantic("badequalitytest.test"); }
+TEST(SemanticTest, badequalitytest2) { TestSemantic("badequalitytest2.test"); }
 
 
 }  // namespace
