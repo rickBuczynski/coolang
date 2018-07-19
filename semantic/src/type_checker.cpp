@@ -42,8 +42,11 @@ class TypeCheckVisitor : public AstVisitor {
     node.SetExprType("TODO");
   }
   void Visit(SubtractExpr& node) override { node.SetExprType("TODO"); }
-  void Visit(AddExpr& node) override { Visit(static_cast<BinOpExpr&>(node)); }
-  void Visit(EqCompareExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(AddExpr& node) override {
+    Visit(static_cast<BinOpExpr&>(node));
+    node.SetExprType("Int");
+  }
+  void Visit(EqCompareExpr& node) override;
   void Visit(DivideExpr& node) override { node.SetExprType("TODO"); }
   void Visit(LessThanCompareExpr& node) override { node.SetExprType("TODO"); }
   void Visit(NewExpr& node) override { node.SetExprType(node.GetType()); }
@@ -91,8 +94,6 @@ void TypeCheckVisitor::Visit(BinOpExpr& node) {
                          "non-Int arguments: " + lhs_type + " + " + rhs_type,
                          program_ast_->GetFileName());
   }
-
-  node.SetExprType("TODOBinOpExpr");
 }
 
 void TypeCheckVisitor::Visit(LetExpr& node) {
@@ -141,6 +142,25 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
                            program_ast_->GetFileName());
     }
   }
+}
+
+void TypeCheckVisitor::Visit(EqCompareExpr& node) {
+  node.MutableLhsExpr()->Accept(*this);
+  node.MutableRhsExpr()->Accept(*this);
+
+  const std::string lhs_type = node.GetLhsExpr()->GetExprType();
+  const std::string rhs_type = node.GetRhsExpr()->GetExprType();
+
+  if (lhs_type == "Int" || lhs_type == "Bool" || lhs_type == "String" ||
+      rhs_type == "Int" || rhs_type == "Bool" || rhs_type == "String") {
+    if (lhs_type != rhs_type) {
+      errors_.emplace_back(node.GetLineRange().end_line_num,
+                           "Illegal comparison with a basic type.",
+                           program_ast_->GetFileName());
+    }
+  }
+
+  node.SetExprType("Bool");
 }
 
 void TypeCheckVisitor::Visit(AssignExpr& node) {
