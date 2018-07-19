@@ -60,7 +60,9 @@ void TestSemantic(const std::string& input_file) {
 TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
 TEST(SemanticTest, outofscope) { TestSemantic("outofscope.test"); }
 
-TEST(SemanticTest, anattributenamedself) { TestSemantic("anattributenamedself.test"); }
+TEST(SemanticTest, anattributenamedself) {
+  TestSemantic("anattributenamedself.test");
+}
 TEST(SemanticTest, assignment) { TestSemantic("assignment.test"); }
 TEST(SemanticTest, assignnoconform) { TestSemantic("assignnoconform.test"); }
 TEST(SemanticTest, attrbadinit) { TestSemantic("attrbadinit.test"); }
@@ -69,6 +71,8 @@ TEST(SemanticTest, badargs1) { TestSemantic("badargs1.test"); }
 TEST(SemanticTest, badarith) { TestSemantic("badarith.test"); }
 TEST(SemanticTest, badequalitytest) { TestSemantic("badequalitytest.test"); }
 TEST(SemanticTest, badequalitytest2) { TestSemantic("badequalitytest2.test"); }
-
+TEST(SemanticTest, badmethodcallsitself) {
+  TestSemantic("badmethodcallsitself.test");
+}
 
 }  // namespace

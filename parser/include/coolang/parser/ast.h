@@ -538,6 +538,7 @@ class MethodFeature : public Feature {
   const std::unique_ptr<Expr>& GetRootExpr() const override { return body_; }
   const std::string& GetId() const { return id_; }
   const std::vector<Formal>& GetArgs() const { return args_; }
+  const std::string& GetReturnType() const { return return_type_; }
 
   std::string ToString(int indent_depth) const override;
 

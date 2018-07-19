@@ -63,6 +63,7 @@ class TypeCheckVisitor : public AstVisitor {
  private:
   std::vector<SemanticError> errors_;
   std::unordered_map<std::string, std::stack<std::string>> in_scope_vars_;
+  ClassAst* current_class_ = nullptr;
   ProgramAst* program_ast_;
 };
 
@@ -119,8 +120,13 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
 }
 
 void TypeCheckVisitor::Visit(MethodCallExpr& node) {
-  node.MutableLhsExpr()->Accept(*this);
-  const std::string caller_type = node.GetLhsExpr()->GetExprType();
+  std::string caller_type;
+  if (node.GetLhsExpr()) {
+    node.MutableLhsExpr()->Accept(*this);
+    caller_type = node.GetLhsExpr()->GetExprType();
+  } else {
+    caller_type = current_class_->GetType();
+  }
 
   const MethodFeature* method_feature =
       program_ast_->GetClassByName(caller_type)
@@ -144,6 +150,8 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
                            program_ast_->GetFileName());
     }
   }
+
+   node.SetExprType(method_feature->GetReturnType());
 }
 
 void TypeCheckVisitor::Visit(EqCompareExpr& node) {
@@ -184,6 +192,8 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
 }
 
 void TypeCheckVisitor::Visit(ClassAst& node) {
+  current_class_ = &node;
+
   // add all attributes to scope before diving into expressions since these
   // attributes are visible throughout the class
   for (const auto* attr : node.GetAttributeFeatures()) {
