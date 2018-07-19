@@ -151,7 +151,7 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
     }
   }
 
-   node.SetExprType(method_feature->GetReturnType());
+  node.SetExprType(method_feature->GetReturnType());
 }
 
 void TypeCheckVisitor::Visit(EqCompareExpr& node) {
@@ -193,6 +193,13 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
 
 void TypeCheckVisitor::Visit(ClassAst& node) {
   current_class_ = &node;
+
+  if (node.GetType() == "Int" || node.GetType() == "Bool" ||
+      node.GetType() == "String") {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "Redefinition of basic class " + node.GetType() + ".",
+                         node.GetContainingFileName());
+  }
 
   // add all attributes to scope before diving into expressions since these
   // attributes are visible throughout the class

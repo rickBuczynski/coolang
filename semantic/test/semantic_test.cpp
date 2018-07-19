@@ -74,5 +74,6 @@ TEST(SemanticTest, badequalitytest2) { TestSemantic("badequalitytest2.test"); }
 TEST(SemanticTest, badmethodcallsitself) {
   TestSemantic("badmethodcallsitself.test");
 }
+TEST(SemanticTest, badredefineint) { TestSemantic("badredefineint.test"); }
 
 }  // namespace
