@@ -676,12 +676,11 @@ class ProgramAst : public AstNode {
         int_class_(std::make_unique<ClassAst>(
             "Int", object_class_.get(), std::vector<std::unique_ptr<Feature>>{},
             LineRange(0, 0), file_name)),
-        string_class_(
-            std::make_unique<ClassAst>("Bool", object_class_.get(),
-                                       std::vector<std::unique_ptr<Feature>>{},
-                                       LineRange(0, 0), file_name)),
+        string_class_(std::make_unique<ClassAst>("String", object_class_.get(),
+                                                 StringClassFeatures(),
+                                                 LineRange(0, 0), file_name)),
         bool_class_(
-            std::make_unique<ClassAst>("String", object_class_.get(),
+            std::make_unique<ClassAst>("Bool", object_class_.get(),
                                        std::vector<std::unique_ptr<Feature>>{},
                                        LineRange(0, 0), file_name)) {
     for (const auto& cool_class : classes_) {
@@ -725,7 +724,30 @@ class ProgramAst : public AstNode {
     features.push_back(std::move(abort_method_feature));
     features.push_back(std::move(type_name_method_feature));
     features.push_back(std::move(copy_method_feature));
+    return features;
+  }
 
+  static std::vector<std::unique_ptr<Feature>> StringClassFeatures() {
+    std::unique_ptr<Feature> length_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "length",
+                                        std::vector<Formal>{}, "Int",
+                                        std::unique_ptr<Expr>{});
+
+    std::vector<Formal> concat_args{Formal("s", "String", LineRange(0, 0))};
+    std::unique_ptr<Feature> concat_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "length", concat_args,
+                                        "String", std::unique_ptr<Expr>{});
+
+    std::vector<Formal> substr_args{Formal("i", "Int", LineRange(0, 0)),
+                                    Formal("l", "Int", LineRange(0, 0))};
+    std::unique_ptr<Feature> substr_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "length", substr_args,
+                                        "String", std::unique_ptr<Expr>{});
+
+    std::vector<std::unique_ptr<Feature>> features;
+    features.push_back(std::move(length_method_feature));
+    features.push_back(std::move(concat_method_feature));
+    features.push_back(std::move(substr_method_feature));
     return features;
   }
 
