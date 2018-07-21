@@ -645,7 +645,10 @@ class ClassAst : public AstNode {
         return method_feature;
       }
     }
-    return nullptr;
+    if (super_class_ == nullptr) {
+      return nullptr;
+    }
+    return super_class_->GetMethodFeatureByName(method_name);
   }
 
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
@@ -664,21 +667,23 @@ class ProgramAst : public AstNode {
       : AstNode(line_range),
         file_name_(file_name),
         classes_(std::move(cool_classes)),
-        object_class_(std::make_unique<ClassAst>(
-            "Object", nullptr, std::vector<std::unique_ptr<Feature>>{},
-            LineRange(0, 0), file_name)),
+        object_class_(std::make_unique<ClassAst>("Object", nullptr,
+                                                 ObjectClassFeatures(),
+                                                 LineRange(0, 0), file_name)),
         io_class_(std::make_unique<ClassAst>(
-            "IO", nullptr, std::vector<std::unique_ptr<Feature>>{},
+            "IO", object_class_.get(), std::vector<std::unique_ptr<Feature>>{},
             LineRange(0, 0), file_name)),
         int_class_(std::make_unique<ClassAst>(
-            "Int", nullptr, std::vector<std::unique_ptr<Feature>>{},
+            "Int", object_class_.get(), std::vector<std::unique_ptr<Feature>>{},
             LineRange(0, 0), file_name)),
-        string_class_(std::make_unique<ClassAst>(
-            "Bool", nullptr, std::vector<std::unique_ptr<Feature>>{},
-            LineRange(0, 0), file_name)),
-        bool_class_(std::make_unique<ClassAst>(
-            "String", nullptr, std::vector<std::unique_ptr<Feature>>{},
-            LineRange(0, 0), file_name)) {
+        string_class_(
+            std::make_unique<ClassAst>("Bool", object_class_.get(),
+                                       std::vector<std::unique_ptr<Feature>>{},
+                                       LineRange(0, 0), file_name)),
+        bool_class_(
+            std::make_unique<ClassAst>("String", object_class_.get(),
+                                       std::vector<std::unique_ptr<Feature>>{},
+                                       LineRange(0, 0), file_name)) {
     for (const auto& cool_class : classes_) {
       classes_by_name_[cool_class.GetType()] = &cool_class;
     }
@@ -702,10 +707,33 @@ class ProgramAst : public AstNode {
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
+  static std::vector<std::unique_ptr<Feature>> ObjectClassFeatures() {
+    std::unique_ptr<Feature> abort_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "abort",
+                                        std::vector<Formal>{}, "Object",
+                                        std::unique_ptr<Expr>{});
+    std::unique_ptr<Feature> type_name_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "type_name",
+                                        std::vector<Formal>{}, "String",
+                                        std::unique_ptr<Expr>{});
+    std::unique_ptr<Feature> copy_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "copy",
+                                        std::vector<Formal>{}, "SELF_TYPE",
+                                        std::unique_ptr<Expr>{});
+
+    std::vector<std::unique_ptr<Feature>> features;
+    features.push_back(std::move(abort_method_feature));
+    features.push_back(std::move(type_name_method_feature));
+    features.push_back(std::move(copy_method_feature));
+
+    return features;
+  }
+
   std::string file_name_;
   std::vector<ClassAst> classes_;
 
   // basic classes you can inherit from
+  // object root of inheritance, so it must be first
   std::unique_ptr<ClassAst> object_class_;
   std::unique_ptr<ClassAst> io_class_;
 
