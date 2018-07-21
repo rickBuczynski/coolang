@@ -21,7 +21,7 @@ class TypeCheckVisitor : public AstVisitor {
 
   void Visit(CaseExpr& node) override { node.SetExprType("TODO"); }
   void Visit(StrExpr& node) override { node.SetExprType("String"); }
-  void Visit(WhileExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(WhileExpr& node) override;
   void Visit(LetExpr& node) override;
   void Visit(IntExpr& node) override { node.SetExprType("Int"); }
   void Visit(IsVoidExpr& node) override { node.SetExprType("TODO"); }
@@ -99,6 +99,13 @@ void TypeCheckVisitor::Visit(BinOpExpr& node) {
   }
 }
 
+void TypeCheckVisitor::Visit(WhileExpr& node) {
+  node.MutableConditionExpr()->Accept(*this);
+  node.MutableLoopExpr()->Accept(*this);
+
+  node.SetExprType("TODOWhileExpr");
+}
+
 void TypeCheckVisitor::Visit(LetExpr& node) {
   if (node.GetInitializationExpr()) {
     node.GetInitializationExpr()->Accept(*this);
@@ -145,13 +152,19 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   const MethodFeature* method_feature =
       program_ast_->GetClassByName(caller_type)
           ->GetMethodFeatureByName(node.GetMethodName());
-  // TODO method_feature could be null if that method is not defined
+  if (method_feature == nullptr) {
+    errors_.emplace_back(
+        node.GetLineRange().end_line_num,
+        "Dispatch to undefined method " + node.GetMethodName() + ".",
+        program_ast_->GetFileName());
+    return;
+  }
 
   auto expected_args = method_feature->GetArgs();
   auto& args = node.MutableArgs();
   // TODO check incorrect number of method call args
 
-  for (auto i = 0; i < args.size(); i++) {
+  for (size_t i = 0; i < args.size(); i++) {
     args[i]->Accept(*this);
     // TODO need to account for inheritance
     if (args[i]->GetExprType() != expected_args[i].GetType()) {

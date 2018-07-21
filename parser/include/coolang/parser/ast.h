@@ -455,6 +455,11 @@ class WhileExpr : public Expr {
         condition_expr_(std::move(condition_expr)),
         loop_expr_(std::move(loop_expr)) {}
 
+  const Expr* GetConditionExpr() const { return condition_expr_.get(); }
+  const Expr* GetLoopExpr() const { return loop_expr_.get(); }
+  Expr* MutableConditionExpr() { return condition_expr_.get(); }
+  Expr* MutableLoopExpr() { return loop_expr_.get(); }
+
   std::string ToString(int indent_depth) const override;
 
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
@@ -664,12 +669,25 @@ class ProgramAst : public AstNode {
             LineRange(0, 0), file_name)),
         io_class_(std::make_unique<ClassAst>(
             "IO", nullptr, std::vector<std::unique_ptr<Feature>>{},
+            LineRange(0, 0), file_name)),
+        int_class_(std::make_unique<ClassAst>(
+            "Int", nullptr, std::vector<std::unique_ptr<Feature>>{},
+            LineRange(0, 0), file_name)),
+        string_class_(std::make_unique<ClassAst>(
+            "Bool", nullptr, std::vector<std::unique_ptr<Feature>>{},
+            LineRange(0, 0), file_name)),
+        bool_class_(std::make_unique<ClassAst>(
+            "String", nullptr, std::vector<std::unique_ptr<Feature>>{},
             LineRange(0, 0), file_name)) {
     for (const auto& cool_class : classes_) {
       classes_by_name_[cool_class.GetType()] = &cool_class;
     }
     classes_by_name_[object_class_->GetType()] = object_class_.get();
     classes_by_name_[io_class_->GetType()] = io_class_.get();
+
+    classes_by_name_[int_class_->GetType()] = int_class_.get();
+    classes_by_name_[string_class_->GetType()] = string_class_.get();
+    classes_by_name_[bool_class_->GetType()] = bool_class_.get();
   }
 
   const std::vector<ClassAst>& GetClasses() const { return classes_; }
@@ -686,8 +704,16 @@ class ProgramAst : public AstNode {
  private:
   std::string file_name_;
   std::vector<ClassAst> classes_;
+
+  // basic classes you can inherit from
   std::unique_ptr<ClassAst> object_class_;
   std::unique_ptr<ClassAst> io_class_;
+
+  // basic classes you can't inherit from
+  std::unique_ptr<ClassAst> int_class_;
+  std::unique_ptr<ClassAst> string_class_;
+  std::unique_ptr<ClassAst> bool_class_;
+
   // all classes this points to need to be dynamically allocated
   // or else all the pointers become invalid when this class is moved
   std::unordered_map<std::string, const ClassAst*> classes_by_name_;

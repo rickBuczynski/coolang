@@ -78,5 +78,6 @@ TEST(SemanticTest, badredefineint) { TestSemantic("badredefineint.test"); }
 TEST(SemanticTest, badstaticdispatch) {
   TestSemantic("badstaticdispatch.test");
 }
+TEST(SemanticTest, badwhilebody) { TestSemantic("badwhilebody.test"); }
 
 }  // namespace
