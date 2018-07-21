@@ -184,7 +184,9 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
     }
   }
 
-  node.SetExprType(method_feature->GetReturnType());
+  std::string return_type = method_feature->GetReturnType();
+  return_type = return_type == "SELF_TYPE" ? caller_type : return_type;
+  node.SetExprType(return_type);
 }
 
 void TypeCheckVisitor::Visit(EqCompareExpr& node) {
