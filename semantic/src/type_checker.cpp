@@ -121,6 +121,9 @@ void TypeCheckVisitor::Visit(CaseExpr& node) {
 
     branch_types.insert(branch.GetType());
   }
+
+  // TODO need least upper bound of all branches
+  node.SetExprType(node.GetBranches().back().GetExpr()->GetExprType());
 }
 
 void TypeCheckVisitor::Visit(WhileExpr& node) {
@@ -145,15 +148,15 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
 
   if (node.GetInExpr()) {
     node.GetInExpr()->Accept(*this);
+    node.SetExprType(node.GetInExpr()->GetExprType());
   } else if (node.GetChainedLet()) {
     // TODO can you use a variable from earlier in the chain in an init
     // expression within the chain?
     node.GetChainedLet()->Accept(*this);
+    node.SetExprType(node.GetChainedLet()->GetExprType());
   }
 
   RemoveFromScope(node.GetId());
-
-  node.SetExprType("TODOLetExpr");
 }
 
 void TypeCheckVisitor::Visit(MethodCallExpr& node) {
@@ -209,7 +212,10 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   }
 
   std::string return_type = method_feature->GetReturnType();
-  return_type = return_type == "SELF_TYPE" ? caller_type : return_type;
+  if (return_type == "SELF_TYPE" && node.GetLhsExpr()) {
+    return_type = caller_type;
+  }
+
   node.SetExprType(return_type);
 }
 
