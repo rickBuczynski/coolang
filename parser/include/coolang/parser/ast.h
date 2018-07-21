@@ -670,9 +670,9 @@ class ProgramAst : public AstNode {
         object_class_(std::make_unique<ClassAst>("Object", nullptr,
                                                  ObjectClassFeatures(),
                                                  LineRange(0, 0), file_name)),
-        io_class_(std::make_unique<ClassAst>(
-            "IO", object_class_.get(), std::vector<std::unique_ptr<Feature>>{},
-            LineRange(0, 0), file_name)),
+        io_class_(std::make_unique<ClassAst>("IO", object_class_.get(),
+                                             IoClassFeatures(), LineRange(0, 0),
+                                             file_name)),
         int_class_(std::make_unique<ClassAst>(
             "Int", object_class_.get(), std::vector<std::unique_ptr<Feature>>{},
             LineRange(0, 0), file_name)),
@@ -724,6 +724,37 @@ class ProgramAst : public AstNode {
     features.push_back(std::move(abort_method_feature));
     features.push_back(std::move(type_name_method_feature));
     features.push_back(std::move(copy_method_feature));
+    return features;
+  }
+
+  static std::vector<std::unique_ptr<Feature>> IoClassFeatures() {
+    std::vector<Formal> out_string_args{Formal("x", "String", LineRange(0, 0))};
+    std::unique_ptr<Feature> out_string_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "out_string",
+                                        out_string_args, "SELF_TYPE",
+                                        std::unique_ptr<Expr>{});
+
+    std::vector<Formal> out_int_args{Formal("x", "Int", LineRange(0, 0))};
+    std::unique_ptr<Feature> out_int_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "out_int",
+                                        out_int_args, "SELF_TYPE",
+                                        std::unique_ptr<Expr>{});
+
+    std::unique_ptr<Feature> in_string_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "in_string",
+                                        std::vector<Formal>{}, "String",
+                                        std::unique_ptr<Expr>{});
+
+    std::unique_ptr<Feature> in_int_method_feature =
+        std::make_unique<MethodFeature>(LineRange(0, 0), "in_int",
+                                        std::vector<Formal>{}, "Int",
+                                        std::unique_ptr<Expr>{});
+
+    std::vector<std::unique_ptr<Feature>> features;
+    features.push_back(std::move(out_string_method_feature));
+    features.push_back(std::move(out_int_method_feature));
+    features.push_back(std::move(in_string_method_feature));
+    features.push_back(std::move(in_int_method_feature));
     return features;
   }
 
