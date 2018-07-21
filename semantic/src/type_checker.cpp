@@ -1,17 +1,9 @@
+#include <set>
 #include <stack>
 #include "coolang/parser/ast.h"
 #include "coolang/semantic/type_checker.h"
 
 namespace coolang {
-
-void PopAndEraseIfEmpty(
-    std::unordered_map<std::string, std::stack<std::string>>& in_scope_vars,
-    const std::string& id) {
-  in_scope_vars[id].pop();
-  if (in_scope_vars[id].empty()) {
-    in_scope_vars.erase(id);
-  }
-}
 
 class TypeCheckVisitor : public AstVisitor {
  public:
@@ -19,7 +11,7 @@ class TypeCheckVisitor : public AstVisitor {
 
   const std::vector<SemanticError>& GetErrors() const { return errors_; }
 
-  void Visit(CaseExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(CaseExpr& node) override;
   void Visit(StrExpr& node) override { node.SetExprType("String"); }
   void Visit(WhileExpr& node) override;
   void Visit(LetExpr& node) override;
@@ -53,7 +45,11 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(AssignExpr& node) override;
   void Visit(BoolExpr& node) override { node.SetExprType("Bool"); }
   void Visit(ClassAst& node) override;
-  void Visit(CaseBranch& node) override {}
+  void Visit(CaseBranch& node) override {
+    AddToScope(node.GetId(), node.GetType());
+    node.MutableExpr()->Accept(*this);
+    RemoveFromScope(node.GetId());
+  }
   void Visit(MethodFeature& node) override {
   }  // not needed, handled by class visitor
   void Visit(AttributeFeature& node) override {
@@ -61,6 +57,17 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(ProgramAst& node) override;
 
  private:
+  void RemoveFromScope(const std::string& id) {
+    in_scope_vars_[id].pop();
+    if (in_scope_vars_[id].empty()) {
+      in_scope_vars_.erase(id);
+    }
+  }
+
+  void AddToScope(const std::string& id, const std::string& type) {
+    in_scope_vars_[id].push(type);
+  }
+
   std::vector<SemanticError> errors_;
   std::unordered_map<std::string, std::stack<std::string>> in_scope_vars_;
   ClassAst* current_class_ = nullptr;
@@ -99,6 +106,23 @@ void TypeCheckVisitor::Visit(BinOpExpr& node) {
   }
 }
 
+void TypeCheckVisitor::Visit(CaseExpr& node) {
+  node.MutableCaseExpr()->Accept(*this);
+
+  std::set<std::string> branch_types;
+  for (auto& branch : node.MutableBranches()) {
+    branch.Accept(*this);
+    if (branch_types.find(branch.GetType()) != branch_types.end()) {
+      errors_.emplace_back(
+          node.GetLineRange().end_line_num,
+          "Duplicate branch " + branch.GetType() + " in case statement.",
+          program_ast_->GetFileName());
+    }
+
+    branch_types.insert(branch.GetType());
+  }
+}
+
 void TypeCheckVisitor::Visit(WhileExpr& node) {
   node.MutableConditionExpr()->Accept(*this);
   if (node.GetConditionExpr()->GetExprType() != "Bool") {
@@ -117,7 +141,7 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
     node.GetInitializationExpr()->Accept(*this);
   }
 
-  in_scope_vars_[node.GetId()].push(node.GetType());
+  AddToScope(node.GetId(), node.GetType());
 
   if (node.GetInExpr()) {
     node.GetInExpr()->Accept(*this);
@@ -127,7 +151,7 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
     node.GetChainedLet()->Accept(*this);
   }
 
-  PopAndEraseIfEmpty(in_scope_vars_, node.GetId());
+  RemoveFromScope(node.GetId());
 
   node.SetExprType("TODOLetExpr");
 }
@@ -263,7 +287,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
       }
     }
 
-    in_scope_vars_[attr->GetId()].push(attr->GetType());
+    AddToScope(attr->GetId(), attr->GetType());
   }
 
   for (const auto& feature : node.GetFeatures()) {
@@ -281,7 +305,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
     if (auto* method_feature = dynamic_cast<MethodFeature*>(feature.get())) {
       auto& args = method_feature->GetArgs();
       for (const auto& arg : args) {
-        PopAndEraseIfEmpty(in_scope_vars_, arg.GetId());
+        RemoveFromScope(arg.GetId());
       }
     }
   }
@@ -289,7 +313,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
   // remove all attributes frome scope
   for (const auto& feature : node.GetFeatures()) {
     if (auto* attr = dynamic_cast<AttributeFeature*>(feature.get())) {
-      PopAndEraseIfEmpty(in_scope_vars_, attr->GetId());
+      RemoveFromScope(attr->GetId());
     }
   }
 }

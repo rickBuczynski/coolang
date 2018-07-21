@@ -419,8 +419,12 @@ class CaseBranch : public AstNode {
         type_(std::move(type)),
         expr_(std::move(expr)) {}
 
-  std::string ToString(int indent_depth) const override;
+  const Expr* GetExpr() const { return expr_.get(); }
+  Expr* MutableExpr() { return expr_.get(); }
+  const std::string& GetId() const { return id_; }
+  const std::string& GetType() const { return type_; }
 
+  std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
@@ -437,8 +441,13 @@ class CaseExpr : public Expr {
         case_expr_(std::move(case_expr)),
         branches_(std::move(case_branches)) {}
 
-  std::string ToString(int indent_depth) const override;
+  const Expr* GetCaseExpr() const { return case_expr_.get(); }
+  const std::vector<CaseBranch>& GetBranches() const { return branches_; }
 
+  Expr* MutableCaseExpr() { return case_expr_.get(); }
+  std::vector<CaseBranch>& MutableBranches() { return branches_; }
+
+  std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:

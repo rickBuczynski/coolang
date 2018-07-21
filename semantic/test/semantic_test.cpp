@@ -81,5 +81,8 @@ TEST(SemanticTest, badstaticdispatch) {
 TEST(SemanticTest, badwhilebody) { TestSemantic("badwhilebody.test"); }
 TEST(SemanticTest, badwhilecond) { TestSemantic("badwhilecond.test"); }
 TEST(SemanticTest, basic) { TestSemantic("basic.test"); }
+TEST(SemanticTest, basicclassestree) { TestSemantic("basicclassestree.test"); }
+TEST(SemanticTest, caseidenticalbranch) { TestSemantic("caseidenticalbranch.test"); }
+
 
 }  // namespace
