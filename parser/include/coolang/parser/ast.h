@@ -378,6 +378,9 @@ class MethodCallExpr : public Expr {
   Expr* MutableLhsExpr() { return lhs_expr_.get(); }
   const std::vector<std::unique_ptr<Expr>>& GetArgs() const { return args_; }
   std::vector<std::unique_ptr<Expr>> const& MutableArgs() { return args_; }
+  const std::optional<std::string>& GetStaticDispatchType() const {
+    return static_dispatch_type_;
+  }
 
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 

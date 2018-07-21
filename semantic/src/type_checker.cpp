@@ -121,9 +121,23 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
 
 void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   std::string caller_type;
+
   if (node.GetLhsExpr()) {
     node.MutableLhsExpr()->Accept(*this);
     caller_type = node.GetLhsExpr()->GetExprType();
+
+    if (node.GetStaticDispatchType().has_value()) {
+      // TODO handle inheritance
+      if (caller_type != node.GetStaticDispatchType().value()) {
+        errors_.emplace_back(
+            node.GetLineRange().end_line_num,
+            "Expression type " + caller_type +
+                " does not conform to declared static dispatch type " +
+                node.GetStaticDispatchType().value() + ".",
+            program_ast_->GetFileName());
+      }
+      caller_type = node.GetStaticDispatchType().value();
+    }
   } else {
     caller_type = current_class_->GetType();
   }

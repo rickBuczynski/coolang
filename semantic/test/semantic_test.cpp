@@ -75,5 +75,8 @@ TEST(SemanticTest, badmethodcallsitself) {
   TestSemantic("badmethodcallsitself.test");
 }
 TEST(SemanticTest, badredefineint) { TestSemantic("badredefineint.test"); }
+TEST(SemanticTest, badstaticdispatch) {
+  TestSemantic("badstaticdispatch.test");
+}
 
 }  // namespace
