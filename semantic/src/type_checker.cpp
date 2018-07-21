@@ -101,6 +101,12 @@ void TypeCheckVisitor::Visit(BinOpExpr& node) {
 
 void TypeCheckVisitor::Visit(WhileExpr& node) {
   node.MutableConditionExpr()->Accept(*this);
+  if (node.GetConditionExpr()->GetExprType() != "Bool") {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "Loop condition does not have type Bool.",
+                         program_ast_->GetFileName());
+  }
+
   node.MutableLoopExpr()->Accept(*this);
 
   node.SetExprType("TODOWhileExpr");

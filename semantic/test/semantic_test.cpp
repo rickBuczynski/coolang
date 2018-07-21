@@ -79,5 +79,6 @@ TEST(SemanticTest, badstaticdispatch) {
   TestSemantic("badstaticdispatch.test");
 }
 TEST(SemanticTest, badwhilebody) { TestSemantic("badwhilebody.test"); }
+TEST(SemanticTest, badwhilecond) { TestSemantic("badwhilecond.test"); }
 
 }  // namespace
