@@ -84,5 +84,6 @@ TEST(SemanticTest, basic) { TestSemantic("basic.test"); }
 TEST(SemanticTest, basicclassestree) { TestSemantic("basicclassestree.test"); }
 TEST(SemanticTest, caseidenticalbranch) { TestSemantic("caseidenticalbranch.test"); }
 TEST(SemanticTest, casenonecl) { TestSemantic("case-none.cl.test"); }
+TEST(SemanticTest, cellscl) { TestSemantic("cells.cl.test"); }
 
 }  // namespace

@@ -775,13 +775,13 @@ class ProgramAst : public AstNode {
 
     std::vector<Formal> concat_args{Formal("s", "String", LineRange(0, 0))};
     std::unique_ptr<Feature> concat_method_feature =
-        std::make_unique<MethodFeature>(LineRange(0, 0), "length", concat_args,
+        std::make_unique<MethodFeature>(LineRange(0, 0), "concat", concat_args,
                                         "String", std::unique_ptr<Expr>{});
 
     std::vector<Formal> substr_args{Formal("i", "Int", LineRange(0, 0)),
                                     Formal("l", "Int", LineRange(0, 0))};
     std::unique_ptr<Feature> substr_method_feature =
-        std::make_unique<MethodFeature>(LineRange(0, 0), "length", substr_args,
+        std::make_unique<MethodFeature>(LineRange(0, 0), "substr", substr_args,
                                         "String", std::unique_ptr<Expr>{});
 
     std::vector<std::unique_ptr<Feature>> features;
