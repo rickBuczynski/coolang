@@ -78,7 +78,7 @@ std::string LetExpr::ToString(int indent_depth) const {
     str += Indentation(indent_depth + 1) + GetLineRange().ToStringStartLine() +
            '\n';
     str += Indentation(indent_depth + 1) + "_no_expr" + '\n';
-    str += Indentation(indent_depth + 1) + ": " + GetExprType() + '\n';
+    str += Indentation(indent_depth + 1) + ": _no_type" + '\n';
   }
   if (chained_let_) {
     str += chained_let_->ToString(indent_depth + 1);
@@ -158,15 +158,7 @@ std::string MethodCallExpr::ToString(int indent_depth) const {
     str += Indentation(indent_depth) + "_dispatch" + '\n';
   }
 
-  if (lhs_expr_) {
-    str += lhs_expr_->ToString(indent_depth + 1);
-  } else {
-    str += Indentation(indent_depth + 1) + GetLineRange().ToStringStartLine() +
-           '\n';
-    str += Indentation(indent_depth + 1) + "_object" + '\n';
-    str += Indentation(indent_depth + 2) + "self" + '\n';
-    str += Indentation(indent_depth + 1) + ": " + GetExprType() + '\n';
-  }
+  str += lhs_expr_->ToString(indent_depth + 1);
 
   if (this->static_dispatch_type_.has_value()) {
     str += Indentation(indent_depth + 1) + static_dispatch_type_.value() + '\n';

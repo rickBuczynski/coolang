@@ -700,6 +700,10 @@ std::unique_ptr<MethodCallExpr> Parser::ParseMethodCallExprRhs(
 
   const LineRange line_range(start_line_num, GetLineNum(rparen_token));
 
+  if (!lhs) {
+    lhs = std::make_unique<ObjectExpr>(line_range, "self");
+  }
+
   return std::make_unique<MethodCallExpr>(
       line_range, std::move(lhs), std::move(static_dispatch_type),
       object_id_token.get_data(), std::move(args));

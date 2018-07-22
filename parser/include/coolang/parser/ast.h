@@ -400,8 +400,15 @@ class IfExpr : public Expr {
         then_expr_(std::move(then_expr)),
         else_expr_(std::move(else_expr)) {}
 
-  std::string ToString(int indent_depth) const override;
+  const Expr* GetIfConditionExpr() const { return if_condition_expr_.get(); }
+  const Expr* GetThenExpr() const { return then_expr_.get(); }
+  const Expr* GetElseExpr() const { return else_expr_.get(); }
 
+  Expr* MutableIfConditionExpr() const { return if_condition_expr_.get(); }
+  Expr* MutableThenExpr() const { return then_expr_.get(); }
+  Expr* MutableElseExpr() const { return else_expr_.get(); }
+
+  std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:

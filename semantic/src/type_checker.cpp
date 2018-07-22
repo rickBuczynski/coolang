@@ -19,7 +19,7 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(IsVoidExpr& node) override { node.SetExprType("TODO"); }
   void Visit(MethodCallExpr& node) override;
   void Visit(NotExpr& node) override { node.SetExprType("TODO"); }
-  void Visit(IfExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(IfExpr& node) override;
   void Visit(NegExpr& node) override { node.SetExprType("TODO"); }
   void Visit(BlockExpr& node) override {
     for (auto& sub_expr : node.GetExprs()) {
@@ -142,7 +142,7 @@ void TypeCheckVisitor::Visit(WhileExpr& node) {
 
   node.MutableLoopExpr()->Accept(*this);
 
-  node.SetExprType("TODOWhileExpr");
+  node.SetExprType("Object");
 }
 
 void TypeCheckVisitor::Visit(LetExpr& node) {
@@ -166,25 +166,23 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
 }
 
 void TypeCheckVisitor::Visit(MethodCallExpr& node) {
-  std::string caller_type;
+  node.MutableLhsExpr()->Accept(*this);
+  std::string caller_type = node.GetLhsExpr()->GetExprType();
 
-  if (node.GetLhsExpr()) {
-    node.MutableLhsExpr()->Accept(*this);
-    caller_type = node.GetLhsExpr()->GetExprType();
-
-    if (node.GetStaticDispatchType().has_value()) {
-      // TODO handle inheritance
-      if (caller_type != node.GetStaticDispatchType().value()) {
-        errors_.emplace_back(
-            node.GetLineRange().end_line_num,
-            "Expression type " + caller_type +
-                " does not conform to declared static dispatch type " +
-                node.GetStaticDispatchType().value() + ".",
-            program_ast_->GetFileName());
-      }
-      caller_type = node.GetStaticDispatchType().value();
+  if (node.GetStaticDispatchType().has_value()) {
+    // TODO handle inheritance
+    if (caller_type != node.GetStaticDispatchType().value()) {
+      errors_.emplace_back(
+          node.GetLineRange().end_line_num,
+          "Expression type " + caller_type +
+              " does not conform to declared static dispatch type " +
+              node.GetStaticDispatchType().value() + ".",
+          program_ast_->GetFileName());
     }
-  } else {
+    caller_type = node.GetStaticDispatchType().value();
+  }
+
+  if (caller_type == "SELF_TYPE") {
     caller_type = current_class_->GetType();
   }
 
@@ -218,11 +216,35 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   }
 
   std::string return_type = method_feature->GetReturnType();
-  if (return_type == "SELF_TYPE" && node.GetLhsExpr()) {
+
+  bool lhs_is_self = false;
+  if (const auto* obj_expr =
+          dynamic_cast<const ObjectExpr*>(node.GetLhsExpr())) {
+    if (obj_expr->GetId() == "self") {
+      lhs_is_self = true;
+    }
+  }
+
+  if (return_type == "SELF_TYPE" && !lhs_is_self) {
     return_type = caller_type;
   }
 
   node.SetExprType(return_type);
+}
+
+void TypeCheckVisitor::Visit(IfExpr& node) {
+  node.MutableIfConditionExpr()->Accept(*this);
+  if (node.GetIfConditionExpr()->GetExprType() != "Bool") {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "Loop condition does not have type Bool.",
+                         program_ast_->GetFileName());
+  }
+
+  node.MutableThenExpr()->Accept(*this);
+  node.MutableElseExpr()->Accept(*this);
+
+  // TODO need least upper bound of then and else
+  node.SetExprType(node.GetElseExpr()->GetExprType());
 }
 
 void TypeCheckVisitor::Visit(EqCompareExpr& node) {
@@ -247,8 +269,12 @@ void TypeCheckVisitor::Visit(EqCompareExpr& node) {
 void TypeCheckVisitor::Visit(AssignExpr& node) {
   node.GetRhsExpr()->Accept(*this);
 
-  const std::string rhs_type = node.GetRhsExpr()->GetExprType();
+  std::string rhs_type = node.GetRhsExpr()->GetExprType();
   const std::string lhs_type = in_scope_vars_[node.GetId()].top();
+
+  if (rhs_type == "SELF_TYPE") {
+    rhs_type = current_class_->GetType();
+  }
 
   if (rhs_type != lhs_type) {
     errors_.emplace_back(node.GetLineRange().end_line_num,
