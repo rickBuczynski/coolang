@@ -18,7 +18,11 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(IntExpr& node) override { node.SetExprType("Int"); }
   void Visit(IsVoidExpr& node) override { node.SetExprType("TODO"); }
   void Visit(MethodCallExpr& node) override;
-  void Visit(NotExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(NotExpr& node) override {
+    node.MutableChildExpr()->Accept(*this);
+    // TODO check that sub expr type is Bool
+    node.SetExprType("Bool");
+  }
   void Visit(IfExpr& node) override;
   void Visit(NegExpr& node) override { node.SetExprType("TODO"); }
   void Visit(BlockExpr& node) override {
@@ -31,7 +35,8 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(BinOpExpr& node) override;
   void Visit(MultiplyExpr& node) override { node.SetExprType("TODO"); }
   void Visit(LessThanEqualCompareExpr& node) override {
-    node.SetExprType("TODO");
+    Visit(static_cast<BinOpExpr&>(node));
+    node.SetExprType("Bool");
   }
   void Visit(SubtractExpr& node) override {
     Visit(static_cast<BinOpExpr&>(node));

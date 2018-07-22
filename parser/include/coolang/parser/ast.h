@@ -326,7 +326,7 @@ class LessThanEqualCompareExpr : public BinOpExpr {
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  protected:
-  std::string OpName() const override { return "_le"; }
+  std::string OpName() const override { return "_leq"; }
 };
 
 class ObjectExpr : public Expr {
@@ -490,8 +490,10 @@ class NotExpr : public Expr {
   NotExpr(LineRange line_range, std::unique_ptr<Expr> child_expr)
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
-  std::string ToString(int indent_depth) const override;
+  const Expr* GetChildExpr() const { return child_expr_.get(); }
+  Expr* MutableChildExpr() { return child_expr_.get(); }
 
+  std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:

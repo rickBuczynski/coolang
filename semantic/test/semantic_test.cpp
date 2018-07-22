@@ -86,5 +86,7 @@ TEST(SemanticTest, caseidenticalbranch) { TestSemantic("caseidenticalbranch.test
 TEST(SemanticTest, casenonecl) { TestSemantic("case-none.cl.test"); }
 TEST(SemanticTest, cellscl) { TestSemantic("cells.cl.test"); }
 TEST(SemanticTest, classes) { TestSemantic("classes.test"); }
+TEST(SemanticTest, compare) { TestSemantic("compare.test"); }
+TEST(SemanticTest, comparisons) { TestSemantic("comparisons.test"); }
 
 }  // namespace
