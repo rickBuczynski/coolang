@@ -81,6 +81,19 @@ class TypeCheckVisitor : public AstVisitor {
     in_scope_vars_[id].push(type);
   }
 
+  bool IsSubtype(std::string subtype, const std::string& supertype) const {
+    if (subtype == "SELF_TYPE") {
+      subtype = current_class_->GetType();
+    }
+    for (const ClassAst* c = program_ast_->GetClassByName(subtype);
+         c != nullptr; c = c->GetSuperClass()) {
+      if (c->GetType() == supertype) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   std::vector<SemanticError> errors_;
   std::unordered_map<std::string, std::stack<std::string>> in_scope_vars_;
   ClassAst* current_class_ = nullptr;
@@ -210,8 +223,7 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
 
   for (size_t i = 0; i < args.size(); i++) {
     args[i]->Accept(*this);
-    // TODO need to account for inheritance
-    if (args[i]->GetExprType() != expected_args[i].GetType()) {
+    if (!IsSubtype(args[i]->GetExprType(), expected_args[i].GetType())) {
       errors_.emplace_back(node.GetLineRange().end_line_num,
                            "In call of method " + node.GetMethodName() +
                                ", type " + args[i]->GetExprType() +

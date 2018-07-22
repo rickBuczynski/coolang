@@ -82,11 +82,15 @@ TEST(SemanticTest, badwhilebody) { TestSemantic("badwhilebody.test"); }
 TEST(SemanticTest, badwhilecond) { TestSemantic("badwhilecond.test"); }
 TEST(SemanticTest, basic) { TestSemantic("basic.test"); }
 TEST(SemanticTest, basicclassestree) { TestSemantic("basicclassestree.test"); }
-TEST(SemanticTest, caseidenticalbranch) { TestSemantic("caseidenticalbranch.test"); }
+TEST(SemanticTest, caseidenticalbranch) {
+  TestSemantic("caseidenticalbranch.test");
+}
 TEST(SemanticTest, casenonecl) { TestSemantic("case-none.cl.test"); }
 TEST(SemanticTest, cellscl) { TestSemantic("cells.cl.test"); }
 TEST(SemanticTest, classes) { TestSemantic("classes.test"); }
 TEST(SemanticTest, compare) { TestSemantic("compare.test"); }
 TEST(SemanticTest, comparisons) { TestSemantic("comparisons.test"); }
+TEST(SemanticTest, cycleinmethods) { TestSemantic("cycleinmethods.test"); }
+TEST(SemanticTest, dispatch) { TestSemantic("dispatch.test"); }
 
 }  // namespace
