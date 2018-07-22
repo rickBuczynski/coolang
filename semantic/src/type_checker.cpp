@@ -63,6 +63,8 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(ProgramAst& node) override;
 
  private:
+  void ClearScope() { in_scope_vars_.clear(); }
+
   void RemoveFromScope(const std::string& id) {
     in_scope_vars_[id].pop();
     if (in_scope_vars_[id].empty()) {
@@ -300,32 +302,44 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
 
   // add all attributes to scope before diving into expressions since these
   // attributes are visible throughout the class
-  for (const auto* attr : node.GetAttributeFeatures()) {
-    if (attr->GetId() == "self") {
-      errors_.emplace_back(attr->GetLineRange().end_line_num,
-                           "'self' cannot be the name of an attribute.",
-                           node.GetContainingFileName());
-      return;
-    }
-    const std::vector<const ClassAst*>& super_classes =
-        node.GetAllSuperClasses();
-    for (const auto* super_class : super_classes) {
-      // TODO this is slow, could be faster
-      for (const auto super_attr : super_class->GetAttributeFeatures()) {
-        if (super_attr->GetId() == attr->GetId()) {
-          errors_.emplace_back(
-              attr->GetLineRange().end_line_num,
-              "Attribute " + node.GetType() + "." + attr->GetId() +
-                  " is already defined in class " + super_class->GetType() +
-                  " at " + super_class->GetContainingFileName() + ":" +
-                  std::to_string(super_attr->GetLineRange().end_line_num) + ".",
-              node.GetContainingFileName());
-          return;
-        }
-      }
-    }
+  std::vector<const ClassAst*> class_and_supers = node.GetAllSuperClasses();
+  class_and_supers.push_back(&node);
 
-    AddToScope(attr->GetId(), attr->GetType());
+  std::unordered_map<std::string,
+                     std::pair<const AttributeFeature*, const ClassAst*>>
+      attributes_by_id;
+  for (const auto* cool_class : class_and_supers) {
+    for (const auto* attr : cool_class->GetAttributeFeatures()) {
+      if (attr->GetId() == "self") {
+        errors_.emplace_back(attr->GetLineRange().end_line_num,
+                             "'self' cannot be the name of an attribute.",
+                             node.GetContainingFileName());
+        return;
+      }
+
+      const auto already_defined_in_class =
+          attributes_by_id.find(attr->GetId());
+      if (already_defined_in_class != attributes_by_id.end()) {
+        errors_.emplace_back(
+            attr->GetLineRange().end_line_num,
+            "Attribute " + node.GetType() + "." +
+                already_defined_in_class->first +
+                " is already defined in class " +
+                already_defined_in_class->second.second->GetType() + " at " +
+                already_defined_in_class->second.second
+                    ->GetContainingFileName() +
+                ":" +
+                std::to_string(
+                    already_defined_in_class->second.first->GetLineRange()
+                        .end_line_num) +
+                ".",
+            node.GetContainingFileName());
+        return;
+      }
+
+      attributes_by_id[attr->GetId()] = std::make_pair(attr, cool_class);
+      AddToScope(attr->GetId(), attr->GetType());
+    }
   }
 
   for (const auto& feature : node.GetFeatures()) {
@@ -348,12 +362,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
     }
   }
 
-  // remove all attributes frome scope
-  for (const auto& feature : node.GetFeatures()) {
-    if (auto* attr = dynamic_cast<AttributeFeature*>(feature.get())) {
-      RemoveFromScope(attr->GetId());
-    }
-  }
+  ClearScope();
 }
 
 void TypeCheckVisitor::Visit(ProgramAst& node) {
