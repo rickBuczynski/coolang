@@ -362,7 +362,15 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
   for (const auto& feature : node.GetFeatures()) {
     if (auto* method_feature = dynamic_cast<MethodFeature*>(feature.get())) {
       auto& args = method_feature->GetArgs();
+      std::set<std::string> arg_ids;
       for (const auto& arg : args) {
+        if (arg_ids.find(arg.GetId()) != arg_ids.end()) {
+          errors_.emplace_back(
+              method_feature->GetLineRange().end_line_num,
+              "Formal parameter " + arg.GetId() + " is multiply defined.",
+              node.GetContainingFileName());
+        }
+        arg_ids.insert(arg.GetId());
         in_scope_vars_[arg.GetId()].push(arg.GetType());
       }
     }

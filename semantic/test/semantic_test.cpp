@@ -92,5 +92,6 @@ TEST(SemanticTest, compare) { TestSemantic("compare.test"); }
 TEST(SemanticTest, comparisons) { TestSemantic("comparisons.test"); }
 TEST(SemanticTest, cycleinmethods) { TestSemantic("cycleinmethods.test"); }
 TEST(SemanticTest, dispatch) { TestSemantic("dispatch.test"); }
+TEST(SemanticTest, dupformals) { TestSemantic("dupformals.test"); }
 
 }  // namespace
