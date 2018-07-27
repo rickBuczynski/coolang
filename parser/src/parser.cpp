@@ -299,9 +299,15 @@ std::unique_ptr<AttributeFeature> Parser::ParseAttributeFeature() {
     initialization_expr = ParseExpr(0);
   }
 
-  // need to change line range if theres an init expr
-  return std::make_unique<AttributeFeature>(
-      f.GetLineRange(), f.GetId(), f.GetType(), std::move(initialization_expr));
+  int end_line = f.GetLineRange().end_line_num;
+  if (initialization_expr) {
+    end_line = initialization_expr->GetLineRange().end_line_num;
+  }
+
+  const LineRange line_range(f.GetLineRange().start_line_num, end_line);
+
+  return std::make_unique<AttributeFeature>(line_range, f.GetId(), f.GetType(),
+                                            std::move(initialization_expr));
 }
 
 Formal Parser::ParseFormal() const {

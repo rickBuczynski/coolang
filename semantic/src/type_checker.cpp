@@ -81,9 +81,12 @@ class TypeCheckVisitor : public AstVisitor {
     in_scope_vars_[id].push(type);
   }
 
-  bool IsSubtype(std::string subtype, const std::string& supertype) const {
+  bool IsSubtype(std::string subtype, std::string supertype) const {
     if (subtype == "SELF_TYPE") {
       subtype = current_class_->GetType();
+    }
+    if (supertype == "SELF_TYPE") {
+      supertype = current_class_->GetType();
     }
     for (const ClassAst* c = program_ast_->GetClassByName(subtype);
          c != nullptr; c = c->GetSuperClass()) {
@@ -92,6 +95,44 @@ class TypeCheckVisitor : public AstVisitor {
       }
     }
     return false;
+  }
+
+  const ClassAst* GetClassByName(std::string name) const {
+    if (name == "SELF_TYPE") {
+      name = current_class_->GetType();
+    }
+    return program_ast_->GetClassByName(name);
+  }
+
+  std::string FirstCommonSupertype(
+      const std::vector<std::string>& types) const {
+    std::vector<std::vector<std::string>> all_super_types_for_each_type;
+    all_super_types_for_each_type.reserve(types.size());
+
+    for (const auto& type : types) {
+      all_super_types_for_each_type.emplace_back();
+      all_super_types_for_each_type.back().push_back(type);
+      for (const auto* super_class :
+           GetClassByName(type)->GetAllSuperClasses()) {
+        all_super_types_for_each_type.back().push_back(super_class->GetType());
+      }
+    }
+
+    std::string prev = all_super_types_for_each_type.front().back();
+    while (!all_super_types_for_each_type.front().empty()) {
+      std::string cur = all_super_types_for_each_type.front().back();
+
+      for (auto& super_classes : all_super_types_for_each_type) {
+        if (super_classes.empty() || super_classes.back() != cur) {
+          return prev;
+        }
+        super_classes.pop_back();
+      }
+
+      prev = cur;
+    }
+
+    return prev;
   }
 
   std::vector<SemanticError> errors_;
@@ -148,8 +189,12 @@ void TypeCheckVisitor::Visit(CaseExpr& node) {
     branch_types.insert(branch.GetType());
   }
 
-  // TODO need least upper bound of all branches
-  node.SetExprType(node.GetBranches().back().GetExpr()->GetExprType());
+  std::vector<std::string> branch_return_types;
+  for (const auto& branch : node.GetBranches()) {
+    branch_return_types.push_back(branch.GetExpr()->GetExprType());
+  }
+
+  node.SetExprType(FirstCommonSupertype(branch_return_types));
 }
 
 void TypeCheckVisitor::Visit(WhileExpr& node) {
@@ -191,7 +236,7 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
 
   if (node.GetStaticDispatchType().has_value()) {
     // TODO handle inheritance
-    if (caller_type != node.GetStaticDispatchType().value()) {
+    if (IsSubtype(node.GetStaticDispatchType().value(), caller_type)) {
       errors_.emplace_back(
           node.GetLineRange().end_line_num,
           "Expression type " + caller_type +

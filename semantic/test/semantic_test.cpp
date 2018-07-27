@@ -93,5 +93,8 @@ TEST(SemanticTest, comparisons) { TestSemantic("comparisons.test"); }
 TEST(SemanticTest, cycleinmethods) { TestSemantic("cycleinmethods.test"); }
 TEST(SemanticTest, dispatch) { TestSemantic("dispatch.test"); }
 TEST(SemanticTest, dupformals) { TestSemantic("dupformals.test"); }
+TEST(SemanticTest, expressionblock) { TestSemantic("expressionblock.test"); }
+TEST(SemanticTest, forwardinherits) { TestSemantic("forwardinherits.test"); }
+TEST(SemanticTest, hairyscarycl) { TestSemantic("hairyscary.cl.test"); }
 
 }  // namespace
