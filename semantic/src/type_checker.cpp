@@ -470,6 +470,11 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
 
       if (method_feature->GetId() == "main") {
         has_main_method = true;
+        if (node.GetType() == "Main" && !method_feature->GetArgs().empty()) {
+          errors_.emplace_back(node.GetLineRange().end_line_num,
+                               "Method Main.main shouldn't take arguments.",
+                               node.GetContainingFileName());
+        }
       }
     }
   }

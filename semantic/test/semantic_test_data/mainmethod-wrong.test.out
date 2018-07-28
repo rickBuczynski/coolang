@@ -1,2 +1,2 @@
-Method Main.main shouldn't take arguments.
+mainmethod-wrong.test:3: Method Main.main shouldn't take arguments.
 Compilation halted due to static semantic errors.

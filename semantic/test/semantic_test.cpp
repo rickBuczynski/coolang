@@ -114,7 +114,7 @@ TEST(SemanticTest, lubtest) { TestSemantic("lubtest.test"); }
 TEST(SemanticTest, mainmethodmissing) {
   TestSemantic("mainmethod-missing.test");
 }
-//TEST(SemanticTest, mainmethodwrong) { TestSemantic("mainmethod-wrong.test"); }
+TEST(SemanticTest, mainmethodwrong) { TestSemantic("mainmethod-wrong.test"); }
 TEST(SemanticTest, methodcallsitself) {
   TestSemantic("methodcallsitself.test");
 }
