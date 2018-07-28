@@ -31,8 +31,19 @@ class InheritanceChecker {
                                 inherits_type_string + ".",
                             cool_class.GetContainingFileName());
       } else {
-        cool_class.SetSuperClass(
-            program_ast.GetClassByName(inherits_type_string));
+        const ClassAst* super_class =
+            program_ast.GetClassByName(inherits_type_string);
+
+        if (super_class == nullptr) {
+          errors.emplace_back(cool_class.GetLineRange().end_line_num,
+                              "Class " + cool_class.GetType() +
+                                  " inherits from an undefined class " +
+                                  inherits_type_string + ".",
+                              cool_class.GetContainingFileName());
+        } else {
+          cool_class.SetSuperClass(
+              program_ast.GetClassByName(inherits_type_string));
+        }
       }
     }
     return errors;

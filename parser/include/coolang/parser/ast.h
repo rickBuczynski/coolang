@@ -721,7 +721,12 @@ class ProgramAst : public AstNode {
   const std::vector<ClassAst>& GetClasses() const { return classes_; }
   std::vector<ClassAst>& MutableClasses() { return classes_; }
   const ClassAst* GetClassByName(const std::string& name) const {
-    return classes_by_name_.at(name);
+    const auto class_ast = classes_by_name_.find(name);
+    if (class_ast == classes_by_name_.end()) {
+      return nullptr;
+    } else {
+      return class_ast->second;
+    }
   }
   const std::string& GetFileName() const { return file_name_; }
 
