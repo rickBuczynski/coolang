@@ -100,5 +100,6 @@ TEST(SemanticTest, ifselftype) { TestSemantic("if-self-type.test"); }
 TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
 TEST(SemanticTest, inheritsObject) { TestSemantic("inheritsObject.test"); }
 TEST(SemanticTest, inheritsselftype) { TestSemantic("inheritsselftype.test"); }
+TEST(SemanticTest, inheritsstring) { TestSemantic("inheritsstring.test"); }
 
 }  // namespace
