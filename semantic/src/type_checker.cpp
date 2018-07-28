@@ -16,7 +16,10 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(WhileExpr& node) override;
   void Visit(LetExpr& node) override;
   void Visit(IntExpr& node) override { node.SetExprType("Int"); }
-  void Visit(IsVoidExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(IsVoidExpr& node) override {
+    node.MutableChildExpr()->Accept(*this);
+    node.SetExprType("Bool");
+  }
   void Visit(MethodCallExpr& node) override;
   void Visit(NotExpr& node) override {
     node.MutableChildExpr()->Accept(*this);

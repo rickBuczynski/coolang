@@ -505,8 +505,10 @@ class IsVoidExpr : public Expr {
   IsVoidExpr(LineRange line_range, std::unique_ptr<Expr> child_expr)
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
-  std::string ToString(int indent_depth) const override;
+  const Expr* GetChildExpr() const { return child_expr_.get(); }
+  Expr* MutableChildExpr() { return child_expr_.get(); }
 
+  std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
