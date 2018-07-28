@@ -1,2 +1,2 @@
-Method Main.main is not defined.
+mainmethod-missing.test:3: Method Main.main is not defined.
 Compilation halted due to static semantic errors.

@@ -430,6 +430,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
     }
   }
 
+  bool has_main_method = false;
   for (const auto& feature : node.GetFeatures()) {
     if (auto* method_feature = dynamic_cast<MethodFeature*>(feature.get())) {
       auto& args = method_feature->GetArgs();
@@ -466,7 +467,17 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
                                  method_feature->GetReturnType() + ".",
                              node.GetContainingFileName());
       }
+
+      if (method_feature->GetId() == "main") {
+        has_main_method = true;
+      }
     }
+  }
+
+  if (node.GetType() == "Main" && !has_main_method) {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "Method Main.main is not defined.",
+                         node.GetContainingFileName());
   }
 
   ClearScope();
