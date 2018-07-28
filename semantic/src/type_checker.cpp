@@ -7,7 +7,8 @@ namespace coolang {
 
 class TypeCheckVisitor : public AstVisitor {
  public:
-  TypeCheckVisitor(ProgramAst& program_ast) : program_ast_(&program_ast) {}
+  explicit TypeCheckVisitor(ProgramAst& program_ast)
+      : program_ast_(&program_ast) {}
 
   const std::vector<SemanticError>& GetErrors() const { return errors_; }
 
@@ -85,6 +86,10 @@ class TypeCheckVisitor : public AstVisitor {
   }
 
   bool IsSubtype(std::string subtype, std::string supertype) const {
+    if (subtype == "_no_type") {
+      return true;
+    }
+
     if (subtype == "SELF_TYPE") {
       subtype = current_class_->GetType();
     }
@@ -449,6 +454,17 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
       auto& args = method_feature->GetArgs();
       for (const auto& arg : args) {
         RemoveFromScope(arg.GetId());
+      }
+
+      if (!IsSubtype(method_feature->GetRootExpr()->GetExprType(),
+                     method_feature->GetReturnType())) {
+        errors_.emplace_back(method_feature->GetLineRange().end_line_num,
+                             "Inferred return type " +
+                                 method_feature->GetRootExpr()->GetExprType() +
+                                 " of method " + method_feature->GetId() +
+                                 " does not conform to declared return type " +
+                                 method_feature->GetReturnType() + ".",
+                             node.GetContainingFileName());
       }
     }
   }
