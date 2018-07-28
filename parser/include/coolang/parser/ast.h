@@ -226,8 +226,10 @@ class NegExpr : public Expr {
   NegExpr(LineRange line_range, std::unique_ptr<Expr> child_expr)
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
-  std::string ToString(int indent_depth) const override;
+  const Expr* GetChildExpr() const { return child_expr_.get(); }
+  Expr* MutableChildExpr() { return child_expr_.get(); }
 
+  std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
@@ -815,7 +817,7 @@ class ProgramAst : public AstNode {
   std::vector<ClassAst> classes_;
 
   // basic classes you can inherit from
-  // object root of inheritance, so it must be first
+  // object is the root of inheritance tree, so it must be first
   std::unique_ptr<ClassAst> object_class_;
   std::unique_ptr<ClassAst> io_class_;
 

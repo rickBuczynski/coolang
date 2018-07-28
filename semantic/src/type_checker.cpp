@@ -28,7 +28,11 @@ class TypeCheckVisitor : public AstVisitor {
     node.SetExprType("Bool");
   }
   void Visit(IfExpr& node) override;
-  void Visit(NegExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(NegExpr& node) override {
+    node.MutableChildExpr()->Accept(*this);
+    // TODO check that sub expr type is Int
+    node.SetExprType("Int");
+  }
   void Visit(BlockExpr& node) override {
     for (auto& sub_expr : node.GetExprs()) {
       sub_expr->Accept(*this);
