@@ -76,6 +76,9 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(ProgramAst& node) override;
 
  private:
+  void CheckMethodOverrideHasSameArgs(const ClassAst* class_ast,
+                                      const MethodFeature* method);
+
   void ClearScope() { in_scope_vars_.clear(); }
 
   void RemoveFromScope(const std::string& id) {
@@ -449,6 +452,8 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
         arg_ids.insert(arg.GetId());
         in_scope_vars_[arg.GetId()].push(arg.GetType());
       }
+
+      CheckMethodOverrideHasSameArgs(&node, method_feature);
     }
 
     if (feature->GetRootExpr()) {
@@ -490,6 +495,28 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
   }
 
   ClearScope();
+}
+
+void TypeCheckVisitor::CheckMethodOverrideHasSameArgs(
+    const ClassAst* class_ast, const MethodFeature* method) {
+  const ClassAst* super_class = class_ast->GetSuperClass();
+  const MethodFeature* overriden_method =
+      super_class->GetMethodFeatureByName(method->GetId());
+  if (overriden_method != nullptr) {
+    // TODO check same number of args
+    for (size_t i = 0; i < method->GetArgs().size(); i++) {
+      if (overriden_method->GetArgs()[i].GetType() !=
+          method->GetArgs()[i].GetType()) {
+        errors_.emplace_back(method->GetLineRange().end_line_num,
+                             "In redefined method " + method->GetId() +
+                                 ", parameter type " +
+                                 method->GetArgs()[i].GetType() +
+                                 " is different from original type " +
+                                 overriden_method->GetArgs()[i].GetType(),
+                             class_ast->GetContainingFileName());
+      }
+    }
+  }
 }
 
 void TypeCheckVisitor::Visit(ProgramAst& node) {

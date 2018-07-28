@@ -137,9 +137,9 @@ TEST(SemanticTest, overridingmethod2) {
 TEST(SemanticTest, overridingmethod3) {
   TestSemantic("overridingmethod3.test");
 }
-//TEST(SemanticTest, overridingmethod4) {
-//  TestSemantic("overridingmethod4.test");
-//}
+TEST(SemanticTest, overridingmethod4) {
+  TestSemantic("overridingmethod4.test");
+}
 //TEST(SemanticTest, redefinedclass) { TestSemantic("redefinedclass.test"); }
 //TEST(SemanticTest, redefinedobject) { TestSemantic("redefinedobject.test"); }
 //TEST(SemanticTest, returntypenoexist) {
