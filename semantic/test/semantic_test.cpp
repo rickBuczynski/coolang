@@ -96,5 +96,6 @@ TEST(SemanticTest, dupformals) { TestSemantic("dupformals.test"); }
 TEST(SemanticTest, expressionblock) { TestSemantic("expressionblock.test"); }
 TEST(SemanticTest, forwardinherits) { TestSemantic("forwardinherits.test"); }
 TEST(SemanticTest, hairyscarycl) { TestSemantic("hairyscary.cl.test"); }
+TEST(SemanticTest, if) { TestSemantic("if.test"); }
 
 }  // namespace

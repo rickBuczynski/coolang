@@ -307,8 +307,8 @@ void TypeCheckVisitor::Visit(IfExpr& node) {
   node.MutableThenExpr()->Accept(*this);
   node.MutableElseExpr()->Accept(*this);
 
-  // TODO need least upper bound of then and else
-  node.SetExprType(node.GetElseExpr()->GetExprType());
+  node.SetExprType(FirstCommonSupertype(
+      {node.GetThenExpr()->GetExprType(), node.GetElseExpr()->GetExprType()}));
 }
 
 void TypeCheckVisitor::Visit(EqCompareExpr& node) {
