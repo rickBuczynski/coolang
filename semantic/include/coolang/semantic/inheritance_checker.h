@@ -1,6 +1,7 @@
 #ifndef COOLANG_SEMANTIC_INHERITANCE_GRAPH_H
 #define COOLANG_SEMANTIC_INHERITANCE_GRAPH_H
 
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -19,11 +20,16 @@ class InheritanceChecker {
       const std::string inherits_type_string =
           cool_class.GetSuperClass()->GetType();
 
-      if (inherits_type_string == "Bool") {
-        errors.emplace_back(
-            cool_class.GetLineRange().end_line_num,
-            "Class " + cool_class.GetType() + " cannot inherit class Bool.",
-            cool_class.GetContainingFileName());
+      // TODO can't inherit int or string either
+      std::set<std::string> cant_iherit_from{"Bool", "SELF_TYPE"};
+
+      if (cant_iherit_from.find(inherits_type_string) !=
+          cant_iherit_from.end()) {
+        errors.emplace_back(cool_class.GetLineRange().end_line_num,
+                            "Class " + cool_class.GetType() +
+                                " cannot inherit class " +
+                                inherits_type_string + ".",
+                            cool_class.GetContainingFileName());
       } else {
         cool_class.SetSuperClass(
             program_ast.GetClassByName(inherits_type_string));

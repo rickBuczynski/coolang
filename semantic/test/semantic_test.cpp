@@ -57,7 +57,6 @@ void TestSemantic(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
-TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
 TEST(SemanticTest, outofscope) { TestSemantic("outofscope.test"); }
 
 TEST(SemanticTest, anattributenamedself) {
@@ -97,5 +96,9 @@ TEST(SemanticTest, expressionblock) { TestSemantic("expressionblock.test"); }
 TEST(SemanticTest, forwardinherits) { TestSemantic("forwardinherits.test"); }
 TEST(SemanticTest, hairyscarycl) { TestSemantic("hairyscary.cl.test"); }
 TEST(SemanticTest, if) { TestSemantic("if.test"); }
+TEST(SemanticTest, ifselftype) { TestSemantic("if-self-type.test"); }
+TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
+TEST(SemanticTest, inheritsObject) { TestSemantic("inheritsObject.test"); }
+TEST(SemanticTest, inheritsselftype) { TestSemantic("inheritsselftype.test"); }
 
 }  // namespace
