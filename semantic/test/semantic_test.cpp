@@ -106,7 +106,7 @@ TEST(SemanticTest, isvoid) { TestSemantic("isvoid.test"); }
 TEST(SemanticTest, letbadinit) { TestSemantic("letbadinit.test"); }
 TEST(SemanticTest, letinit) { TestSemantic("letinit.test"); }
 TEST(SemanticTest, letnoinit) { TestSemantic("letnoinit.test"); }
-//TEST(SemanticTest, letself) { TestSemantic("letself.test"); }
+TEST(SemanticTest, letself) { TestSemantic("letself.test"); }
 TEST(SemanticTest, letselftype) { TestSemantic("letselftype.test"); }
 TEST(SemanticTest, letshadows) { TestSemantic("letshadows.test"); }
 //TEST(SemanticTest, listcl) { TestSemantic("list.cl.test"); }

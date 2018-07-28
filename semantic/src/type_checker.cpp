@@ -229,7 +229,13 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
     }
   }
 
-  AddToScope(node.GetId(), node.GetType());
+  if (node.GetId() == "self") {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "'self' cannot be bound in a 'let' expression.",
+                         program_ast_->GetFileName());
+  } else {
+    AddToScope(node.GetId(), node.GetType());
+  }
 
   if (node.GetInExpr()) {
     node.GetInExpr()->Accept(*this);
@@ -241,7 +247,9 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
     node.SetExprType(node.GetChainedLet()->GetExprType());
   }
 
-  RemoveFromScope(node.GetId());
+  if (node.GetId() != "self") {
+    RemoveFromScope(node.GetId());
+  }
 }
 
 void TypeCheckVisitor::Visit(MethodCallExpr& node) {
