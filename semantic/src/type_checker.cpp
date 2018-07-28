@@ -216,6 +216,17 @@ void TypeCheckVisitor::Visit(WhileExpr& node) {
 void TypeCheckVisitor::Visit(LetExpr& node) {
   if (node.GetInitializationExpr()) {
     node.GetInitializationExpr()->Accept(*this);
+
+    if (!IsSubtype(node.GetInitializationExpr()->GetExprType(),
+                   node.GetType())) {
+      errors_.emplace_back(
+          node.GetLineRange().end_line_num,
+          "Inferred type " + node.GetInitializationExpr()->GetExprType() +
+              " of initialization of " + node.GetId() +
+              " does not conform to identifier's declared type " +
+              node.GetType() + ".",
+          program_ast_->GetFileName());
+    }
   }
 
   AddToScope(node.GetId(), node.GetType());
@@ -238,8 +249,7 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   std::string caller_type = node.GetLhsExpr()->GetExprType();
 
   if (node.GetStaticDispatchType().has_value()) {
-    // TODO handle inheritance
-    if (IsSubtype(node.GetStaticDispatchType().value(), caller_type)) {
+    if (!IsSubtype(caller_type, node.GetStaticDispatchType().value())) {
       errors_.emplace_back(
           node.GetLineRange().end_line_num,
           "Expression type " + caller_type +

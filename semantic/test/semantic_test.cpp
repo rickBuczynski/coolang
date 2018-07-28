@@ -103,7 +103,7 @@ TEST(SemanticTest, inheritsstring) { TestSemantic("inheritsstring.test"); }
 TEST(SemanticTest, initwithself) { TestSemantic("initwithself.test"); }
 TEST(SemanticTest, io) { TestSemantic("io.test"); }
 TEST(SemanticTest, isvoid) { TestSemantic("isvoid.test"); }
-//TEST(SemanticTest, letbadinit) { TestSemantic("letbadinit.test"); }
+TEST(SemanticTest, letbadinit) { TestSemantic("letbadinit.test"); }
 TEST(SemanticTest, letinit) { TestSemantic("letinit.test"); }
 TEST(SemanticTest, letnoinit) { TestSemantic("letnoinit.test"); }
 //TEST(SemanticTest, letself) { TestSemantic("letself.test"); }
