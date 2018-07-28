@@ -121,8 +121,8 @@ TEST(SemanticTest, methodcallsitself) {
 TEST(SemanticTest, methodnameclash) { TestSemantic("methodnameclash.test"); }
 TEST(SemanticTest, missingclass) { TestSemantic("missingclass.test"); }
 TEST(SemanticTest, neg) { TestSemantic("neg.test"); }
-//TEST(SemanticTest, newselftype) { TestSemantic("newselftype.test"); }
-//TEST(SemanticTest, nomain) { TestSemantic("nomain.test"); }
+TEST(SemanticTest, newselftype) { TestSemantic("newselftype.test"); }
+TEST(SemanticTest, nomain) { TestSemantic("nomain.test"); }
 TEST(SemanticTest, objectdispatchabort) {
   TestSemantic("objectdispatchabort.test");
 }

@@ -496,6 +496,11 @@ void TypeCheckVisitor::Visit(ProgramAst& node) {
   for (auto& cool_class : node.MutableClasses()) {
     cool_class.Accept(*this);
   }
+
+  if (node.GetClassByName("Main") == nullptr) {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "Class Main is not defined.", node.GetFileName());
+  }
 }
 
 std::vector<SemanticError> TypeChecker::CheckTypes(ProgramAst& program_ast) {
