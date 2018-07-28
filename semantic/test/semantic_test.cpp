@@ -109,7 +109,7 @@ TEST(SemanticTest, letnoinit) { TestSemantic("letnoinit.test"); }
 TEST(SemanticTest, letself) { TestSemantic("letself.test"); }
 TEST(SemanticTest, letselftype) { TestSemantic("letselftype.test"); }
 TEST(SemanticTest, letshadows) { TestSemantic("letshadows.test"); }
-//TEST(SemanticTest, listcl) { TestSemantic("list.cl.test"); }
+TEST(SemanticTest, listcl) { TestSemantic("list.cl.test"); }
 //TEST(SemanticTest, lubtest) { TestSemantic("lubtest.test"); }
 //TEST(SemanticTest, mainmethodmissing) {
 //  TestSemantic("mainmethod-missing.test");
