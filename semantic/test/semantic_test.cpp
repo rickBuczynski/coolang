@@ -167,9 +167,9 @@ TEST(SemanticTest, stringtest) { TestSemantic("stringtest.test"); }
 TEST(SemanticTest, subtypemethodreturn) {
   TestSemantic("subtypemethodreturn.test");
 }
-//TEST(SemanticTest, trickyatdispatch) { TestSemantic("trickyatdispatch.test"); }
-//TEST(SemanticTest, trickyatdispatch2) {
-//  TestSemantic("trickyatdispatch2.test");
-//}
+TEST(SemanticTest, trickyatdispatch) { TestSemantic("trickyatdispatch.test"); }
+TEST(SemanticTest, trickyatdispatch2) {
+  TestSemantic("trickyatdispatch2.test");
+}
 
 }  // namespace
