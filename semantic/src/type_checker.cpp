@@ -467,8 +467,16 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
         RemoveFromScope(arg.GetId());
       }
 
-      if (!IsSubtype(method_feature->GetRootExpr()->GetExprType(),
-                     method_feature->GetReturnType())) {
+      if (method_feature->GetReturnType() != "SELF_TYPE" &&
+          program_ast_->GetClassByName(method_feature->GetReturnType()) ==
+              nullptr) {
+        errors_.emplace_back(
+            method_feature->GetLineRange().end_line_num,
+            "Method " + node.GetType() + "." + method_feature->GetId() +
+                " has undefined type " + method_feature->GetReturnType() + ".",
+            node.GetContainingFileName());
+      } else if (!IsSubtype(method_feature->GetRootExpr()->GetExprType(),
+                            method_feature->GetReturnType())) {
         errors_.emplace_back(method_feature->GetLineRange().end_line_num,
                              "Inferred return type " +
                                  method_feature->GetRootExpr()->GetExprType() +
