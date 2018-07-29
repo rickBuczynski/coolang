@@ -459,6 +459,13 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
         }
         arg_ids.insert(arg.GetId());
         in_scope_vars_[arg.GetId()].push(arg.GetType());
+
+        if (arg.GetType() == "SELF_TYPE") {
+          errors_.emplace_back(method_feature->GetLineRange().end_line_num,
+                               "Formal parameter " + arg.GetId() +
+                                   " cannot have type SELF_TYPE.",
+                               node.GetContainingFileName());
+        }
       }
 
       if (arg_ids.find("self") != arg_ids.end()) {

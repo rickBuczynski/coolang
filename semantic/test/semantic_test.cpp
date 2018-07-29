@@ -153,9 +153,9 @@ TEST(SemanticTest, selfinformalparameter) {
 TEST(SemanticTest, selftypebadreturn) {
   TestSemantic("selftypebadreturn.test");
 }
-//TEST(SemanticTest, selftypeparameterposition) {
-//  TestSemantic("selftypeparameterposition.test");
-//}
+TEST(SemanticTest, selftypeparameterposition) {
+  TestSemantic("selftypeparameterposition.test");
+}
 //TEST(SemanticTest, selftyperedeclared) {
 //  TestSemantic("selftyperedeclared.test");
 //}
