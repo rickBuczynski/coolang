@@ -461,6 +461,12 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
         in_scope_vars_[arg.GetId()].push(arg.GetType());
       }
 
+      if (arg_ids.find("self") != arg_ids.end()) {
+        errors_.emplace_back(method_feature->GetLineRange().end_line_num,
+                             "'self' cannot be the name of a formal parameter.",
+                             node.GetContainingFileName());
+      }
+
       CheckMethodOverrideHasSameArgs(&node, method_feature);
     }
 
