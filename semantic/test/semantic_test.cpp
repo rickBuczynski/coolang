@@ -141,7 +141,7 @@ TEST(SemanticTest, overridingmethod4) {
   TestSemantic("overridingmethod4.test");
 }
 TEST(SemanticTest, redefinedclass) { TestSemantic("redefinedclass.test"); }
-//TEST(SemanticTest, redefinedobject) { TestSemantic("redefinedobject.test"); }
+TEST(SemanticTest, redefinedobject) { TestSemantic("redefinedobject.test"); }
 //TEST(SemanticTest, returntypenoexist) {
 //  TestSemantic("returntypenoexist.test");
 //}
