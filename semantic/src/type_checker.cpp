@@ -480,22 +480,25 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
         RemoveFromScope(arg.GetId());
       }
 
-      if (method_feature->GetReturnType() != "SELF_TYPE" &&
-          program_ast_->GetClassByName(method_feature->GetReturnType()) ==
-              nullptr) {
+      const std::string& declared_return_type = method_feature->GetReturnType();
+      const std::string& inferred_return_type =
+          method_feature->GetRootExpr()->GetExprType();
+
+      if (declared_return_type != "SELF_TYPE" &&
+          program_ast_->GetClassByName(declared_return_type) == nullptr) {
         errors_.emplace_back(
             method_feature->GetLineRange().end_line_num,
             "Method " + node.GetType() + "." + method_feature->GetId() +
-                " has undefined type " + method_feature->GetReturnType() + ".",
+                " has undefined type " + declared_return_type + ".",
             node.GetContainingFileName());
-      } else if (!IsSubtype(method_feature->GetRootExpr()->GetExprType(),
-                            method_feature->GetReturnType())) {
+      } else if (!IsSubtype(inferred_return_type, declared_return_type) ||
+                 declared_return_type == "SELF_TYPE" &&
+                     inferred_return_type != "SELF_TYPE") {
         errors_.emplace_back(method_feature->GetLineRange().end_line_num,
-                             "Inferred return type " +
-                                 method_feature->GetRootExpr()->GetExprType() +
+                             "Inferred return type " + inferred_return_type +
                                  " of method " + method_feature->GetId() +
                                  " does not conform to declared return type " +
-                                 method_feature->GetReturnType() + ".",
+                                 declared_return_type + ".",
                              node.GetContainingFileName());
       }
 

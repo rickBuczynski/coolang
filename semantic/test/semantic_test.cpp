@@ -150,9 +150,9 @@ TEST(SemanticTest, selfassignment) { TestSemantic("self-assignment.test"); }
 TEST(SemanticTest, selfinformalparameter) {
   TestSemantic("selfinformalparameter.test");
 }
-//TEST(SemanticTest, selftypebadreturn) {
-//  TestSemantic("selftypebadreturn.test");
-//}
+TEST(SemanticTest, selftypebadreturn) {
+  TestSemantic("selftypebadreturn.test");
+}
 //TEST(SemanticTest, selftypeparameterposition) {
 //  TestSemantic("selftypeparameterposition.test");
 //}
