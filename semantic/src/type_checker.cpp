@@ -520,7 +520,15 @@ void TypeCheckVisitor::CheckMethodOverrideHasSameArgs(
 }
 
 void TypeCheckVisitor::Visit(ProgramAst& node) {
+  std::set<std::string> class_names;
   for (auto& cool_class : node.MutableClasses()) {
+    if (class_names.find(cool_class.GetType()) != class_names.end()) {
+      errors_.emplace_back(
+          cool_class.GetLineRange().end_line_num,
+          "Class " + cool_class.GetType() + " was previously defined.",
+          node.GetFileName());
+    }
+    class_names.insert(cool_class.GetType());
     cool_class.Accept(*this);
   }
 
