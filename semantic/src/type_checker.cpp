@@ -41,7 +41,10 @@ class TypeCheckVisitor : public AstVisitor {
   }
   void Visit(ObjectExpr& node) override;
   void Visit(BinOpExpr& node) override;
-  void Visit(MultiplyExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(MultiplyExpr& node) override {
+    Visit(static_cast<BinOpExpr&>(node));
+    node.SetExprType("Int");
+  }
   void Visit(LessThanEqualCompareExpr& node) override {
     Visit(static_cast<BinOpExpr&>(node));
     node.SetExprType("Bool");
@@ -55,7 +58,10 @@ class TypeCheckVisitor : public AstVisitor {
     node.SetExprType("Int");
   }
   void Visit(EqCompareExpr& node) override;
-  void Visit(DivideExpr& node) override { node.SetExprType("TODO"); }
+  void Visit(DivideExpr& node) override {
+    Visit(static_cast<BinOpExpr&>(node));
+    node.SetExprType("Int");
+  }
   void Visit(LessThanCompareExpr& node) override {
     Visit(static_cast<BinOpExpr&>(node));
     node.SetExprType("Bool");

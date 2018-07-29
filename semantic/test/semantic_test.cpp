@@ -160,7 +160,7 @@ TEST(SemanticTest, selftyperedeclared) {
   TestSemantic("selftyperedeclared.test");
 }
 TEST(SemanticTest, signaturechange) { TestSemantic("signaturechange.test"); }
-//TEST(SemanticTest, simplearith) { TestSemantic("simplearith.test"); }
+TEST(SemanticTest, simplearith) { TestSemantic("simplearith.test"); }
 TEST(SemanticTest, simplecase) { TestSemantic("simplecase.test"); }
 TEST(SemanticTest, staticdispatch) { TestSemantic("staticdispatch.test"); }
 TEST(SemanticTest, stringtest) { TestSemantic("stringtest.test"); }
