@@ -366,6 +366,13 @@ void TypeCheckVisitor::Visit(EqCompareExpr& node) {
 void TypeCheckVisitor::Visit(AssignExpr& node) {
   node.GetRhsExpr()->Accept(*this);
 
+  if (node.GetId() == "self") {
+    errors_.emplace_back(node.GetLineRange().end_line_num,
+                         "Cannot assign to 'self'.",
+                         program_ast_->GetFileName());
+    return;
+  }
+
   std::string rhs_type = node.GetRhsExpr()->GetExprType();
   const std::string lhs_type = in_scope_vars_[node.GetId()].top();
 

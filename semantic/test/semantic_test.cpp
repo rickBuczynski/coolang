@@ -146,7 +146,7 @@ TEST(SemanticTest, returntypenoexist) {
   TestSemantic("returntypenoexist.test");
 }
 TEST(SemanticTest, scopes) { TestSemantic("scopes.test"); }
-//TEST(SemanticTest, selfassignment) { TestSemantic("self-assignment.test"); }
+TEST(SemanticTest, selfassignment) { TestSemantic("self-assignment.test"); }
 //TEST(SemanticTest, selfinformalparameter) {
 //  TestSemantic("selfinformalparameter.test");
 //}
