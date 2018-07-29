@@ -397,7 +397,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
 
   if (node.GetType() == "Int" || node.GetType() == "Bool" ||
       node.GetType() == "String" || node.GetType() == "Object" ||
-      node.GetType() == "IO") {
+      node.GetType() == "IO" || node.GetType() == "SELF_TYPE") {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Redefinition of basic class " + node.GetType() + ".",
                          node.GetContainingFileName());

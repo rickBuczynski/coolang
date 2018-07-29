@@ -156,9 +156,9 @@ TEST(SemanticTest, selftypebadreturn) {
 TEST(SemanticTest, selftypeparameterposition) {
   TestSemantic("selftypeparameterposition.test");
 }
-//TEST(SemanticTest, selftyperedeclared) {
-//  TestSemantic("selftyperedeclared.test");
-//}
+TEST(SemanticTest, selftyperedeclared) {
+  TestSemantic("selftyperedeclared.test");
+}
 //TEST(SemanticTest, signaturechange) { TestSemantic("signaturechange.test"); }
 //TEST(SemanticTest, simplearith) { TestSemantic("simplearith.test"); }
 TEST(SemanticTest, simplecase) { TestSemantic("simplecase.test"); }
