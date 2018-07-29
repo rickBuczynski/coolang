@@ -535,7 +535,15 @@ void TypeCheckVisitor::CheckMethodOverrideHasSameArgs(
   const MethodFeature* overriden_method =
       super_class->GetMethodFeatureByName(method->GetId());
   if (overriden_method != nullptr) {
-    // TODO check same number of args
+    if (method->GetArgs().size() != overriden_method->GetArgs().size()) {
+      errors_.emplace_back(
+          method->GetLineRange().end_line_num,
+          "Incompatible number of formal parameters in redefined method " +
+              overriden_method->GetId() + ".",
+          class_ast->GetContainingFileName());
+      return;
+    }
+
     for (size_t i = 0; i < method->GetArgs().size(); i++) {
       if (overriden_method->GetArgs()[i].GetType() !=
           method->GetArgs()[i].GetType()) {
