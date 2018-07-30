@@ -1,0 +1,2 @@
+dispatchwrongnumargs.test:16: In call of method foo expected 4 args but found 3 args.
+Compilation halted due to static semantic errors.

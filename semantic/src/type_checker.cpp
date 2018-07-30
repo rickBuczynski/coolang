@@ -303,7 +303,15 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
 
   auto expected_args = method_feature->GetArgs();
   auto& args = node.MutableArgs();
-  // TODO check incorrect number of method call args
+
+  if (expected_args.size() != args.size()) {
+    errors_.emplace_back(
+        node.GetLineRange().end_line_num,
+        "In call of method " + node.GetMethodName() + " expected " +
+            std::to_string(expected_args.size()) + " args but found " +
+            std::to_string(args.size()) + " args.",
+        program_ast_->GetFileName());
+  }
 
   for (size_t i = 0; i < args.size(); i++) {
     args[i]->Accept(*this);
