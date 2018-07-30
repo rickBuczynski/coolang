@@ -30,7 +30,14 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(IfExpr& node) override;
   void Visit(NegExpr& node) override {
     node.MutableChildExpr()->Accept(*this);
-    // TODO check that sub expr type is Int
+
+    if (node.GetChildExpr()->GetExprType() != "Int") {
+      errors_.emplace_back(node.GetLineRange().end_line_num,
+                           "Operator ~ needs an Int arg but got arg of type: " +
+                               node.GetChildExpr()->GetExprType() + ".",
+                           program_ast_->GetFileName());
+    }
+
     node.SetExprType("Int");
   }
   void Visit(BlockExpr& node) override {

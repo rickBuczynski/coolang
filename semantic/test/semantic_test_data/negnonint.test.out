@@ -1,0 +1,2 @@
+negnonint.test:4: Operator ~ needs an Int arg but got arg of type: Bool.
+Compilation halted due to static semantic errors.
