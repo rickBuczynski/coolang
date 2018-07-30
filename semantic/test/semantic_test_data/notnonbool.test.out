@@ -1,0 +1,2 @@
+notnonbool.test:2: Operator not needs a Bool arg but got arg of type: Int.
+Compilation halted due to static semantic errors.

@@ -24,7 +24,15 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(MethodCallExpr& node) override;
   void Visit(NotExpr& node) override {
     node.MutableChildExpr()->Accept(*this);
-    // TODO check that sub expr type is Bool
+
+    if (node.GetChildExpr()->GetExprType() != "Bool") {
+      errors_.emplace_back(
+          node.GetLineRange().end_line_num,
+          "Operator not needs a Bool arg but got arg of type: " +
+              node.GetChildExpr()->GetExprType() + ".",
+          program_ast_->GetFileName());
+    }
+
     node.SetExprType("Bool");
   }
   void Visit(IfExpr& node) override;
