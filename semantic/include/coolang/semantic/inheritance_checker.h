@@ -20,8 +20,8 @@ class InheritanceChecker {
       const std::string inherits_type_string =
           cool_class.GetSuperClass()->GetType();
 
-      // TODO can't inherit int or string either
-      std::set<std::string> cant_iherit_from{"Bool", "String", "SELF_TYPE"};
+      std::set<std::string> cant_iherit_from{"Int", "Bool", "String",
+                                             "SELF_TYPE"};
 
       if (cant_iherit_from.find(inherits_type_string) !=
           cant_iherit_from.end()) {

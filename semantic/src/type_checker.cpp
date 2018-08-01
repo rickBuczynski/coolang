@@ -200,8 +200,6 @@ void TypeCheckVisitor::Visit(BinOpExpr& node) {
   const std::string lhs_type = node.GetLhsExpr()->GetExprType();
   const std::string rhs_type = node.GetRhsExpr()->GetExprType();
 
-  // TODO do all BinOps require ints?
-  // Even EqCompareExpr?
   if (lhs_type != "Int" || rhs_type != "Int") {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "non-Int arguments: " + lhs_type + " + " + rhs_type,
@@ -247,41 +245,52 @@ void TypeCheckVisitor::Visit(WhileExpr& node) {
 }
 
 void TypeCheckVisitor::Visit(LetExpr& node) {
-  if (node.GetInitializationExpr()) {
-    node.GetInitializationExpr()->Accept(*this);
+  std::vector<Formal> bindings;
+  LetExpr* cur_let = &node;
+  Expr* in_expr = nullptr;
 
-    if (!IsSubtype(node.GetInitializationExpr()->GetExprType(),
-                   node.GetType())) {
-      errors_.emplace_back(
-          node.GetLineRange().end_line_num,
-          "Inferred type " + node.GetInitializationExpr()->GetExprType() +
-              " of initialization of " + node.GetId() +
-              " does not conform to identifier's declared type " +
-              node.GetType() + ".",
-          program_ast_->GetFileName());
+  while (in_expr == nullptr) {
+    if (cur_let->GetInitializationExpr()) {
+      cur_let->GetInitializationExpr()->Accept(*this);
+
+      if (!IsSubtype(cur_let->GetInitializationExpr()->GetExprType(),
+                     cur_let->GetType())) {
+        errors_.emplace_back(
+            cur_let->GetLineRange().end_line_num,
+            "Inferred type " + cur_let->GetInitializationExpr()->GetExprType() +
+                " of initialization of " + cur_let->GetId() +
+                " does not conform to identifier's declared type " +
+                cur_let->GetType() + ".",
+            program_ast_->GetFileName());
+      }
     }
+
+    if (cur_let->GetId() == "self") {
+      errors_.emplace_back(cur_let->GetLineRange().end_line_num,
+                           "'self' cannot be bound in a 'let' expression.",
+                           program_ast_->GetFileName());
+    } else {
+      bindings.emplace_back(cur_let->GetId(), cur_let->GetType(),
+                            LineRange(0, 0));
+    }
+
+    in_expr = cur_let->GetInExpr().get();
+    cur_let = cur_let->GetChainedLet().get();
   }
 
-  if (node.GetId() == "self") {
-    errors_.emplace_back(node.GetLineRange().end_line_num,
-                         "'self' cannot be bound in a 'let' expression.",
-                         program_ast_->GetFileName());
-  } else {
-    AddToScope(node.GetId(), node.GetType());
+  for (const Formal& f : bindings) {
+    AddToScope(f.GetId(), f.GetType());
   }
 
-  if (node.GetInExpr()) {
-    node.GetInExpr()->Accept(*this);
-    node.SetExprType(node.GetInExpr()->GetExprType());
-  } else if (node.GetChainedLet()) {
-    // TODO can you use a variable from earlier in the chain in an init
-    // expression within the chain?
-    node.GetChainedLet()->Accept(*this);
-    node.SetExprType(node.GetChainedLet()->GetExprType());
+  in_expr->Accept(*this);
+
+  for (const Formal& f : bindings) {
+    RemoveFromScope(f.GetId());
   }
 
-  if (node.GetId() != "self") {
-    RemoveFromScope(node.GetId());
+  for (LetExpr* let_expr = &node; let_expr != nullptr;
+       let_expr = let_expr->GetChainedLet().get()) {
+    let_expr->SetExprType(in_expr->GetExprType());
   }
 }
 
