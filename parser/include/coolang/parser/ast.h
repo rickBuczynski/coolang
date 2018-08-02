@@ -608,11 +608,11 @@ class AttributeFeature : public Feature {
 
 class ClassAst : public AstNode {
  public:
-  ClassAst(std::string type, ClassAst* super_class,
+  ClassAst(std::string name, ClassAst* super_class,
            std::vector<std::unique_ptr<Feature>>&& features,
            LineRange line_range, std::string containing_file_name)
       : AstNode(line_range),
-        type_(std::move(type)),
+        name_(std::move(name)),
         super_class_(super_class),
         features_(std::move(features)),
         containing_file_name_(std::move(containing_file_name)) {}
@@ -641,7 +641,7 @@ class ClassAst : public AstNode {
   void SetSuperClass(const ClassAst* super_class) {
     super_class_ = super_class;
   }
-  const std::string& GetType() const { return type_; }
+  const std::string& GetName() const { return name_; }
   const std::vector<std::unique_ptr<Feature>>& GetFeatures() const {
     return features_;
   }
@@ -680,7 +680,7 @@ class ClassAst : public AstNode {
   void Accept(AstVisitor& ast_visitor) override { ast_visitor.Visit(*this); }
 
  private:
-  std::string type_;
+  std::string name_;
   const ClassAst* super_class_;
   std::vector<std::unique_ptr<Feature>> features_;
   std::string containing_file_name_;
@@ -710,14 +710,14 @@ class ProgramAst : public AstNode {
                                        std::vector<std::unique_ptr<Feature>>{},
                                        LineRange(0, 0), file_name)) {
     for (const auto& cool_class : classes_) {
-      classes_by_name_[cool_class.GetType()] = &cool_class;
+      classes_by_name_[cool_class.GetName()] = &cool_class;
     }
-    classes_by_name_[object_class_->GetType()] = object_class_.get();
-    classes_by_name_[io_class_->GetType()] = io_class_.get();
+    classes_by_name_[object_class_->GetName()] = object_class_.get();
+    classes_by_name_[io_class_->GetName()] = io_class_.get();
 
-    classes_by_name_[int_class_->GetType()] = int_class_.get();
-    classes_by_name_[string_class_->GetType()] = string_class_.get();
-    classes_by_name_[bool_class_->GetType()] = bool_class_.get();
+    classes_by_name_[int_class_->GetName()] = int_class_.get();
+    classes_by_name_[string_class_->GetName()] = string_class_.get();
+    classes_by_name_[bool_class_->GetName()] = bool_class_.get();
   }
 
   const std::vector<ClassAst>& GetClasses() const { return classes_; }

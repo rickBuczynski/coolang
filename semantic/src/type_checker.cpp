@@ -119,14 +119,14 @@ class TypeCheckVisitor : public AstVisitor {
     }
 
     if (subtype == "SELF_TYPE") {
-      subtype = current_class_->GetType();
+      subtype = current_class_->GetName();
     }
     if (supertype == "SELF_TYPE") {
-      supertype = current_class_->GetType();
+      supertype = current_class_->GetName();
     }
     for (const ClassAst* c = program_ast_->GetClassByName(subtype);
          c != nullptr; c = c->GetSuperClass()) {
-      if (c->GetType() == supertype) {
+      if (c->GetName() == supertype) {
         return true;
       }
     }
@@ -135,7 +135,7 @@ class TypeCheckVisitor : public AstVisitor {
 
   const ClassAst* GetClassByName(std::string name) const {
     if (name == "SELF_TYPE") {
-      name = current_class_->GetType();
+      name = current_class_->GetName();
     }
     return program_ast_->GetClassByName(name);
   }
@@ -150,7 +150,7 @@ class TypeCheckVisitor : public AstVisitor {
       all_super_types_for_each_type.back().push_back(type);
       for (const auto* super_class :
            GetClassByName(type)->GetAllSuperClasses()) {
-        all_super_types_for_each_type.back().push_back(super_class->GetType());
+        all_super_types_for_each_type.back().push_back(super_class->GetName());
       }
     }
 
@@ -311,7 +311,7 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   }
 
   if (caller_type == "SELF_TYPE") {
-    caller_type = current_class_->GetType();
+    caller_type = current_class_->GetName();
   }
 
   const MethodFeature* method_feature =
@@ -415,7 +415,7 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
   const std::string lhs_type = in_scope_vars_[node.GetId()].top();
 
   if (rhs_type == "SELF_TYPE") {
-    rhs_type = current_class_->GetType();
+    rhs_type = current_class_->GetName();
   }
 
   if (rhs_type != lhs_type) {
@@ -433,11 +433,11 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
 void TypeCheckVisitor::Visit(ClassAst& node) {
   current_class_ = &node;
 
-  if (node.GetType() == "Int" || node.GetType() == "Bool" ||
-      node.GetType() == "String" || node.GetType() == "Object" ||
-      node.GetType() == "IO" || node.GetType() == "SELF_TYPE") {
+  if (node.GetName() == "Int" || node.GetName() == "Bool" ||
+      node.GetName() == "String" || node.GetName() == "Object" ||
+      node.GetName() == "IO" || node.GetName() == "SELF_TYPE") {
     errors_.emplace_back(node.GetLineRange().end_line_num,
-                         "Redefinition of basic class " + node.GetType() + ".",
+                         "Redefinition of basic class " + node.GetName() + ".",
                          node.GetContainingFileName());
   }
 
@@ -463,10 +463,10 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
       if (already_defined_in_class != attributes_by_id.end()) {
         errors_.emplace_back(
             attr->GetLineRange().end_line_num,
-            "Attribute " + node.GetType() + "." +
+            "Attribute " + node.GetName() + "." +
                 already_defined_in_class->first +
                 " is already defined in class " +
-                already_defined_in_class->second.second->GetType() + " at " +
+                already_defined_in_class->second.second->GetName() + " at " +
                 already_defined_in_class->second.second
                     ->GetContainingFileName() +
                 ":" +
@@ -533,7 +533,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
           program_ast_->GetClassByName(declared_return_type) == nullptr) {
         errors_.emplace_back(
             method_feature->GetLineRange().end_line_num,
-            "Method " + node.GetType() + "." + method_feature->GetId() +
+            "Method " + node.GetName() + "." + method_feature->GetId() +
                 " has undefined type " + declared_return_type + ".",
             node.GetContainingFileName());
       } else if (!IsSubtype(inferred_return_type, declared_return_type) ||
@@ -549,7 +549,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
 
       if (method_feature->GetId() == "main") {
         has_main_method = true;
-        if (node.GetType() == "Main" && !method_feature->GetArgs().empty()) {
+        if (node.GetName() == "Main" && !method_feature->GetArgs().empty()) {
           errors_.emplace_back(node.GetLineRange().end_line_num,
                                "Method Main.main shouldn't take arguments.",
                                node.GetContainingFileName());
@@ -558,7 +558,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
     }
   }
 
-  if (node.GetType() == "Main" && !has_main_method) {
+  if (node.GetName() == "Main" && !has_main_method) {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Method Main.main is not defined.",
                          node.GetContainingFileName());
@@ -600,13 +600,13 @@ void TypeCheckVisitor::CheckMethodOverrideHasSameArgs(
 void TypeCheckVisitor::Visit(ProgramAst& node) {
   std::set<std::string> class_names;
   for (auto& cool_class : node.MutableClasses()) {
-    if (class_names.find(cool_class.GetType()) != class_names.end()) {
+    if (class_names.find(cool_class.GetName()) != class_names.end()) {
       errors_.emplace_back(
           cool_class.GetLineRange().end_line_num,
-          "Class " + cool_class.GetType() + " was previously defined.",
+          "Class " + cool_class.GetName() + " was previously defined.",
           node.GetFileName());
     }
-    class_names.insert(cool_class.GetType());
+    class_names.insert(cool_class.GetName());
     cool_class.Accept(*this);
   }
 
