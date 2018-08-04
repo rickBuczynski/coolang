@@ -438,7 +438,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
       node.GetName() == "IO" || node.GetName() == "SELF_TYPE") {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Redefinition of basic class " + node.GetName() + ".",
-                         node.GetContainingFileName());
+                         node.GetContainingFilePath());
   }
 
   // add all attributes to scope before diving into expressions since these
@@ -454,7 +454,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
       if (attr->GetId() == "self") {
         errors_.emplace_back(attr->GetLineRange().end_line_num,
                              "'self' cannot be the name of an attribute.",
-                             node.GetContainingFileName());
+                             node.GetContainingFilePath());
         return;
       }
 
@@ -467,14 +467,15 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
                 already_defined_in_class->first +
                 " is already defined in class " +
                 already_defined_in_class->second.second->GetName() + " at " +
-                already_defined_in_class->second.second
-                    ->GetContainingFileName() +
+                already_defined_in_class->second.second->GetContainingFilePath()
+                    .filename()
+                    .string() +
                 ":" +
                 std::to_string(
                     already_defined_in_class->second.first->GetLineRange()
                         .end_line_num) +
                 ".",
-            node.GetContainingFileName());
+            node.GetContainingFilePath());
         return;
       }
 
@@ -493,7 +494,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
           errors_.emplace_back(
               method_feature->GetLineRange().end_line_num,
               "Formal parameter " + arg.GetId() + " is multiply defined.",
-              node.GetContainingFileName());
+              node.GetContainingFilePath());
         }
         arg_ids.insert(arg.GetId());
         in_scope_vars_[arg.GetId()].push(arg.GetType());
@@ -502,14 +503,14 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
           errors_.emplace_back(method_feature->GetLineRange().end_line_num,
                                "Formal parameter " + arg.GetId() +
                                    " cannot have type SELF_TYPE.",
-                               node.GetContainingFileName());
+                               node.GetContainingFilePath());
         }
       }
 
       if (arg_ids.find("self") != arg_ids.end()) {
         errors_.emplace_back(method_feature->GetLineRange().end_line_num,
                              "'self' cannot be the name of a formal parameter.",
-                             node.GetContainingFileName());
+                             node.GetContainingFilePath());
       }
 
       CheckMethodOverrideHasSameArgs(&node, method_feature);
@@ -535,7 +536,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
             method_feature->GetLineRange().end_line_num,
             "Method " + node.GetName() + "." + method_feature->GetId() +
                 " has undefined type " + declared_return_type + ".",
-            node.GetContainingFileName());
+            node.GetContainingFilePath());
       } else if (!IsSubtype(inferred_return_type, declared_return_type) ||
                  declared_return_type == "SELF_TYPE" &&
                      inferred_return_type != "SELF_TYPE") {
@@ -544,7 +545,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
                                  " of method " + method_feature->GetId() +
                                  " does not conform to declared return type " +
                                  declared_return_type + ".",
-                             node.GetContainingFileName());
+                             node.GetContainingFilePath());
       }
 
       if (method_feature->GetId() == "main") {
@@ -552,7 +553,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
         if (node.GetName() == "Main" && !method_feature->GetArgs().empty()) {
           errors_.emplace_back(node.GetLineRange().end_line_num,
                                "Method Main.main shouldn't take arguments.",
-                               node.GetContainingFileName());
+                               node.GetContainingFilePath());
         }
       }
     }
@@ -561,7 +562,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
   if (node.GetName() == "Main" && !has_main_method) {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Method Main.main is not defined.",
-                         node.GetContainingFileName());
+                         node.GetContainingFilePath());
   }
 
   ClearScope();
@@ -578,7 +579,7 @@ void TypeCheckVisitor::CheckMethodOverrideHasSameArgs(
           method->GetLineRange().end_line_num,
           "Incompatible number of formal parameters in redefined method " +
               overriden_method->GetId() + ".",
-          class_ast->GetContainingFileName());
+          class_ast->GetContainingFilePath());
       return;
     }
 
@@ -591,7 +592,7 @@ void TypeCheckVisitor::CheckMethodOverrideHasSameArgs(
                                  method->GetArgs()[i].GetType() +
                                  " is different from original type " +
                                  overriden_method->GetArgs()[i].GetType(),
-                             class_ast->GetContainingFileName());
+                             class_ast->GetContainingFilePath());
       }
     }
   }

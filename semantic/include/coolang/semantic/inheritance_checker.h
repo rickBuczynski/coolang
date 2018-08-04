@@ -29,7 +29,7 @@ class InheritanceChecker {
                             "Class " + cool_class.GetName() +
                                 " cannot inherit class " +
                                 inherits_type_string + ".",
-                            cool_class.GetContainingFileName());
+                            cool_class.GetContainingFilePath());
       } else {
         const ClassAst* super_class =
             program_ast.GetClassByName(inherits_type_string);
@@ -39,7 +39,7 @@ class InheritanceChecker {
                               "Class " + cool_class.GetName() +
                                   " inherits from an undefined class " +
                                   inherits_type_string + ".",
-                              cool_class.GetContainingFileName());
+                              cool_class.GetContainingFilePath());
         } else {
           cool_class.SetSuperClass(
               program_ast.GetClassByName(inherits_type_string));

@@ -1,26 +1,28 @@
 #ifndef COOLANG_SEMANTIC_SEMANTIC_ERROR_H
 #define COOLANG_SEMANTIC_SEMANTIC_ERROR_H
 
+#include <filesystem>
 #include <string>
 
 namespace coolang {
 
 class SemanticError {
  public:
-  SemanticError(int line_num, std::string error_message, std::string file_name)
+  SemanticError(int line_num, std::string error_message,
+                std::filesystem::path file_path)
       : line_num_(line_num),
         error_message_(std::move(error_message)),
-        file_name_(std::move(file_name)) {}
+        file_path_(std::move(file_path)) {}
 
   std::string ToString(int indent_depth) const {
-    return file_name_ + ":" + std::to_string(line_num_) + ": " +
-           error_message_ + "\n";
+    return file_path_.filename().string() + ":" + std::to_string(line_num_) +
+           ": " + error_message_ + "\n";
   }
 
  private:
   int line_num_;
   std::string error_message_;
-  std::string file_name_;
+  std::filesystem::path file_path_;
 };
 
 }  // namespace coolang

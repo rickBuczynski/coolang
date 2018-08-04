@@ -332,8 +332,8 @@ std::string ClassAst::ToString(int indent_depth) const {
 
   str += Indentation(indent_depth + 1) + name_ + '\n';
   str += Indentation(indent_depth + 1) + GetSuperClass()->GetName() + '\n';
-  str += Indentation(indent_depth + 1) + '"' + GetContainingFileName() + '"' +
-         '\n';
+  str += Indentation(indent_depth + 1) + '"' +
+         GetContainingFilePath().filename().string() + '"' + '\n';
   str += Indentation(indent_depth + 1) + '(' + '\n';
 
   for (const auto& feature : features_) {

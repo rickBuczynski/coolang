@@ -620,7 +620,7 @@ class ClassAst : public AstNode {
 
   std::string ToString(int indent_depth) const override;
 
-  std::string GetContainingFileName() const {
+  std::filesystem::path GetContainingFilePath() const {
     return containing_file_path_.filename().string();
   }
 
