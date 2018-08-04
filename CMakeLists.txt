@@ -6,6 +6,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+add_definitions(${LLVM_DEFINITIONS})
+llvm_map_components_to_libnames(llvm_libs all)
+list(REMOVE_ITEM llvm_libs LLVM)
+list(REMOVE_ITEM llvm_libs LTO)
+
+
 if(MSVC)
   # see https://github.com/google/googletest/blob/master/googletest/README.md and https://stackoverflow.com/questions/12540970/how-to-make-gtest-build-mdd-instead-of-mtd-by-default-using-cmake
   # TODO MSVC uses shared crt by default but I should find a way to check and only force shared if using it

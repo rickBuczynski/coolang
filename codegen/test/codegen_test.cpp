@@ -19,6 +19,7 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name) {
   auto parser = std::make_unique<coolang::Parser>(std::move(lexer));
   auto semantic = std::make_unique<coolang::Semantic>(std::move(parser));
   auto codegen = std::make_unique<coolang::Codegen>(std::move(semantic));
+  codegen->GenerateCode();
 
   return "";
 }

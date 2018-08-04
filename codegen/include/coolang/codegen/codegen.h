@@ -11,7 +11,7 @@ class Codegen {
   explicit Codegen(std::unique_ptr<Semantic> semantic)
       : semantic_(std::move(semantic)) {}
 
-  void GenerateCode();
+  void GenerateCode() const;
 
  private:
   std::unique_ptr<Semantic> semantic_;
