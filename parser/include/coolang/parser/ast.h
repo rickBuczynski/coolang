@@ -2,6 +2,7 @@
 #define COOLANG_PARSER_AST_H
 
 #include <algorithm>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -688,27 +689,27 @@ class ClassAst : public AstNode {
 
 class ProgramAst : public AstNode {
  public:
-  ProgramAst(const std::string& file_name, std::vector<ClassAst>&& cool_classes,
-             LineRange line_range)
+  ProgramAst(const std::filesystem::path& file_path,
+             std::vector<ClassAst>&& cool_classes, LineRange line_range)
       : AstNode(line_range),
-        file_name_(file_name),
+        file_path_(file_path),
         classes_(std::move(cool_classes)),
-        object_class_(std::make_unique<ClassAst>("Object", nullptr,
-                                                 ObjectClassFeatures(),
-                                                 LineRange(0, 0), file_name)),
+        object_class_(std::make_unique<ClassAst>(
+            "Object", nullptr, ObjectClassFeatures(), LineRange(0, 0),
+            file_path.filename().string())),
         io_class_(std::make_unique<ClassAst>("IO", object_class_.get(),
                                              IoClassFeatures(), LineRange(0, 0),
-                                             file_name)),
+                                             file_path.filename().string())),
         int_class_(std::make_unique<ClassAst>(
             "Int", object_class_.get(), std::vector<std::unique_ptr<Feature>>{},
-            LineRange(0, 0), file_name)),
-        string_class_(std::make_unique<ClassAst>("String", object_class_.get(),
-                                                 StringClassFeatures(),
-                                                 LineRange(0, 0), file_name)),
-        bool_class_(
-            std::make_unique<ClassAst>("Bool", object_class_.get(),
-                                       std::vector<std::unique_ptr<Feature>>{},
-                                       LineRange(0, 0), file_name)) {
+            LineRange(0, 0), file_path.filename().string())),
+        string_class_(std::make_unique<ClassAst>(
+            "String", object_class_.get(), StringClassFeatures(),
+            LineRange(0, 0), file_path.filename().string())),
+        bool_class_(std::make_unique<ClassAst>(
+            "Bool", object_class_.get(),
+            std::vector<std::unique_ptr<Feature>>{}, LineRange(0, 0),
+            file_path.filename().string())) {
     for (const auto& cool_class : classes_) {
       classes_by_name_[cool_class.GetName()] = &cool_class;
     }
@@ -730,7 +731,9 @@ class ProgramAst : public AstNode {
       return class_ast->second;
     }
   }
-  const std::string& GetFileName() const { return file_name_; }
+
+  std::string GetFileName() const { return file_path_.filename().string(); }
+  const std::filesystem::path& GetFilePath() const { return file_path_; }
 
   std::string ToString(int indent_depth) const override;
 
@@ -813,7 +816,7 @@ class ProgramAst : public AstNode {
     return features;
   }
 
-  std::string file_name_;
+  std::filesystem::path file_path_;
   std::vector<ClassAst> classes_;
 
   // basic classes you can inherit from

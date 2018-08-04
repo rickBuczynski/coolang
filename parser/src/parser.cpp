@@ -167,8 +167,7 @@ std::variant<ProgramAst, std::vector<ParseError>> Parser::ParseProgram() {
         classes.empty() ? eof_token.get_line_num()
                         : classes.back().GetLineRange().end_line_num;
 
-    program_ast.emplace(ProgramAst(lexer_->GetInputFile().filename().string(),
-                                   std::move(classes),
+    program_ast.emplace(ProgramAst(lexer_->GetInputFile(), std::move(classes),
                                    LineRange(1, program_end_line)));
   } catch (const UnexpectedTokenExcpetion& e) {
     const auto parse_error = ParseError(

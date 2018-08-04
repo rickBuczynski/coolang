@@ -87,9 +87,11 @@ void Codegen::GenerateCode() const {
 
   std::error_code EC;
 
-  std::string object_file_name = "out.obj";
+  std::filesystem::path object_file_path = ast_.GetFilePath();
+  object_file_path.replace_extension(".obj");
 
-  llvm::raw_fd_ostream dest(object_file_name, EC, llvm::sys::fs::F_None);
+  llvm::raw_fd_ostream dest(object_file_path.string(), EC,
+                            llvm::sys::fs::F_None);
 
   if (EC) {
     llvm::errs() << "Could not open file: " << EC.message();
@@ -107,15 +109,24 @@ void Codegen::GenerateCode() const {
   pass.run(*module);
   dest.flush();
 
-  std::cout << "Wrote " << object_file_name << "\n";
+  std::cout << "ast_.GetFileName() " << ast_.GetFileName() << "\n";
+
+  std::cout << "Wrote " << object_file_path.string() << "\n";
 }
 
 void Codegen::Link() const {
+  std::filesystem::path exe_file_path = ast_.GetFilePath();
+  exe_file_path.replace_extension(".exe");
+
+  std::string output_exe_linker_arg = "-OUT:";
+  output_exe_linker_arg += exe_file_path.string();
+  output_exe_linker_arg += " ";
+
   // clang-format off
   std::string linker_cmd = "cmd /C \"";
   linker_cmd += "\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/bin/Hostx86/x86/link.exe\" ";
   linker_cmd += "C:/Users/RickB/cpp/coolang/build/codegen/out.obj ";
-  linker_cmd += "-OUT:C:/Users/RickB/cpp/coolang/build/codegen/out.exe ";
+  linker_cmd += output_exe_linker_arg;
   linker_cmd += "libcmt.lib ";
   linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/lib/x86\" ";
   linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.16299.0/um/x86\" ";
