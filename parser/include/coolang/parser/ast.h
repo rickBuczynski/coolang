@@ -611,17 +611,17 @@ class ClassAst : public AstNode {
  public:
   ClassAst(std::string name, ClassAst* super_class,
            std::vector<std::unique_ptr<Feature>>&& features,
-           LineRange line_range, std::string containing_file_name)
+           LineRange line_range, std::filesystem::path containing_file_path)
       : AstNode(line_range),
         name_(std::move(name)),
         super_class_(super_class),
         features_(std::move(features)),
-        containing_file_name_(std::move(containing_file_name)) {}
+        containing_file_path_(std::move(containing_file_path)) {}
 
   std::string ToString(int indent_depth) const override;
 
-  const std::string& GetContainingFileName() const {
-    return containing_file_name_;
+  std::string GetContainingFileName() const {
+    return containing_file_path_.filename().string();
   }
 
   const ClassAst* GetSuperClass() const { return super_class_; }
@@ -684,7 +684,7 @@ class ClassAst : public AstNode {
   std::string name_;
   const ClassAst* super_class_;
   std::vector<std::unique_ptr<Feature>> features_;
-  std::string containing_file_name_;
+  std::filesystem::path containing_file_path_;
 };
 
 class ProgramAst : public AstNode {

@@ -14,6 +14,8 @@ class Lexer {
  public:
   explicit Lexer(const std::string& input_file_path);
 
+  // TODO find cases where this is converted to string and stored
+  // and change it to stay as path as long as possible
   std::filesystem::path GetInputFile() const { return input_file_; }
 
   void PopToken();
