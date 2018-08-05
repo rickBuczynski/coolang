@@ -7,13 +7,13 @@ namespace coolang {
 
 class Codegen {
  public:
-  explicit Codegen(ProgramAst ast) : ast_(std::move(ast)) {}
+  explicit Codegen(ProgramAst& ast) : ast_(&ast) {}
 
   void GenerateCode() const;
   void Link() const;
 
  private:
-  ProgramAst ast_;
+  ProgramAst* ast_;
 };
 
 }  // namespace coolang

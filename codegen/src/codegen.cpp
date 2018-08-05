@@ -27,32 +27,74 @@
 
 namespace coolang {
 
-void Codegen::GenerateCode() const {
-  llvm::LLVMContext context;
-  auto *module = new llvm::Module("asdf", context);
-  llvm::IRBuilder<> builder(context);
+class CodegenVisitor : public AstVisitor {
+ public:
+  explicit CodegenVisitor(const ProgramAst& program_ast)
+      : program_ast_(&program_ast),
+        module_(new llvm::Module("asdf", context_)),
+        builder_(context_) {}
 
-  llvm::FunctionType *funcType =
-      llvm::FunctionType::get(builder.getVoidTy(), false);
-  llvm::Function *mainFunc = llvm::Function::Create(
-      funcType, llvm::Function::ExternalLinkage, "main", module);
-  llvm::BasicBlock *entry =
-      llvm::BasicBlock::Create(context, "entrypoint", mainFunc);
-  builder.SetInsertPoint(entry);
+  void Visit(CaseExpr& node) override {}
+  void Visit(StrExpr& node) override {}
+  void Visit(WhileExpr& node) override {}
+  void Visit(LetExpr& node) override {}
+  void Visit(IntExpr& node) override {}
+  void Visit(IsVoidExpr& node) override {}
+  void Visit(MethodCallExpr& node) override {}
+  void Visit(NotExpr& node) override {}
+  void Visit(IfExpr& node) override {}
+  void Visit(NegExpr& node) override {}
+  void Visit(BlockExpr& node) override {}
+  void Visit(ObjectExpr& node) override {}
+  void Visit(BinOpExpr& node) override {}
+  void Visit(MultiplyExpr& node) override {}
+  void Visit(LessThanEqualCompareExpr& node) override {}
+  void Visit(SubtractExpr& node) override {}
+  void Visit(AddExpr& node) override {}
+  void Visit(EqCompareExpr& node) override {}
+  void Visit(DivideExpr& node) override {}
+  void Visit(LessThanCompareExpr& node) override {}
+  void Visit(NewExpr& node) override {}
+  void Visit(AssignExpr& node) override {}
+  void Visit(BoolExpr& node) override {}
+  void Visit(ClassAst& node) override {}
+  void Visit(CaseBranch& node) override {}
+  void Visit(MethodFeature& node) override {}
+  void Visit(AttributeFeature& node) override {}
 
-  llvm::Value *helloWorld = builder.CreateGlobalStringPtr("hello world!\n");
+  void Visit(ProgramAst& node) override;
 
-  std::vector<llvm::Type *> putsArgs;
-  putsArgs.push_back(builder.getInt8Ty()->getPointerTo());
-  llvm::ArrayRef<llvm::Type *> argsRef(putsArgs);
+ private:
+  const ProgramAst* program_ast_;
 
-  llvm::FunctionType *putsType =
-      llvm::FunctionType::get(builder.getInt32Ty(), argsRef, false);
-  llvm::Constant *putsFunc = module->getOrInsertFunction("puts", putsType);
+  llvm::LLVMContext context_;
+  std::unique_ptr<llvm::Module> module_;
+  llvm::IRBuilder<> builder_;
+};
 
-  builder.CreateCall(putsFunc, helloWorld);
-  builder.CreateRetVoid();
-  // module->print(llvm::errs(), nullptr);
+void CodegenVisitor::Visit(ProgramAst& node) {
+  llvm::FunctionType* func_type =
+      llvm::FunctionType::get(builder_.getVoidTy(), false);
+  llvm::Function* main_func = llvm::Function::Create(
+      func_type, llvm::Function::ExternalLinkage, "main", module_.get());
+  llvm::BasicBlock* entry =
+      llvm::BasicBlock::Create(context_, "entrypoint", main_func);
+  builder_.SetInsertPoint(entry);
+
+  llvm::Value* helloWorld = builder_.CreateGlobalStringPtr("hello world!\n");
+
+  std::vector<llvm::Type*> puts_args;
+  puts_args.push_back(builder_.getInt8Ty()->getPointerTo());
+  const llvm::ArrayRef<llvm::Type*> args_ref(puts_args);
+
+  llvm::FunctionType* putsType =
+      llvm::FunctionType::get(builder_.getInt32Ty(), args_ref, false);
+  llvm::Constant* putsFunc = module_->getOrInsertFunction("puts", putsType);
+
+  builder_.CreateCall(putsFunc, helloWorld);
+  builder_.CreateRetVoid();
+
+  module_->print(llvm::errs(), nullptr);
 
   // Initialize the target registry etc.
   LLVMInitializeX86TargetInfo();
@@ -62,7 +104,7 @@ void Codegen::GenerateCode() const {
   LLVMInitializeX86AsmPrinter();
 
   auto TargetTriple = llvm::sys::getDefaultTargetTriple();
-  module->setTargetTriple(TargetTriple);
+  module_->setTargetTriple(TargetTriple);
 
   std::string Error;
   auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
@@ -83,11 +125,11 @@ void Codegen::GenerateCode() const {
   auto TheTargetMachine =
       Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
 
-  module->setDataLayout(TheTargetMachine->createDataLayout());
+  module_->setDataLayout(TheTargetMachine->createDataLayout());
 
   std::error_code EC;
 
-  std::filesystem::path object_file_path = ast_.GetFilePath();
+  std::filesystem::path object_file_path = program_ast_->GetFilePath();
   object_file_path.replace_extension(".obj");
 
   llvm::raw_fd_ostream dest(object_file_path.string(), EC,
@@ -106,16 +148,21 @@ void Codegen::GenerateCode() const {
     return;
   }
 
-  pass.run(*module);
+  pass.run(*module_);
   dest.flush();
 
-  std::cout << "ast_.GetFileName() " << ast_.GetFileName() << "\n";
+  std::cout << "ast_->GetFileName() " << program_ast_->GetFileName() << "\n";
 
   std::cout << "Wrote " << object_file_path.string() << "\n";
 }
 
+void Codegen::GenerateCode() const {
+  CodegenVisitor codegen_visitor(*ast_);
+  ast_->Accept(codegen_visitor);
+}
+
 void Codegen::Link() const {
-  std::filesystem::path exe_file_path = ast_.GetFilePath();
+  std::filesystem::path exe_file_path = ast_->GetFilePath();
   exe_file_path.replace_extension(".exe");
 
   std::string output_exe_linker_arg = "-OUT:";
