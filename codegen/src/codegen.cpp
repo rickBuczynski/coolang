@@ -31,7 +31,7 @@ class CodegenVisitor : public ConstAstVisitor {
  public:
   explicit CodegenVisitor(const ProgramAst& program_ast)
       : program_ast_(&program_ast),
-        module_(new llvm::Module("asdf", context_)),
+        module_(new llvm::Module("TODOMODULENAME", context_)),
         builder_(context_) {}
 
   void Visit(const CaseExpr& node) override {}
@@ -81,17 +81,17 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
       llvm::BasicBlock::Create(context_, "entrypoint", main_func);
   builder_.SetInsertPoint(entry);
 
-  llvm::Value* helloWorld = builder_.CreateGlobalStringPtr("hello world!\n");
+  llvm::Value* hello_world = builder_.CreateGlobalStringPtr("hello world!\n");
 
   std::vector<llvm::Type*> puts_args;
   puts_args.push_back(builder_.getInt8Ty()->getPointerTo());
   const llvm::ArrayRef<llvm::Type*> args_ref(puts_args);
 
-  llvm::FunctionType* putsType =
+  llvm::FunctionType* puts_type =
       llvm::FunctionType::get(builder_.getInt32Ty(), args_ref, false);
-  llvm::Constant* putsFunc = module_->getOrInsertFunction("puts", putsType);
+  llvm::Constant* puts_func = module_->getOrInsertFunction("puts", puts_type);
 
-  builder_.CreateCall(putsFunc, helloWorld);
+  builder_.CreateCall(puts_func, hello_world);
   builder_.CreateRetVoid();
 
   module_->print(llvm::errs(), nullptr);
@@ -103,47 +103,47 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   LLVMInitializeX86AsmParser();
   LLVMInitializeX86AsmPrinter();
 
-  auto TargetTriple = llvm::sys::getDefaultTargetTriple();
-  module_->setTargetTriple(TargetTriple);
+  const auto target_triple = llvm::sys::getDefaultTargetTriple();
+  module_->setTargetTriple(target_triple);
 
-  std::string Error;
-  auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+  std::string error;
+  const auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
 
   // Print an error and exit if we couldn't find the requested target.
   // This generally occurs if we've forgotten to initialise the
   // TargetRegistry or we have a bogus target triple.
-  if (!Target) {
-    llvm::errs() << Error;
+  if (!target) {
+    llvm::errs() << error;
     return;
   }
 
-  auto CPU = "generic";
-  auto Features = "";
+  const auto cpu = "generic";
+  const auto features = "";
 
-  llvm::TargetOptions opt;
-  auto RM = llvm::Optional<llvm::Reloc::Model>();
-  auto TheTargetMachine =
-      Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+  const llvm::TargetOptions opt;
+  const auto rm = llvm::Optional<llvm::Reloc::Model>();
+  auto the_target_machine =
+      target->createTargetMachine(target_triple, cpu, features, opt, rm);
 
-  module_->setDataLayout(TheTargetMachine->createDataLayout());
+  module_->setDataLayout(the_target_machine->createDataLayout());
 
-  std::error_code EC;
+  std::error_code ec;
 
   std::filesystem::path object_file_path = program_ast_->GetFilePath();
   object_file_path.replace_extension(".obj");
 
-  llvm::raw_fd_ostream dest(object_file_path.string(), EC,
+  llvm::raw_fd_ostream dest(object_file_path.string(), ec,
                             llvm::sys::fs::F_None);
 
-  if (EC) {
-    llvm::errs() << "Could not open file: " << EC.message();
+  if (ec) {
+    llvm::errs() << "Could not open file: " << ec.message();
     return;
   }
 
   llvm::legacy::PassManager pass;
-  auto FileType = llvm::TargetMachine::CGFT_ObjectFile;
+  const auto file_type = llvm::TargetMachine::CGFT_ObjectFile;
 
-  if (TheTargetMachine->addPassesToEmitFile(pass, dest, FileType)) {
+  if (the_target_machine->addPassesToEmitFile(pass, dest, file_type)) {
     llvm::errs() << "TheTargetMachine can't emit a file of this type";
     return;
   }
