@@ -27,42 +27,42 @@
 
 namespace coolang {
 
-class CodegenVisitor : public AstVisitor {
+class CodegenVisitor : public ConstAstVisitor {
  public:
   explicit CodegenVisitor(const ProgramAst& program_ast)
       : program_ast_(&program_ast),
         module_(new llvm::Module("asdf", context_)),
         builder_(context_) {}
 
-  void Visit(CaseExpr& node) override {}
-  void Visit(StrExpr& node) override {}
-  void Visit(WhileExpr& node) override {}
-  void Visit(LetExpr& node) override {}
-  void Visit(IntExpr& node) override {}
-  void Visit(IsVoidExpr& node) override {}
-  void Visit(MethodCallExpr& node) override {}
-  void Visit(NotExpr& node) override {}
-  void Visit(IfExpr& node) override {}
-  void Visit(NegExpr& node) override {}
-  void Visit(BlockExpr& node) override {}
-  void Visit(ObjectExpr& node) override {}
-  void Visit(BinOpExpr& node) override {}
-  void Visit(MultiplyExpr& node) override {}
-  void Visit(LessThanEqualCompareExpr& node) override {}
-  void Visit(SubtractExpr& node) override {}
-  void Visit(AddExpr& node) override {}
-  void Visit(EqCompareExpr& node) override {}
-  void Visit(DivideExpr& node) override {}
-  void Visit(LessThanCompareExpr& node) override {}
-  void Visit(NewExpr& node) override {}
-  void Visit(AssignExpr& node) override {}
-  void Visit(BoolExpr& node) override {}
-  void Visit(ClassAst& node) override {}
-  void Visit(CaseBranch& node) override {}
-  void Visit(MethodFeature& node) override {}
-  void Visit(AttributeFeature& node) override {}
+  void Visit(const CaseExpr& node) override {}
+  void Visit(const StrExpr& node) override {}
+  void Visit(const WhileExpr& node) override {}
+  void Visit(const LetExpr& node) override {}
+  void Visit(const IntExpr& node) override {}
+  void Visit(const IsVoidExpr& node) override {}
+  void Visit(const MethodCallExpr& node) override {}
+  void Visit(const NotExpr& node) override {}
+  void Visit(const IfExpr& node) override {}
+  void Visit(const NegExpr& node) override {}
+  void Visit(const BlockExpr& node) override {}
+  void Visit(const ObjectExpr& node) override {}
+  void Visit(const BinOpExpr& node) override {}
+  void Visit(const MultiplyExpr& node) override {}
+  void Visit(const LessThanEqualCompareExpr& node) override {}
+  void Visit(const SubtractExpr& node) override {}
+  void Visit(const AddExpr& node) override {}
+  void Visit(const EqCompareExpr& node) override {}
+  void Visit(const DivideExpr& node) override {}
+  void Visit(const LessThanCompareExpr& node) override {}
+  void Visit(const NewExpr& node) override {}
+  void Visit(const AssignExpr& node) override {}
+  void Visit(const BoolExpr& node) override {}
+  void Visit(const ClassAst& node) override {}
+  void Visit(const CaseBranch& node) override {}
+  void Visit(const MethodFeature& node) override {}
+  void Visit(const AttributeFeature& node) override {}
 
-  void Visit(ProgramAst& node) override;
+  void Visit(const ProgramAst& node) override;
 
  private:
   const ProgramAst* program_ast_;
@@ -72,7 +72,7 @@ class CodegenVisitor : public AstVisitor {
   llvm::IRBuilder<> builder_;
 };
 
-void CodegenVisitor::Visit(ProgramAst& node) {
+void CodegenVisitor::Visit(const ProgramAst& node) {
   llvm::FunctionType* func_type =
       llvm::FunctionType::get(builder_.getVoidTy(), false);
   llvm::Function* main_func = llvm::Function::Create(
