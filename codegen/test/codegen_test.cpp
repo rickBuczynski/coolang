@@ -35,6 +35,6 @@ void TestCodegen(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
-TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
+TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
 
 }  // namespace

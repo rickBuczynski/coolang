@@ -107,15 +107,14 @@ class CodegenVisitor : public ConstAstVisitor {
 };
 
 void CodegenVisitor::Visit(const ProgramAst& node) {
+  llvm::Value* hello_world = builder_.CreateGlobalStringPtr("hello world!\n");
+
   llvm::FunctionType* func_type =
       llvm::FunctionType::get(builder_.getVoidTy(), false);
   llvm::Function* main_func = llvm::Function::Create(
       func_type, llvm::Function::ExternalLinkage, "main", module_.get());
   llvm::BasicBlock* entry =
       llvm::BasicBlock::Create(context_, "entrypoint", main_func);
-  builder_.SetInsertPoint(entry);
-
-  llvm::Value* hello_world = builder_.CreateGlobalStringPtr("hello world!\n");
 
   builder_.SetInsertPoint(entry);
   builder_.CreateCall(io_out_string_func_, hello_world);
