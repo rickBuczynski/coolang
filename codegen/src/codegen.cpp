@@ -32,7 +32,10 @@ class CodegenVisitor : public ConstAstVisitor {
   explicit CodegenVisitor(const ProgramAst& program_ast)
       : program_ast_(&program_ast),
         module_(new llvm::Module("TODOMODULENAME", context_)),
-        builder_(context_) {}
+        builder_(context_) {
+    puts_func_ = CreatePutsFunc();
+    io_out_string_func_ = CreateIoOutStringFunc();
+  }
 
   void Visit(const CaseExpr& node) override {}
   void Visit(const StrExpr& node) override {}
@@ -65,6 +68,37 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const ProgramAst& node) override;
 
  private:
+  llvm::Constant* CreatePutsFunc() {
+    std::vector<llvm::Type*> puts_args;
+    puts_args.push_back(builder_.getInt8Ty()->getPointerTo());
+    const llvm::ArrayRef<llvm::Type*> args_ref(puts_args);
+    llvm::FunctionType* puts_type =
+        llvm::FunctionType::get(builder_.getInt32Ty(), args_ref, false);
+    return module_->getOrInsertFunction("puts", puts_type);
+  }
+  llvm::Constant* puts_func_;
+
+  llvm::Function* CreateIoOutStringFunc() {
+    std::vector<llvm::Type*> io_out_string_args;
+    io_out_string_args.push_back(builder_.getInt8Ty()->getPointerTo());
+    const llvm::ArrayRef<llvm::Type*> io_out_string_args_ref(
+        io_out_string_args);
+    // TODO return type should be SELF_TYPE I guess just a pointer?
+    llvm::FunctionType* io_out_string_type = llvm::FunctionType::get(
+        builder_.getVoidTy(), io_out_string_args_ref, false);
+    llvm::Function* io_out_string_func = llvm::Function::Create(
+        io_out_string_type, llvm::Function::ExternalLinkage, "IO-out_string",
+        module_.get());
+    llvm::BasicBlock* io_out_string_entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", io_out_string_func);
+    builder_.SetInsertPoint(io_out_string_entry);
+    builder_.CreateCall(puts_func_, io_out_string_func->args().begin());
+    builder_.CreateRetVoid();
+
+    return io_out_string_func;
+  }
+  llvm::Function* io_out_string_func_;
+
   const ProgramAst* program_ast_;
 
   llvm::LLVMContext context_;
@@ -83,30 +117,8 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   llvm::Value* hello_world = builder_.CreateGlobalStringPtr("hello world!\n");
 
-  std::vector<llvm::Type*> puts_args;
-  puts_args.push_back(builder_.getInt8Ty()->getPointerTo());
-  const llvm::ArrayRef<llvm::Type*> args_ref(puts_args);
-  llvm::FunctionType* puts_type =
-      llvm::FunctionType::get(builder_.getInt32Ty(), args_ref, false);
-  llvm::Constant* puts_func = module_->getOrInsertFunction("puts", puts_type);
-
-  std::vector<llvm::Type*> io_out_string_args;
-  io_out_string_args.push_back(builder_.getInt8Ty()->getPointerTo());
-  const llvm::ArrayRef<llvm::Type*> io_out_string_args_ref(io_out_string_args);
-  // TODO return type should be SELF_TYPE I guess just a pointer?
-  llvm::FunctionType* io_out_string_type = llvm::FunctionType::get(
-      builder_.getVoidTy(), io_out_string_args_ref, false);
-  llvm::Function* io_out_string_func = llvm::Function::Create(
-      io_out_string_type, llvm::Function::ExternalLinkage, "IO-out_string",
-      module_.get());
-  llvm::BasicBlock* io_out_string_entry =
-      llvm::BasicBlock::Create(context_, "entrypoint", io_out_string_func);
-  builder_.SetInsertPoint(io_out_string_entry);
-  builder_.CreateCall(puts_func, hello_world);
-  builder_.CreateRetVoid();
-
   builder_.SetInsertPoint(entry);
-  builder_.CreateCall(io_out_string_func, hello_world);
+  builder_.CreateCall(io_out_string_func_, hello_world);
   builder_.CreateRetVoid();
 
   module_->print(llvm::errs(), nullptr);
