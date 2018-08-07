@@ -14,6 +14,7 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
+#include "llvm/IR/TypeBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
@@ -34,6 +35,7 @@ class CodegenVisitor : public ConstAstVisitor {
         module_(new llvm::Module("TODOMODULENAME", context_)),
         builder_(context_) {
     puts_func_ = CreatePutsFunc();
+    printf_func_ = CreatePrintfFunc();
     io_out_string_func_ = CreateIoOutStringFunc();
   }
 
@@ -60,7 +62,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const NewExpr& node) override {}
   void Visit(const AssignExpr& node) override {}
   void Visit(const BoolExpr& node) override {}
-  void Visit(const ClassAst& node) override {}
+  void Visit(const ClassAst& node) override;
   void Visit(const CaseBranch& node) override {}
   void Visit(const MethodFeature& node) override {}
   void Visit(const AttributeFeature& node) override {}
@@ -71,18 +73,31 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::Constant* CreatePutsFunc() {
     std::vector<llvm::Type*> puts_args;
     puts_args.push_back(builder_.getInt8Ty()->getPointerTo());
-    const llvm::ArrayRef<llvm::Type*> args_ref(puts_args);
+
     llvm::FunctionType* puts_type =
-        llvm::FunctionType::get(builder_.getInt32Ty(), args_ref, false);
+        llvm::FunctionType::get(builder_.getInt32Ty(), puts_args, false);
+
     return module_->getOrInsertFunction("puts", puts_type);
   }
   llvm::Constant* puts_func_;
+
+  llvm::Constant* CreatePrintfFunc() {
+    std::vector<llvm::Type*> printf_arg_types;
+    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(context_));
+
+    llvm::FunctionType* printf_type =
+        llvm::FunctionType::get(builder_.getInt32Ty(), printf_arg_types, true);
+
+    return module_->getOrInsertFunction("printf", printf_type);
+  }
+  llvm::Constant* printf_func_;
 
   llvm::Function* CreateIoOutStringFunc() {
     std::vector<llvm::Type*> io_out_string_args;
     io_out_string_args.push_back(builder_.getInt8Ty()->getPointerTo());
     const llvm::ArrayRef<llvm::Type*> io_out_string_args_ref(
         io_out_string_args);
+
     // TODO return type should be SELF_TYPE I guess just a pointer?
     llvm::FunctionType* io_out_string_type = llvm::FunctionType::get(
         builder_.getVoidTy(), io_out_string_args_ref, false);
@@ -92,12 +107,31 @@ class CodegenVisitor : public ConstAstVisitor {
     llvm::BasicBlock* io_out_string_entry =
         llvm::BasicBlock::Create(context_, "entrypoint", io_out_string_func);
     builder_.SetInsertPoint(io_out_string_entry);
-    builder_.CreateCall(puts_func_, io_out_string_func->args().begin());
+
+    llvm::Value* format_str = builder_.CreateGlobalStringPtr("zzz%shhh");
+    llvm::Value* args[] = {format_str, io_out_string_func->args().begin()};
+    builder_.CreateCall(printf_func_, args);
+
     builder_.CreateRetVoid();
 
     return io_out_string_func;
   }
   llvm::Function* io_out_string_func_;
+
+  void ClearScope() { in_scope_vars_.clear(); }
+
+  void RemoveFromScope(const std::string& id) {
+    in_scope_vars_[id].pop();
+    if (in_scope_vars_[id].empty()) {
+      in_scope_vars_.erase(id);
+    }
+  }
+
+  void AddToScope(const std::string& id, llvm::Value* val) {
+    in_scope_vars_[id].push(val);
+  }
+
+  std::unordered_map<std::string, std::stack<llvm::Value*>> in_scope_vars_;
 
   const ProgramAst* program_ast_;
 
@@ -106,8 +140,21 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::IRBuilder<> builder_;
 };
 
+void CodegenVisitor::Visit(const ClassAst& node) {
+  for (const auto* attr : node.GetAttributeFeatures()) {
+    if (attr->GetType() == "Int") {
+      llvm::Value* val =
+          llvm::ConstantInt::get(context_, llvm::APInt(32, 1, true));
+      AddToScope(attr->GetId(), val);
+    }
+  }
+
+  ClearScope();
+}
+
 void CodegenVisitor::Visit(const ProgramAst& node) {
-  llvm::Value* hello_world = builder_.CreateGlobalStringPtr("hello world!\n");
+  llvm::Value* hello_world =
+      builder_.CreateGlobalStringPtr("hello rick");
 
   llvm::FunctionType* func_type =
       llvm::FunctionType::get(builder_.getVoidTy(), false);
@@ -188,6 +235,12 @@ void Codegen::GenerateCode() const {
 }
 
 void Codegen::Link() const {
+  std::filesystem::path object_file_path = ast_->GetFilePath();
+  object_file_path.replace_extension(".obj");
+
+  std::string obj_input_linker_arg = object_file_path.string();
+  obj_input_linker_arg += " ";
+
   std::filesystem::path exe_file_path = ast_->GetFilePath();
   exe_file_path.replace_extension(".exe");
 
@@ -198,9 +251,12 @@ void Codegen::Link() const {
   // clang-format off
   std::string linker_cmd = "cmd /C \"";
   linker_cmd += "\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/bin/Hostx86/x86/link.exe\" ";
-  linker_cmd += "C:/Users/RickB/cpp/coolang/build/codegen/out.obj ";
+  linker_cmd += obj_input_linker_arg;
   linker_cmd += output_exe_linker_arg;
   linker_cmd += "libcmt.lib ";
+  // TODO windows requires legacy_stdio_definitions.lib in new versions of MSVC to link against printf but not in old versions
+  // https://github.com/rust-lang/rust/issues/42830
+  linker_cmd += "legacy_stdio_definitions.lib ";
   linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/lib/x86\" ";
   linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.16299.0/um/x86\" ";
   linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.16299.0/ucrt/x86\" ";
