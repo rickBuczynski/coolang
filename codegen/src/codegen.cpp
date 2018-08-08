@@ -37,6 +37,7 @@ class CodegenVisitor : public ConstAstVisitor {
     puts_func_ = CreatePutsFunc();
     printf_func_ = CreatePrintfFunc();
     io_out_string_func_ = CreateIoOutStringFunc();
+    io_out_int_func_ = CreateIoOutIntFunc();
   }
 
   void Visit(const CaseExpr& node) override {}
@@ -118,6 +119,31 @@ class CodegenVisitor : public ConstAstVisitor {
   }
   llvm::Function* io_out_string_func_;
 
+  llvm::Function* CreateIoOutIntFunc() {
+    std::vector<llvm::Type*> io_out_int_args;
+    io_out_int_args.push_back(builder_.getInt32Ty());
+    const llvm::ArrayRef<llvm::Type*> io_out_int_args_ref(io_out_int_args);
+
+    // TODO return type should be SELF_TYPE I guess just a pointer?
+    llvm::FunctionType* io_out_int_type = llvm::FunctionType::get(
+        builder_.getVoidTy(), io_out_int_args_ref, false);
+    llvm::Function* io_out_int_func =
+        llvm::Function::Create(io_out_int_type, llvm::Function::ExternalLinkage,
+                               "IO-out_int", module_.get());
+    llvm::BasicBlock* io_out_int_entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", io_out_int_func);
+    builder_.SetInsertPoint(io_out_int_entry);
+
+    llvm::Value* format_str = builder_.CreateGlobalStringPtr("%d");
+    llvm::Value* args[] = {format_str, io_out_int_func->args().begin()};
+    builder_.CreateCall(printf_func_, args);
+
+    builder_.CreateRetVoid();
+
+    return io_out_int_func;
+  }
+  llvm::Function* io_out_int_func_;
+
   void ClearScope() { in_scope_vars_.clear(); }
 
   void RemoveFromScope(const std::string& id) {
@@ -144,7 +170,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   for (const auto* attr : node.GetAttributeFeatures()) {
     if (attr->GetType() == "Int") {
       llvm::Value* val =
-          llvm::ConstantInt::get(context_, llvm::APInt(32, 1, true));
+          llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
       AddToScope(attr->GetId(), val);
     }
   }
@@ -153,8 +179,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 }
 
 void CodegenVisitor::Visit(const ProgramAst& node) {
-  llvm::Value* hello_world =
-      builder_.CreateGlobalStringPtr("hello rick");
+  llvm::Value* hello_world = builder_.CreateGlobalStringPtr("hello rick");
 
   llvm::FunctionType* func_type =
       llvm::FunctionType::get(builder_.getVoidTy(), false);
@@ -165,6 +190,9 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   builder_.SetInsertPoint(entry);
   builder_.CreateCall(io_out_string_func_, hello_world);
+  builder_.CreateCall(
+      io_out_int_func_,
+      llvm::ConstantInt::get(context_, llvm::APInt(32, 6, true)));
   builder_.CreateRetVoid();
 
   module_->print(llvm::errs(), nullptr);
