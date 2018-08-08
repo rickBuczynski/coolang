@@ -111,8 +111,8 @@ class CodegenVisitor : public ConstAstVisitor {
     io_out_int_args.push_back(builder_.getInt32Ty());
 
     // TODO return type should be SELF_TYPE I guess just a pointer?
-    llvm::FunctionType* io_out_int_type = llvm::FunctionType::get(
-        builder_.getVoidTy(), io_out_int_args, false);
+    llvm::FunctionType* io_out_int_type =
+        llvm::FunctionType::get(builder_.getVoidTy(), io_out_int_args, false);
 
     llvm::Function* io_out_int_func =
         llvm::Function::Create(io_out_int_type, llvm::Function::ExternalLinkage,
@@ -158,28 +158,35 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       llvm::Value* val =
           llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
       AddToScope(attr->GetId(), val);
+    } else if (attr->GetType() == "String") {
+      // TODO change hello to empty string
+      llvm::Value* val = builder_.CreateGlobalStringPtr("hello");
+      AddToScope(attr->GetId(), val);
     }
+  }
+
+  for (const auto* method : node.GetMethodFeatures()) {
+    llvm::FunctionType* func_type =
+        llvm::FunctionType::get(builder_.getVoidTy(), false);  // TODO
+    llvm::Function* func =
+        llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
+                               method->GetId(), module_.get());
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+
+    builder_.SetInsertPoint(entry);
+    builder_.CreateCall(io_out_string_func_, in_scope_vars_["s"].top());
+    builder_.CreateCall(io_out_int_func_, in_scope_vars_["i"].top());
+    builder_.CreateRetVoid();
   }
 
   ClearScope();
 }
 
 void CodegenVisitor::Visit(const ProgramAst& node) {
-  llvm::Value* hello_world = builder_.CreateGlobalStringPtr("hello rick");
-
-  llvm::FunctionType* func_type =
-      llvm::FunctionType::get(builder_.getVoidTy(), false);
-  llvm::Function* main_func = llvm::Function::Create(
-      func_type, llvm::Function::ExternalLinkage, "main", module_.get());
-  llvm::BasicBlock* entry =
-      llvm::BasicBlock::Create(context_, "entrypoint", main_func);
-
-  builder_.SetInsertPoint(entry);
-  builder_.CreateCall(io_out_string_func_, hello_world);
-  builder_.CreateCall(
-      io_out_int_func_,
-      llvm::ConstantInt::get(context_, llvm::APInt(32, 6, true)));
-  builder_.CreateRetVoid();
+  for (const auto& class_ast : node.GetClasses()) {
+    class_ast.Accept(*this);
+  }
 
   module_->print(llvm::errs(), nullptr);
 
