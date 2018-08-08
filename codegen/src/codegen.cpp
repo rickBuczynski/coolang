@@ -45,11 +45,11 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const LetExpr& node) override {}
   void Visit(const IntExpr& node) override {}
   void Visit(const IsVoidExpr& node) override {}
-  void Visit(const MethodCallExpr& node) override {}
+  void Visit(const MethodCallExpr& node) override;
   void Visit(const NotExpr& node) override {}
   void Visit(const IfExpr& node) override {}
   void Visit(const NegExpr& node) override {}
-  void Visit(const BlockExpr& node) override {}
+  void Visit(const BlockExpr& node) override;
   void Visit(const ObjectExpr& node) override {}
   void Visit(const BinOpExpr& node) override {}
   void Visit(const MultiplyExpr& node) override {}
@@ -152,6 +152,20 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::IRBuilder<> builder_;
 };
 
+void CodegenVisitor::Visit(const MethodCallExpr& node) {
+  if (node.GetArgs().front()->GetExprType() == "String") {
+    builder_.CreateCall(io_out_string_func_, in_scope_vars_["s"].top());
+  } else if (node.GetArgs().front()->GetExprType() == "Int") {
+    builder_.CreateCall(io_out_int_func_, in_scope_vars_["i"].top());
+  }
+}
+
+void CodegenVisitor::Visit(const BlockExpr& node) {
+  for (const auto& sub_expr : node.GetExprs()) {
+    sub_expr->Accept(*this);
+  }
+}
+
 void CodegenVisitor::Visit(const ClassAst& node) {
   for (const auto* attr : node.GetAttributeFeatures()) {
     if (attr->GetType() == "Int") {
@@ -166,17 +180,19 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   }
 
   for (const auto* method : node.GetMethodFeatures()) {
+    // TODO dont always return void type
     llvm::FunctionType* func_type =
-        llvm::FunctionType::get(builder_.getVoidTy(), false);  // TODO
+        llvm::FunctionType::get(builder_.getVoidTy(), false);
     llvm::Function* func =
         llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
                                method->GetId(), module_.get());
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(context_, "entrypoint", func);
-
     builder_.SetInsertPoint(entry);
-    builder_.CreateCall(io_out_string_func_, in_scope_vars_["s"].top());
-    builder_.CreateCall(io_out_int_func_, in_scope_vars_["i"].top());
+
+    method->GetRootExpr()->Accept(*this);
+
+    // TODO dont always return void
     builder_.CreateRetVoid();
   }
 
