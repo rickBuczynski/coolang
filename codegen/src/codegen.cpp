@@ -102,6 +102,9 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.CreateCall(printf_func_, args);
     builder_.CreateRetVoid();
 
+    functions_[GetClassByName("IO")->GetMethodFeatureByName("out_string")] =
+        io_out_string_func;
+
     return io_out_string_func;
   }
   llvm::Function* io_out_string_func_;
@@ -126,6 +129,9 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.CreateCall(printf_func_, args);
     builder_.CreateRetVoid();
 
+    functions_[GetClassByName("IO")->GetMethodFeatureByName("out_int")] =
+        io_out_int_func;
+
     return io_out_int_func;
   }
   llvm::Function* io_out_int_func_;
@@ -143,10 +149,20 @@ class CodegenVisitor : public ConstAstVisitor {
     in_scope_vars_[id].push(val);
   }
 
+  const ClassAst* GetClassByName(std::string name) const {
+    if (name == "SELF_TYPE") {
+      name = current_class_->GetName();
+    }
+    return program_ast_->GetClassByName(name);
+  }
+
   llvm::Value* last_codegened_expr_value_ = nullptr;
 
   std::unordered_map<std::string, std::stack<llvm::Value*>> in_scope_vars_;
 
+  std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
+
+  const ClassAst* current_class_ = nullptr;
   const ProgramAst* program_ast_;
 
   llvm::LLVMContext context_;
@@ -161,11 +177,11 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
     arg_vals.push_back(last_codegened_expr_value_);
   }
 
-  if (node.GetArgs().front()->GetExprType() == "String") {
-    builder_.CreateCall(io_out_string_func_, arg_vals);
-  } else if (node.GetArgs().front()->GetExprType() == "Int") {
-    builder_.CreateCall(io_out_int_func_, arg_vals);
-  }
+  const auto called_method =
+      functions_[GetClassByName(node.GetLhsExpr()->GetExprType())
+                     ->GetMethodFeatureByName(node.GetMethodName())];
+
+  builder_.CreateCall(called_method, arg_vals);
 }
 
 void CodegenVisitor::Visit(const BlockExpr& node) {
@@ -179,6 +195,8 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
+  current_class_ = &node;
+
   for (const auto* attr : node.GetAttributeFeatures()) {
     if (attr->GetType() == "Int") {
       llvm::Value* val =
