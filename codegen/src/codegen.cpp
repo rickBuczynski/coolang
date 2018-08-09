@@ -50,7 +50,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const IfExpr& node) override {}
   void Visit(const NegExpr& node) override {}
   void Visit(const BlockExpr& node) override;
-  void Visit(const ObjectExpr& node) override {}
+  void Visit(const ObjectExpr& node) override;
   void Visit(const BinOpExpr& node) override {}
   void Visit(const MultiplyExpr& node) override {}
   void Visit(const LessThanEqualCompareExpr& node) override {}
@@ -143,6 +143,8 @@ class CodegenVisitor : public ConstAstVisitor {
     in_scope_vars_[id].push(val);
   }
 
+  llvm::Value* last_codegened_expr_value_ = nullptr;
+
   std::unordered_map<std::string, std::stack<llvm::Value*>> in_scope_vars_;
 
   const ProgramAst* program_ast_;
@@ -153,10 +155,16 @@ class CodegenVisitor : public ConstAstVisitor {
 };
 
 void CodegenVisitor::Visit(const MethodCallExpr& node) {
+  std::vector<llvm::Value*> arg_vals;
+  for (const auto& arg : node.GetArgs()) {
+    arg->Accept(*this);
+    arg_vals.push_back(last_codegened_expr_value_);
+  }
+
   if (node.GetArgs().front()->GetExprType() == "String") {
-    builder_.CreateCall(io_out_string_func_, in_scope_vars_["s"].top());
+    builder_.CreateCall(io_out_string_func_, arg_vals);
   } else if (node.GetArgs().front()->GetExprType() == "Int") {
-    builder_.CreateCall(io_out_int_func_, in_scope_vars_["i"].top());
+    builder_.CreateCall(io_out_int_func_, arg_vals);
   }
 }
 
@@ -164,6 +172,10 @@ void CodegenVisitor::Visit(const BlockExpr& node) {
   for (const auto& sub_expr : node.GetExprs()) {
     sub_expr->Accept(*this);
   }
+}
+
+void CodegenVisitor::Visit(const ObjectExpr& node) {
+  last_codegened_expr_value_ = in_scope_vars_[node.GetId()].top();
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
