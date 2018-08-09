@@ -1,3 +1,4 @@
+#include <filesystem>
 #include "coolang/codegen/codegen.h"
 #include "coolang/lexer/lexer.h"
 #include "coolang/parser/parser.h"
@@ -8,6 +9,25 @@ namespace {
 
 std::string GetExpectedOutput(const std::string& expected_output_file) {
   std::ifstream t(expected_output_file);
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  return buffer.str();
+}
+
+void RunProgram(std::filesystem::path input_file_path) {
+  std::filesystem::path output_file_path =
+      input_file_path.replace_extension(".runout");
+  std::filesystem::path exe_path = input_file_path.replace_extension(".exe");
+
+  std::string command = exe_path.string() + " > " + output_file_path.string();
+  std::system(command.c_str());
+}
+
+std::string GetProgramOutput(std::filesystem::path input_file_path) {
+  std::filesystem::path output_file_path =
+      input_file_path.replace_extension(".runout");
+
+  std::ifstream t(output_file_path.string());
   std::stringstream buffer;
   buffer << t.rdbuf();
   return buffer.str();
@@ -25,7 +45,8 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name) {
   codegen->GenerateCode();
   codegen->Link();
 
-  return "";
+  RunProgram(codegen->GetFilePath());
+  return GetProgramOutput(codegen->GetFilePath());
 }
 
 void TestCodegen(const std::string& input_file) {

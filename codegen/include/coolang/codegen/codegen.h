@@ -12,6 +12,10 @@ class Codegen {
   void GenerateCode() const;
   void Link() const;
 
+  const std::filesystem::path& GetFilePath() const {
+    return ast_->GetFilePath();
+  }
+
  private:
   ProgramAst* ast_;
 };
