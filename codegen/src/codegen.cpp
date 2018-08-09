@@ -40,14 +40,14 @@ class CodegenVisitor : public ConstAstVisitor {
   }
 
   void Visit(const CaseExpr& node) override {}
-  void Visit(const StrExpr& node) override {}
+  void Visit(const StrExpr& node) override;
   void Visit(const WhileExpr& node) override {}
   void Visit(const LetExpr& node) override {}
   void Visit(const IntExpr& node) override {}
   void Visit(const IsVoidExpr& node) override {}
   void Visit(const MethodCallExpr& node) override;
   void Visit(const NotExpr& node) override {}
-  void Visit(const IfExpr& node) override {}
+  void Visit(const IfExpr& node) override;
   void Visit(const NegExpr& node) override {}
   void Visit(const BlockExpr& node) override;
   void Visit(const ObjectExpr& node) override;
@@ -162,6 +162,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
 
+  llvm::Function* current_func_ = nullptr;
   const ClassAst* current_class_ = nullptr;
   const ProgramAst* program_ast_;
 
@@ -169,6 +170,10 @@ class CodegenVisitor : public ConstAstVisitor {
   std::unique_ptr<llvm::Module> module_;
   llvm::IRBuilder<> builder_;
 };
+
+void CodegenVisitor::Visit(const StrExpr& node) {
+  last_codegened_expr_value_ = builder_.CreateGlobalStringPtr(node.GetVal());
+}
 
 void CodegenVisitor::Visit(const MethodCallExpr& node) {
   std::vector<llvm::Value*> arg_vals;
@@ -182,6 +187,35 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
                      ->GetMethodFeatureByName(node.GetMethodName())];
 
   builder_.CreateCall(called_method, arg_vals);
+}
+
+void CodegenVisitor::Visit(const IfExpr& node) {
+  node.GetIfConditionExpr()->Accept(*this);
+  llvm::Value* cond_val = last_codegened_expr_value_;
+
+  llvm::BasicBlock* then_bb =
+      llvm::BasicBlock::Create(context_, "then", current_func_);
+  llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context_, "else");
+  llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-if");
+
+  builder_.CreateCondBr(cond_val, then_bb, else_bb);
+
+  // TODO need a PHI node so if expr has a value
+
+  // then block
+  builder_.SetInsertPoint(then_bb);
+  node.GetThenExpr()->Accept(*this);
+  builder_.CreateBr(done_bb);
+
+  // else block
+  current_func_->getBasicBlockList().push_back(else_bb);
+  builder_.SetInsertPoint(else_bb);
+  node.GetElseExpr()->Accept(*this);
+  builder_.CreateBr(done_bb);
+
+  // merge block
+  current_func_->getBasicBlockList().push_back(done_bb);
+  builder_.SetInsertPoint(done_bb);
 }
 
 void CodegenVisitor::Visit(const BlockExpr& node) {
@@ -206,6 +240,10 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       // TODO change hello to empty string
       llvm::Value* val = builder_.CreateGlobalStringPtr("hello");
       AddToScope(attr->GetId(), val);
+    } else if (attr->GetType() == "Bool") {
+      llvm::Value* val =
+          llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
+      AddToScope(attr->GetId(), val);
     }
   }
 
@@ -220,7 +258,9 @@ void CodegenVisitor::Visit(const ClassAst& node) {
         llvm::BasicBlock::Create(context_, "entrypoint", func);
     builder_.SetInsertPoint(entry);
 
+    current_func_ = func;
     method->GetRootExpr()->Accept(*this);
+    current_func_ = nullptr;
 
     // TODO dont always return void
     builder_.CreateRetVoid();
