@@ -44,7 +44,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const WhileExpr& node) override {}
   void Visit(const LetExpr& node) override {}
   void Visit(const IntExpr& node) override {}
-  void Visit(const IsVoidExpr& node) override {}
+  void Visit(const IsVoidExpr& node) override;
   void Visit(const MethodCallExpr& node) override;
   void Visit(const NotExpr& node) override {}
   void Visit(const IfExpr& node) override;
@@ -175,6 +175,17 @@ void CodegenVisitor::Visit(const StrExpr& node) {
   last_codegened_expr_value_ = builder_.CreateGlobalStringPtr(node.GetVal());
 }
 
+void CodegenVisitor::Visit(const IsVoidExpr& node) {
+  node.GetChildExpr()->Accept(*this);
+
+  llvm::Value* obj_ptr_as_int = builder_.CreatePtrToInt(
+      last_codegened_expr_value_, builder_.getInt32Ty());
+
+  last_codegened_expr_value_ = builder_.CreateICmpEQ(
+      obj_ptr_as_int,
+      llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true)), "isvoidcmp");
+}
+
 void CodegenVisitor::Visit(const MethodCallExpr& node) {
   std::vector<llvm::Value*> arg_vals;
   for (const auto& arg : node.GetArgs()) {
@@ -238,11 +249,16 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       AddToScope(attr->GetId(), val);
     } else if (attr->GetType() == "String") {
       // TODO change hello to empty string
-      llvm::Value* val = builder_.CreateGlobalStringPtr("hello");
+      llvm::Value* val = builder_.CreateGlobalStringPtr("");
       AddToScope(attr->GetId(), val);
     } else if (attr->GetType() == "Bool") {
       llvm::Value* val =
           llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
+      AddToScope(attr->GetId(), val);
+    } else {
+      // TODO should objects be pointers to i32? or i8? or something else?
+      llvm::Value* val =
+          llvm::ConstantPointerNull::get(builder_.getInt32Ty()->getPointerTo());
       AddToScope(attr->GetId(), val);
     }
   }
