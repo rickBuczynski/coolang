@@ -803,9 +803,10 @@ class ProgramAst : public AstNode {
 
   std::string GetFileName() const { return file_path_.filename().string(); }
   const std::filesystem::path& GetFilePath() const { return file_path_; }
+  const ClassAst* GetObjectClass() const { return object_class_.get(); }
+  const ClassAst* GetIoClass() const { return io_class_.get(); }
 
   std::string ToString(int indent_depth) const override;
-
   void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 

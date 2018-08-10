@@ -161,6 +161,7 @@ class CodegenVisitor : public ConstAstVisitor {
   std::unordered_map<std::string, std::stack<llvm::Value*>> in_scope_vars_;
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
+  std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
 
   llvm::Function* current_func_ = nullptr;
   const ClassAst* current_class_ = nullptr;
@@ -252,14 +253,8 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     } else if (attr->GetType() == "Bool") {
       val = llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
     } else {
-      // TODO use actual members not just int
-      // TODO dont recreate struct each time it's used probably should do a pass
-      // over the AST to create llvm structs for each class first
-      llvm::Type* int_type = llvm::Type::getInt32Ty(context_);
-      llvm::StructType* struct_type = llvm::StructType::create(
-          attr->GetType(), int_type, int_type, int_type);
-
-      val = llvm::ConstantPointerNull::get(struct_type->getPointerTo());
+      val = llvm::ConstantPointerNull::get(
+          classes_[GetClassByName(attr->GetType())]->getPointerTo());
     }
 
     AddToScope(attr->GetId(), val);
@@ -288,6 +283,32 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 }
 
 void CodegenVisitor::Visit(const ProgramAst& node) {
+  for (const auto& class_ast : node.GetClasses()) {
+    classes_[&class_ast] =
+        llvm::StructType::create(context_, class_ast.GetName());
+  }
+  classes_[node.GetIoClass()] =
+      llvm::StructType::create(context_, node.GetIoClass()->GetName());
+  classes_[node.GetObjectClass()] =
+      llvm::StructType::create(context_, node.GetObjectClass()->GetName());
+
+  for (const auto& class_ast : node.GetClasses()) {
+    std::vector<llvm::Type*> class_attributes;
+    for (const auto* attr : class_ast.GetAttributeFeatures()) {
+      if (attr->GetType() == "Int") {
+        class_attributes.push_back(builder_.getInt32Ty());
+      } else if (attr->GetType() == "String") {
+        class_attributes.push_back(builder_.getInt8PtrTy());
+      } else if (attr->GetType() == "Bool") {
+        class_attributes.push_back(builder_.getInt1Ty());
+      } else {
+        class_attributes.push_back(
+            classes_[GetClassByName(attr->GetType())]->getPointerTo());
+      }
+    }
+    classes_[&class_ast]->setBody(class_attributes);
+  }
+
   for (const auto& class_ast : node.GetClasses()) {
     class_ast.Accept(*this);
   }

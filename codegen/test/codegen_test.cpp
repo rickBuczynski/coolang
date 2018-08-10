@@ -57,5 +57,8 @@ void TestCodegen(const std::string& input_file) {
 }
 
 TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
+//TEST(CodegenTest, interactionattrinitmethod) {
+//  TestCodegen("interaction-attrinit-method.cl");
+//}
 
 }  // namespace
