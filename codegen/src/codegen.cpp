@@ -243,24 +243,26 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
   for (const auto* attr : node.GetAttributeFeatures()) {
+    llvm::Value* val;
+
     if (attr->GetType() == "Int") {
-      llvm::Value* val =
-          llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
-      AddToScope(attr->GetId(), val);
+      val = llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
     } else if (attr->GetType() == "String") {
-      // TODO change hello to empty string
-      llvm::Value* val = builder_.CreateGlobalStringPtr("");
-      AddToScope(attr->GetId(), val);
+      val = builder_.CreateGlobalStringPtr("");
     } else if (attr->GetType() == "Bool") {
-      llvm::Value* val =
-          llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
-      AddToScope(attr->GetId(), val);
+      val = llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
     } else {
-      // TODO should objects be pointers to i32? or i8? or something else?
-      llvm::Value* val =
-          llvm::ConstantPointerNull::get(builder_.getInt32Ty()->getPointerTo());
-      AddToScope(attr->GetId(), val);
+      // TODO use actual members not just int
+      // TODO dont recreate struct each time it's used probably should do a pass
+      // over the AST to create llvm structs for each class first
+      llvm::Type* int_type = llvm::Type::getInt32Ty(context_);
+      llvm::StructType* struct_type = llvm::StructType::create(
+          attr->GetType(), int_type, int_type, int_type);
+
+      val = llvm::ConstantPointerNull::get(struct_type->getPointerTo());
     }
+
+    AddToScope(attr->GetId(), val);
   }
 
   for (const auto* method : node.GetMethodFeatures()) {
