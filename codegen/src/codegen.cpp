@@ -102,8 +102,7 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.CreateCall(printf_func_, args);
     builder_.CreateRetVoid();
 
-    functions_[GetClassByName("IO")->GetMethodFeatureByName("out_string")] =
-        io_out_string_func;
+    SetLlvmFunction("IO", "out_string", io_out_string_func);
 
     return io_out_string_func;
   }
@@ -129,8 +128,7 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.CreateCall(printf_func_, args);
     builder_.CreateRetVoid();
 
-    functions_[GetClassByName("IO")->GetMethodFeatureByName("out_int")] =
-        io_out_int_func;
+    SetLlvmFunction("IO", "out_int", io_out_int_func);
 
     return io_out_int_func;
   }
@@ -211,8 +209,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
   }
 
   const auto called_method =
-      functions_[GetClassByName(node.GetLhsExpr()->GetExprType())
-                     ->GetMethodFeatureByName(node.GetMethodName())];
+      GetLlvmFunction(node.GetLhsExpr()->GetExprType(), node.GetMethodName());
 
   builder_.CreateCall(called_method, arg_vals);
 }
