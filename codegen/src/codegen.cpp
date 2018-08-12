@@ -43,7 +43,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const StrExpr& node) override;
   void Visit(const WhileExpr& node) override {}
   void Visit(const LetExpr& node) override {}
-  void Visit(const IntExpr& node) override {}
+  void Visit(const IntExpr& node) override;
   void Visit(const IsVoidExpr& node) override;
   void Visit(const MethodCallExpr& node) override;
   void Visit(const NotExpr& node) override {}
@@ -55,7 +55,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const MultiplyExpr& node) override {}
   void Visit(const LessThanEqualCompareExpr& node) override {}
   void Visit(const SubtractExpr& node) override {}
-  void Visit(const AddExpr& node) override {}
+  void Visit(const AddExpr& node) override;
   void Visit(const EqCompareExpr& node) override {}
   void Visit(const DivideExpr& node) override {}
   void Visit(const LessThanCompareExpr& node) override {}
@@ -176,6 +176,11 @@ void CodegenVisitor::Visit(const StrExpr& node) {
   last_codegened_expr_value_ = builder_.CreateGlobalStringPtr(node.GetVal());
 }
 
+void CodegenVisitor::Visit(const IntExpr& node) {
+  last_codegened_expr_value_ =
+      llvm::ConstantInt::get(context_, llvm::APInt(32, node.GetVal(), true));
+}
+
 void CodegenVisitor::Visit(const IsVoidExpr& node) {
   node.GetChildExpr()->Accept(*this);
 
@@ -240,6 +245,16 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
   last_codegened_expr_value_ = in_scope_vars_[node.GetId()].top();
 }
 
+void CodegenVisitor::Visit(const AddExpr& node) {
+  node.GetLhsExpr()->Accept(*this);
+  llvm::Value* lhs_value = last_codegened_expr_value_;
+
+  node.GetRhsExpr()->Accept(*this);
+  llvm::Value* rhs_value = last_codegened_expr_value_;
+
+  last_codegened_expr_value_ = builder_.CreateAdd(lhs_value, rhs_value);
+}
+
 void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
@@ -261,9 +276,20 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   }
 
   for (const auto* method : node.GetMethodFeatures()) {
-    // TODO dont always return void type
-    llvm::FunctionType* func_type =
-        llvm::FunctionType::get(builder_.getVoidTy(), false);
+    llvm::Type* return_type;
+
+    if (method->GetReturnType() == "Int") {
+      return_type = builder_.getInt32Ty();
+    } else if (method->GetReturnType() == "String") {
+      return_type = builder_.getInt8PtrTy();
+    } else if (method->GetReturnType() == "Bool") {
+      return_type = builder_.getInt1Ty();
+    } else {
+      return_type =
+          classes_[GetClassByName(method->GetReturnType())]->getPointerTo();
+    }
+
+    llvm::FunctionType* func_type = llvm::FunctionType::get(return_type, false);
     llvm::Function* func =
         llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
                                method->GetId(), module_.get());
@@ -276,7 +302,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     current_func_ = nullptr;
 
     // TODO dont always return void
-    builder_.CreateRetVoid();
+    builder_.CreateRet(last_codegened_expr_value_);
   }
 
   ClearScope();
