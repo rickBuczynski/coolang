@@ -156,6 +156,17 @@ class CodegenVisitor : public ConstAstVisitor {
     return program_ast_->GetClassByName(name);
   }
 
+  llvm::Function* GetLlvmFunction(const std::string& class_name,
+                                  const std::string& method_name) {
+    return functions_[GetClassByName(class_name)
+                          ->GetMethodFeatureByName(method_name)];
+  }
+  void SetLlvmFunction(const std::string& class_name,
+                       const std::string& method_name, llvm::Function* func) {
+    functions_[GetClassByName(class_name)
+                   ->GetMethodFeatureByName(method_name)] = func;
+  }
+
   llvm::Value* last_codegened_expr_value_ = nullptr;
 
   std::unordered_map<std::string, std::stack<llvm::Value*>> in_scope_vars_;
@@ -290,23 +301,27 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     }
 
     llvm::FunctionType* func_type = llvm::FunctionType::get(return_type, false);
-    llvm::Function* func =
-        llvm::Function::Create(func_type, llvm::Function::ExternalLinkage,
-                               method->GetId(), module_.get());
+    llvm::Function* func = llvm::Function::Create(
+        func_type, llvm::Function::ExternalLinkage,
+        node.GetName() + "-" + method->GetId(), module_.get());
+
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(context_, "entrypoint", func);
     builder_.SetInsertPoint(entry);
 
     current_func_ = func;
     method->GetRootExpr()->Accept(*this);
+    SetLlvmFunction(node.GetName(), method->GetId(), func);
     current_func_ = nullptr;
 
-    // TODO dont always return void
     builder_.CreateRet(last_codegened_expr_value_);
   }
 
   ClearScope();
 }
+
+// instead of pushing constants on to the scope need to access main's struct
+// data
 
 void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
@@ -338,6 +353,19 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
     class_ast.Accept(*this);
   }
+
+  llvm::FunctionType* func_type =
+      llvm::FunctionType::get(builder_.getVoidTy(), false);
+  llvm::Function* func = llvm::Function::Create(
+      func_type, llvm::Function::ExternalLinkage, "main", module_.get());
+  llvm::BasicBlock* entry =
+      llvm::BasicBlock::Create(context_, "entrypoint", func);
+  builder_.SetInsertPoint(entry);
+  // TODO alloc a Main object and pass it to Main.main()
+  // TODO instead of pushing constants on to the scope need to access main's
+  // struct data
+  builder_.CreateCall(GetLlvmFunction("Main", "main"));
+  builder_.CreateRetVoid();
 
   module_->print(llvm::errs(), nullptr);
 
