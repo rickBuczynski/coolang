@@ -165,6 +165,23 @@ class CodegenVisitor : public ConstAstVisitor {
                    ->GetMethodFeatureByName(method_name)] = func;
   }
 
+  llvm::Type* GetLlvmBasicType(const std::string& class_name) {
+    if (class_name == "Int") {
+      return builder_.getInt32Ty();
+    }
+    if (class_name == "String") {
+      return builder_.getInt8PtrTy();
+    }
+    if (class_name == "Bool") {
+      return builder_.getInt1Ty();
+    }
+    return nullptr;
+  }
+
+  llvm::Type* GetLlvmClassType(const std::string& class_name) {
+    return classes_[GetClassByName(class_name)];
+  }
+
   llvm::Value* last_codegened_expr_value_ = nullptr;
 
   std::unordered_map<std::string, std::stack<llvm::Value*>> in_scope_vars_;
@@ -277,24 +294,16 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       val = llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
     } else {
       val = llvm::ConstantPointerNull::get(
-          classes_[GetClassByName(attr->GetType())]->getPointerTo());
+          GetLlvmClassType(attr->GetType())->getPointerTo());
     }
 
     AddToScope(attr->GetId(), val);
   }
 
   for (const auto* method : node.GetMethodFeatures()) {
-    llvm::Type* return_type;
-
-    if (method->GetReturnType() == "Int") {
-      return_type = builder_.getInt32Ty();
-    } else if (method->GetReturnType() == "String") {
-      return_type = builder_.getInt8PtrTy();
-    } else if (method->GetReturnType() == "Bool") {
-      return_type = builder_.getInt1Ty();
-    } else {
-      return_type =
-          classes_[GetClassByName(method->GetReturnType())]->getPointerTo();
+    llvm::Type* return_type = GetLlvmBasicType(method->GetReturnType());
+    if (return_type == nullptr) {
+      return_type = GetLlvmClassType(method->GetReturnType())->getPointerTo();
     }
 
     llvm::FunctionType* func_type = llvm::FunctionType::get(return_type, false);
@@ -333,16 +342,11 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;
     for (const auto* attr : class_ast.GetAttributeFeatures()) {
-      if (attr->GetType() == "Int") {
-        class_attributes.push_back(builder_.getInt32Ty());
-      } else if (attr->GetType() == "String") {
-        class_attributes.push_back(builder_.getInt8PtrTy());
-      } else if (attr->GetType() == "Bool") {
-        class_attributes.push_back(builder_.getInt1Ty());
-      } else {
-        class_attributes.push_back(
-            classes_[GetClassByName(attr->GetType())]->getPointerTo());
+      llvm::Type* attr_type = GetLlvmBasicType(attr->GetType());
+      if (attr_type == nullptr) {
+        attr_type = GetLlvmClassType(attr->GetType())->getPointerTo();
       }
+      class_attributes.push_back(attr_type);
     }
     classes_[&class_ast]->setBody(class_attributes);
   }
