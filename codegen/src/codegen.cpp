@@ -235,15 +235,14 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
       class_calling_method->GetClassOrSuperClassThatDefinesMethod(
           method_feature);
 
-  // TODO DO NOT ALLOC A NEW "SELF" FOR EACH METHOD CALL
-  llvm::AllocaInst* alloca_self =
-      builder_.CreateAlloca(classes_[current_class_]);
+  node.GetLhsExpr()->Accept(*this);
+  llvm::Value* lhs_val = last_codegened_expr_value_;
 
   if (class_calling_method == class_that_defines_method) {
-    arg_vals.push_back(alloca_self);
+    arg_vals.push_back(lhs_val);
   } else {
     auto* dest_type = classes_[class_that_defines_method]->getPointerTo();
-    auto* casted_value = builder_.CreateBitCast(alloca_self, dest_type);
+    auto* casted_value = builder_.CreateBitCast(lhs_val, dest_type);
     arg_vals.push_back(casted_value);
   }
 
@@ -304,6 +303,11 @@ void CodegenVisitor::Visit(const BlockExpr& node) {
 }
 
 void CodegenVisitor::Visit(const ObjectExpr& node) {
+  if (node.GetId() == "self") {
+    last_codegened_expr_value_ = current_func_->args().begin();
+    return;
+  }
+
   last_codegened_expr_value_ = in_scope_vars_[node.GetId()].top();
 }
 
