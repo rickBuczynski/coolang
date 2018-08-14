@@ -748,6 +748,19 @@ class ClassAst : public AstNode {
     return super_class_->GetMethodFeatureByName(method_name);
   }
 
+  const ClassAst* GetClassOrSuperClassThatDefinesMethod(
+      const MethodFeature* method) const {
+    for (const auto* method_feature : GetMethodFeatures()) {
+      if (method_feature == method) {
+        return this;
+      }
+    }
+    if (super_class_ == nullptr) {
+      return nullptr;
+    }
+    return super_class_->GetClassOrSuperClassThatDefinesMethod(method);
+  }
+
   void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 

@@ -35,8 +35,6 @@ class CodegenVisitor : public ConstAstVisitor {
         module_(new llvm::Module("TODOMODULENAME", context_)),
         builder_(context_) {
     printf_func_ = CreatePrintfFunc();
-    io_out_string_func_ = CreateIoOutStringFunc();
-    io_out_int_func_ = CreateIoOutIntFunc();
   }
 
   void Visit(const CaseExpr& node) override {}
@@ -83,6 +81,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   llvm::Function* CreateIoOutStringFunc() {
     std::vector<llvm::Type*> io_out_string_args;
+    io_out_string_args.push_back(GetLlvmClassType("IO")->getPointerTo());
     io_out_string_args.push_back(builder_.getInt8Ty()->getPointerTo());
 
     // TODO return type should be SELF_TYPE I guess just a pointer?
@@ -98,7 +97,9 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.SetInsertPoint(io_out_string_entry);
 
     llvm::Value* format_str = builder_.CreateGlobalStringPtr("%s");
-    llvm::Value* args[] = {format_str, io_out_string_func->args().begin()};
+    auto arg_iterator = io_out_string_func->arg_begin();
+    arg_iterator++;
+    llvm::Value* args[] = {format_str, arg_iterator};
     builder_.CreateCall(printf_func_, args);
     builder_.CreateRetVoid();
 
@@ -110,6 +111,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   llvm::Function* CreateIoOutIntFunc() {
     std::vector<llvm::Type*> io_out_int_args;
+    io_out_int_args.push_back(GetLlvmClassType("IO")->getPointerTo());
     io_out_int_args.push_back(builder_.getInt32Ty());
 
     // TODO return type should be SELF_TYPE I guess just a pointer?
@@ -124,7 +126,9 @@ class CodegenVisitor : public ConstAstVisitor {
         llvm::BasicBlock::Create(context_, "entrypoint", io_out_int_func);
     builder_.SetInsertPoint(io_out_int_entry);
     llvm::Value* format_str = builder_.CreateGlobalStringPtr("%d");
-    llvm::Value* args[] = {format_str, io_out_int_func->args().begin()};
+    auto arg_iterator = io_out_int_func->arg_begin();
+    arg_iterator++;
+    llvm::Value* args[] = {format_str, arg_iterator};
     builder_.CreateCall(printf_func_, args);
     builder_.CreateRetVoid();
 
@@ -220,9 +224,42 @@ void CodegenVisitor::Visit(const IsVoidExpr& node) {
 
 void CodegenVisitor::Visit(const MethodCallExpr& node) {
   std::vector<llvm::Value*> arg_vals;
-  for (const auto& arg : node.GetArgs()) {
-    arg->Accept(*this);
-    arg_vals.push_back(last_codegened_expr_value_);
+
+  const ClassAst* class_calling_method =
+      GetClassByName(node.GetLhsExpr()->GetExprType());
+
+  const auto method_feature =
+      class_calling_method->GetMethodFeatureByName(node.GetMethodName());
+
+  const ClassAst* class_that_defines_method =
+      class_calling_method->GetClassOrSuperClassThatDefinesMethod(
+          method_feature);
+
+  // TODO DO NOT ALLOC A NEW "SELF" FOR EACH METHOD CALL
+  llvm::AllocaInst* alloca_self =
+      builder_.CreateAlloca(classes_[current_class_]);
+
+  if (class_calling_method == class_that_defines_method) {
+    arg_vals.push_back(alloca_self);
+  } else {
+    auto* dest_type = classes_[class_that_defines_method]->getPointerTo();
+    auto* casted_value = builder_.CreateBitCast(alloca_self, dest_type);
+    arg_vals.push_back(casted_value);
+  }
+
+  for (size_t i = 0; i < method_feature->GetArgs().size(); i++) {
+    node.GetArgs()[i]->Accept(*this);
+    if (method_feature->GetArgs()[i].GetType() ==
+        node.GetArgs()[i]->GetExprType()) {
+      arg_vals.push_back(last_codegened_expr_value_);
+    } else {
+      const auto dest_type =
+          GetLlvmClassType(method_feature->GetArgs()[i].GetType())
+              ->getPointerTo();
+      auto* casted_value =
+          builder_.CreateBitCast(last_codegened_expr_value_, dest_type);
+      arg_vals.push_back(casted_value);
+    }
   }
 
   const auto called_method =
@@ -306,7 +343,12 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       return_type = GetLlvmClassType(method->GetReturnType())->getPointerTo();
     }
 
-    llvm::FunctionType* func_type = llvm::FunctionType::get(return_type, false);
+    std::vector<llvm::Type*> arg_types;
+    // first param is always implicit 'self'
+    arg_types.push_back(classes_[&node]->getPointerTo());
+
+    llvm::FunctionType* func_type =
+        llvm::FunctionType::get(return_type, arg_types, false);
     llvm::Function* func = llvm::Function::Create(
         func_type, llvm::Function::ExternalLinkage,
         node.GetName() + "-" + method->GetId(), module_.get());
@@ -338,6 +380,8 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
       llvm::StructType::create(context_, node.GetIoClass()->GetName());
   classes_[node.GetObjectClass()] =
       llvm::StructType::create(context_, node.GetObjectClass()->GetName());
+  io_out_string_func_ = CreateIoOutStringFunc();
+  io_out_int_func_ = CreateIoOutIntFunc();
 
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;
@@ -365,7 +409,13 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   // TODO alloc a Main object and pass it to Main.main()
   // TODO instead of pushing constants on to the scope need to access main's
   // struct data
-  builder_.CreateCall(GetLlvmFunction("Main", "main"));
+
+  llvm::AllocaInst* main_class =
+      builder_.CreateAlloca(GetLlvmClassType("Main"));
+  std::vector<llvm::Value*> args;
+  args.push_back(main_class);
+
+  builder_.CreateCall(GetLlvmFunction("Main", "main"), args);
   builder_.CreateRetVoid();
 
   module_->print(llvm::errs(), nullptr);
