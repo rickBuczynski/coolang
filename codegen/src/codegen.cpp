@@ -422,6 +422,10 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
 void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
+  // TODO attributes added to scope aren't being used now.
+  // I just hard coded generating a load for attributes into object expr codegen
+  // either get rid of this or try changing it to push the element pointer into scope
+  // and then create a load from that when codegening object expr.
   for (const auto* attr : node.GetAttributeFeatures()) {
     llvm::Value* val;
 
@@ -463,8 +467,6 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     method->GetRootExpr()->Accept(*this);
     SetLlvmFunction(node.GetName(), method->GetId(), func);
     current_func_ = nullptr;
-
-    // builder_.CreateRetVoid();
 
     if (last_codegened_expr_value_->getType() == return_type) {
       builder_.CreateRet(last_codegened_expr_value_);
@@ -518,9 +520,6 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   llvm::BasicBlock* entry =
       llvm::BasicBlock::Create(context_, "entrypoint", func);
   builder_.SetInsertPoint(entry);
-  // TODO alloc a Main object and pass it to Main.main()
-  // TODO instead of pushing constants on to the scope need to access main's
-  // struct data
 
   llvm::AllocaInst* main_class =
       builder_.CreateAlloca(GetLlvmClassType("Main"));
