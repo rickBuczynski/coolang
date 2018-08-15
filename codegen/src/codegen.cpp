@@ -189,7 +189,7 @@ class CodegenVisitor : public ConstAstVisitor {
     return classes_[GetClassByName(class_name)];
   }
 
-  llvm::Value* last_codegened_expr_value_ = nullptr;
+  std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
 
   std::unordered_map<std::string, std::stack<llvm::Value*>> in_scope_vars_;
 
@@ -207,11 +207,11 @@ class CodegenVisitor : public ConstAstVisitor {
 };
 
 void CodegenVisitor::Visit(const StrExpr& node) {
-  last_codegened_expr_value_ = builder_.CreateGlobalStringPtr(node.GetVal());
+  codegened_values_[&node] = builder_.CreateGlobalStringPtr(node.GetVal());
 }
 
 void CodegenVisitor::Visit(const IntExpr& node) {
-  last_codegened_expr_value_ =
+  codegened_values_[&node] =
       llvm::ConstantInt::get(context_, llvm::APInt(32, node.GetVal(), true));
 }
 
@@ -219,9 +219,9 @@ void CodegenVisitor::Visit(const IsVoidExpr& node) {
   node.GetChildExpr()->Accept(*this);
 
   llvm::Value* obj_ptr_as_int = builder_.CreatePtrToInt(
-      last_codegened_expr_value_, builder_.getInt32Ty());
+      codegened_values_.at(node.GetChildExpr()), builder_.getInt32Ty());
 
-  last_codegened_expr_value_ = builder_.CreateICmpEQ(
+  codegened_values_[&node] = builder_.CreateICmpEQ(
       obj_ptr_as_int,
       llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true)), "isvoidcmp");
 }
@@ -240,7 +240,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
           method_feature);
 
   node.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_val = last_codegened_expr_value_;
+  llvm::Value* lhs_val = codegened_values_.at(node.GetLhsExpr());
 
   if (class_calling_method == class_that_defines_method) {
     arg_vals.push_back(lhs_val);
@@ -254,13 +254,13 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
     node.GetArgs()[i]->Accept(*this);
     if (method_feature->GetArgs()[i].GetType() ==
         node.GetArgs()[i]->GetExprType()) {
-      arg_vals.push_back(last_codegened_expr_value_);
+      arg_vals.push_back(codegened_values_.at(node.GetArgs()[i].get()));
     } else {
       const auto dest_type =
           GetLlvmClassType(method_feature->GetArgs()[i].GetType())
               ->getPointerTo();
-      auto* casted_value =
-          builder_.CreateBitCast(last_codegened_expr_value_, dest_type);
+      auto* casted_value = builder_.CreateBitCast(
+          codegened_values_.at(node.GetArgs()[i].get()), dest_type);
       arg_vals.push_back(casted_value);
     }
   }
@@ -268,12 +268,12 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
   const auto called_method =
       GetLlvmFunction(node.GetLhsExpr()->GetExprType(), node.GetMethodName());
 
-  last_codegened_expr_value_ = builder_.CreateCall(called_method, arg_vals);
+  codegened_values_[&node] = builder_.CreateCall(called_method, arg_vals);
 }
 
 void CodegenVisitor::Visit(const IfExpr& node) {
   node.GetIfConditionExpr()->Accept(*this);
-  llvm::Value* cond_val = last_codegened_expr_value_;
+  llvm::Value* cond_val = codegened_values_.at(node.GetIfConditionExpr());
 
   llvm::BasicBlock* then_bb =
       llvm::BasicBlock::Create(context_, "then", current_func_);
@@ -291,7 +291,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   builder_.SetInsertPoint(then_bb);
 
   node.GetThenExpr()->Accept(*this);
-  llvm::Value* then_val = last_codegened_expr_value_;
+  llvm::Value* then_val = codegened_values_.at(node.GetThenExpr());
   if (then_val->getType() != return_type) {
     then_val = builder_.CreateBitCast(then_val, return_type);
   }
@@ -303,7 +303,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   builder_.SetInsertPoint(else_bb);
 
   node.GetElseExpr()->Accept(*this);
-  llvm::Value* else_val = last_codegened_expr_value_;
+  llvm::Value* else_val = codegened_values_.at(node.GetElseExpr());
   if (else_val->getType() != return_type) {
     else_val = builder_.CreateBitCast(else_val, return_type);
   }
@@ -318,18 +318,19 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   pn->addIncoming(then_val, then_bb);
   pn->addIncoming(else_val, else_bb);
 
-  last_codegened_expr_value_ = pn;
+  codegened_values_[&node] = pn;
 }
 
 void CodegenVisitor::Visit(const BlockExpr& node) {
   for (const auto& sub_expr : node.GetExprs()) {
     sub_expr->Accept(*this);
   }
+  codegened_values_[&node] = codegened_values_.at(node.GetExprs().back().get());
 }
 
 void CodegenVisitor::Visit(const ObjectExpr& node) {
   if (node.GetId() == "self") {
-    last_codegened_expr_value_ = current_func_->args().begin();
+    codegened_values_[&node] = current_func_->args().begin();
     return;
   }
 
@@ -341,22 +342,22 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
     if (attr->GetId() == node.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           classes_[current_class_], current_func_->args().begin(), i);
-      last_codegened_expr_value_ = builder_.CreateLoad(element_ptr);
+      codegened_values_[&node] = builder_.CreateLoad(element_ptr);
       return;
     }
   }
 
-  last_codegened_expr_value_ = in_scope_vars_[node.GetId()].top();
+  codegened_values_[&node] = in_scope_vars_[node.GetId()].top();
 }
 
 void CodegenVisitor::Visit(const AddExpr& node) {
   node.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_value = last_codegened_expr_value_;
+  llvm::Value* lhs_value = codegened_values_.at(node.GetLhsExpr().get());
 
   node.GetRhsExpr()->Accept(*this);
-  llvm::Value* rhs_value = last_codegened_expr_value_;
+  llvm::Value* rhs_value = codegened_values_.at(node.GetRhsExpr().get());
 
-  last_codegened_expr_value_ = builder_.CreateAdd(lhs_value, rhs_value);
+  codegened_values_[&node] = builder_.CreateAdd(lhs_value, rhs_value);
 }
 
 llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
@@ -409,7 +410,8 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
       attr->GetRootExpr()->Accept(*this);
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           classes_[&node], constructor->args().begin(), i);
-      builder_.CreateStore(last_codegened_expr_value_, element_ptr);
+      builder_.CreateStore(codegened_values_.at(attr->GetRootExpr().get()),
+                           element_ptr);
     }
   }
 
@@ -424,8 +426,8 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
   // TODO attributes added to scope aren't being used now.
   // I just hard coded generating a load for attributes into object expr codegen
-  // either get rid of this or try changing it to push the element pointer into scope
-  // and then create a load from that when codegening object expr.
+  // either get rid of this or try changing it to push the element pointer into
+  // scope and then create a load from that when codegening object expr.
   for (const auto* attr : node.GetAttributeFeatures()) {
     llvm::Value* val;
 
@@ -468,11 +470,12 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     SetLlvmFunction(node.GetName(), method->GetId(), func);
     current_func_ = nullptr;
 
-    if (last_codegened_expr_value_->getType() == return_type) {
-      builder_.CreateRet(last_codegened_expr_value_);
+    if (codegened_values_.at(method->GetRootExpr().get())->getType() ==
+        return_type) {
+      builder_.CreateRet(codegened_values_.at(method->GetRootExpr().get()));
     } else {
-      auto* casted_value =
-          builder_.CreateBitCast(last_codegened_expr_value_, return_type);
+      auto* casted_value = builder_.CreateBitCast(
+          codegened_values_.at(method->GetRootExpr().get()), return_type);
       builder_.CreateRet(casted_value);
     }
   }
