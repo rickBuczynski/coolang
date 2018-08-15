@@ -158,6 +158,10 @@ class CodegenVisitor : public ConstAstVisitor {
     return program_ast_->GetClassByName(name);
   }
 
+  llvm::Function* GetConstructor(const std::string& class_name) {
+    return constructors_[GetClassByName(class_name)];
+  }
+
   llvm::Function* GetLlvmFunction(const std::string& class_name,
                                   const std::string& method_name) {
     return functions_[GetClassByName(class_name)
@@ -192,6 +196,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
   std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
+  std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
   llvm::Function* current_func_ = nullptr;
   const ClassAst* current_class_ = nullptr;
@@ -308,6 +313,17 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
     return;
   }
 
+  for (size_t i = 0; i < current_class_->GetAttributeFeatures().size(); i++) {
+    const auto* attr = current_class_->GetAttributeFeatures()[i];
+
+    if (attr->GetId() == node.GetId()) {
+      llvm::Value* element_ptr = builder_.CreateStructGEP(
+          classes_[current_class_], current_func_->args().begin(), i);
+      last_codegened_expr_value_ = builder_.CreateLoad(element_ptr);
+      return;
+    }
+  }
+
   last_codegened_expr_value_ = in_scope_vars_[node.GetId()].top();
 }
 
@@ -323,7 +339,48 @@ void CodegenVisitor::Visit(const AddExpr& node) {
 
 void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
+  
+  using namespace std::string_literals;
 
+  std::vector<llvm::Type*> constructor_arg_types;
+  constructor_arg_types.push_back(classes_[&node]->getPointerTo());
+
+  llvm::FunctionType* constructor_func_type = llvm::FunctionType::get(
+      builder_.getVoidTy(), constructor_arg_types, false);
+  llvm::Function* constructor = llvm::Function::Create(
+      constructor_func_type, llvm::Function::ExternalLinkage,
+      "construct"s + "-" + node.GetName(), module_.get());
+  llvm::BasicBlock* constructor_entry =
+      llvm::BasicBlock::Create(context_, "entrypoint", constructor);
+  builder_.SetInsertPoint(constructor_entry);
+
+  for (size_t i = 0; i < node.GetAttributeFeatures().size(); i++) {
+    const auto* attr = node.GetAttributeFeatures()[i];
+
+    llvm::Value* element_ptr = builder_.CreateStructGEP(
+        classes_[&node], constructor->args().begin(), i);
+
+    llvm::Value* val;
+
+    if (attr->GetType() == "Int") {
+      val = llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
+    } else if (attr->GetType() == "String") {
+      val = builder_.CreateGlobalStringPtr("");
+    } else if (attr->GetType() == "Bool") {
+      val = llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
+    } else {
+      val = llvm::ConstantPointerNull::get(
+          GetLlvmClassType(attr->GetType())->getPointerTo());
+    }
+
+    builder_.CreateStore(val, element_ptr);
+  }
+  builder_.CreateRetVoid();
+  constructors_[&node] = constructor;
+  
+
+  // TODO maybe need super class attributes?
+  // are attributes private or protected?
   for (const auto* attr : node.GetAttributeFeatures()) {
     llvm::Value* val;
 
@@ -419,6 +476,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   std::vector<llvm::Value*> args;
   args.push_back(main_class);
 
+  builder_.CreateCall(GetConstructor("Main"), args);
   builder_.CreateCall(GetLlvmFunction("Main", "main"), args);
   builder_.CreateRetVoid();
 
