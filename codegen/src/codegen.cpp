@@ -136,17 +136,17 @@ class CodegenVisitor : public ConstAstVisitor {
   }
   llvm::Function* io_out_int_func_;
 
-  void ClearScope() { in_scope_vars_.clear(); }
+  void ClearScope() { let_binding_vars_.clear(); }
 
   void RemoveFromScope(const std::string& id) {
-    in_scope_vars_[id].pop();
-    if (in_scope_vars_[id].empty()) {
-      in_scope_vars_.erase(id);
+    let_binding_vars_[id].pop();
+    if (let_binding_vars_[id].empty()) {
+      let_binding_vars_.erase(id);
     }
   }
 
   void AddToScope(const std::string& id, llvm::Value* val) {
-    in_scope_vars_[id].push(val);
+    let_binding_vars_[id].push(val);
   }
 
   const ClassAst* GetClassByName(std::string name) const {
@@ -191,7 +191,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
 
-  std::unordered_map<std::string, std::stack<llvm::Value*>> in_scope_vars_;
+  std::unordered_map<std::string, std::stack<llvm::Value*>> let_binding_vars_;
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
   std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
@@ -329,10 +329,19 @@ void CodegenVisitor::Visit(const BlockExpr& node) {
 }
 
 void CodegenVisitor::Visit(const ObjectExpr& node) {
+  // First check for let binding, it has priority over class attributes and
+  // method params
+  auto let_binding = let_binding_vars_.find(node.GetId());
+  if (let_binding != let_binding_vars_.end()) {
+    codegened_values_[&node] = let_binding->second.top();
+  }
+
   if (node.GetId() == "self") {
     codegened_values_[&node] = current_func_->args().begin();
     return;
   }
+
+  // TODO check method params
 
   // TODO maybe need super class attributes?
   // are attributes private or protected?
@@ -346,8 +355,6 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
       return;
     }
   }
-
-  codegened_values_[&node] = in_scope_vars_[node.GetId()].top();
 }
 
 void CodegenVisitor::Visit(const AddExpr& node) {
@@ -363,8 +370,7 @@ void CodegenVisitor::Visit(const AddExpr& node) {
 llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
   using namespace std::string_literals;
 
-  // TODO maybe need super class attributes?
-  // are attributes private or protected?
+  
   std::vector<llvm::Type*> constructor_arg_types;
   constructor_arg_types.push_back(classes_[&node]->getPointerTo());
 
@@ -376,6 +382,8 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
   llvm::BasicBlock* constructor_entry =
       llvm::BasicBlock::Create(context_, "entrypoint", constructor);
   builder_.SetInsertPoint(constructor_entry);
+
+  // TODO constructor should init super class attrs too
 
   // first store default values
   for (size_t i = 0; i < node.GetAttributeFeatures().size(); i++) {
@@ -424,27 +432,6 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
 void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
-  // TODO attributes added to scope aren't being used now.
-  // I just hard coded generating a load for attributes into object expr codegen
-  // either get rid of this or try changing it to push the element pointer into
-  // scope and then create a load from that when codegening object expr.
-  for (const auto* attr : node.GetAttributeFeatures()) {
-    llvm::Value* val;
-
-    if (attr->GetType() == "Int") {
-      val = llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
-    } else if (attr->GetType() == "String") {
-      val = builder_.CreateGlobalStringPtr("");
-    } else if (attr->GetType() == "Bool") {
-      val = llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
-    } else {
-      val = llvm::ConstantPointerNull::get(
-          GetLlvmClassType(attr->GetType())->getPointerTo());
-    }
-
-    AddToScope(attr->GetId(), val);
-  }
-
   for (const auto* method : node.GetMethodFeatures()) {
     llvm::Type* return_type = GetLlvmBasicType(method->GetReturnType());
     if (return_type == nullptr) {
@@ -482,6 +469,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
   constructors_[&node] = CreateConstructor(node);
 
+  current_class_ = nullptr;
   ClearScope();
 }
 
