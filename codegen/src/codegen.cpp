@@ -58,7 +58,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const DivideExpr& node) override {}
   void Visit(const LessThanCompareExpr& node) override {}
   void Visit(const NewExpr& node) override {}
-  void Visit(const AssignExpr& node) override {}
+  void Visit(const AssignExpr& node) override;
   void Visit(const BoolExpr& node) override {}
   void Visit(const ClassAst& node) override;
   void Visit(const CaseBranch& node) override {}
@@ -189,6 +189,14 @@ class CodegenVisitor : public ConstAstVisitor {
     return classes_[GetClassByName(class_name)];
   }
 
+  llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
+    llvm::Type* type = GetLlvmBasicType(type_name);
+    if (type == nullptr) {
+      type = GetLlvmClassType(type_name)->getPointerTo();
+    }
+    return type;
+  }
+
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
 
   std::unordered_map<std::string, std::stack<llvm::Value*>> let_binding_vars_;
@@ -197,7 +205,7 @@ class CodegenVisitor : public ConstAstVisitor {
   std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
-  llvm::Function* current_func_ = nullptr;
+  const MethodFeature* current_method_ = nullptr;
   const ClassAst* current_class_ = nullptr;
   const ProgramAst* program_ast_;
 
@@ -275,15 +283,13 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   node.GetIfConditionExpr()->Accept(*this);
   llvm::Value* cond_val = codegened_values_.at(node.GetIfConditionExpr());
 
-  llvm::BasicBlock* then_bb =
-      llvm::BasicBlock::Create(context_, "then", current_func_);
+  llvm::BasicBlock* then_bb = llvm::BasicBlock::Create(
+      context_, "then", functions_.at(current_method_));
   llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context_, "else");
   llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-if");
 
-  llvm::Type* return_type = GetLlvmBasicType(node.GetExprType());
-  if (return_type == nullptr) {
-    return_type = GetLlvmClassType(node.GetExprType())->getPointerTo();
-  }
+  llvm::Type* return_type =
+      GetLlvmBasicOrPointerToClassType(node.GetExprType());
 
   builder_.CreateCondBr(cond_val, then_bb, else_bb);
 
@@ -299,7 +305,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   builder_.CreateBr(done_bb);
 
   // else block
-  current_func_->getBasicBlockList().push_back(else_bb);
+  functions_.at(current_method_)->getBasicBlockList().push_back(else_bb);
   builder_.SetInsertPoint(else_bb);
 
   node.GetElseExpr()->Accept(*this);
@@ -311,7 +317,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   builder_.CreateBr(done_bb);
 
   // merge block
-  current_func_->getBasicBlockList().push_back(done_bb);
+  functions_.at(current_method_)->getBasicBlockList().push_back(done_bb);
   builder_.SetInsertPoint(done_bb);
 
   llvm::PHINode* pn = builder_.CreatePHI(return_type, 2);
@@ -337,11 +343,20 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
   }
 
   if (node.GetId() == "self") {
-    codegened_values_[&node] = current_func_->args().begin();
+    codegened_values_[&node] = functions_.at(current_method_)->args().begin();
     return;
   }
 
-  // TODO check method params
+  auto arg_iter = functions_.at(current_method_)->arg_begin();
+  arg_iter++;  // skip implicit self param
+  for (const auto& arg : current_method_->GetArgs()) {
+    if (arg.GetId() == node.GetId()) {
+      codegened_values_[&node] = arg_iter;
+      return;
+    }
+
+    arg_iter++;
+  }
 
   // TODO maybe need super class attributes?
   // are attributes private or protected?
@@ -350,7 +365,8 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
 
     if (attr->GetId() == node.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
-          classes_[current_class_], current_func_->args().begin(), i);
+          classes_[current_class_],
+          functions_.at(current_method_)->args().begin(), i);
       codegened_values_[&node] = builder_.CreateLoad(element_ptr);
       return;
     }
@@ -370,7 +386,6 @@ void CodegenVisitor::Visit(const AddExpr& node) {
 llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
   using namespace std::string_literals;
 
-  
   std::vector<llvm::Type*> constructor_arg_types;
   constructor_arg_types.push_back(classes_[&node]->getPointerTo());
 
@@ -408,7 +423,10 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
     builder_.CreateStore(val, element_ptr);
   }
 
-  current_func_ = constructor;
+  auto dummy_constructor_method =
+      MethodFeature(LineRange(0, 0), "constructor", {}, "", {});
+  functions_[&dummy_constructor_method] = constructor;
+  current_method_ = &dummy_constructor_method;
 
   // then store value from init expr
   for (size_t i = 0; i < node.GetAttributeFeatures().size(); i++) {
@@ -423,24 +441,33 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
     }
   }
 
-  current_func_ = nullptr;
+  current_method_ = nullptr;
+  functions_.erase(&dummy_constructor_method);
 
   builder_.CreateRetVoid();
   return constructor;
+}
+
+void CodegenVisitor::Visit(const AssignExpr& node) {
+  node.GetRhsExpr()->Accept(*this);
+  codegened_values_[&node] = codegened_values_.at(node.GetRhsExpr());
+
+  // TODO actually store the value in a variable
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
   for (const auto* method : node.GetMethodFeatures()) {
-    llvm::Type* return_type = GetLlvmBasicType(method->GetReturnType());
-    if (return_type == nullptr) {
-      return_type = GetLlvmClassType(method->GetReturnType())->getPointerTo();
-    }
+    llvm::Type* return_type =
+        GetLlvmBasicOrPointerToClassType(method->GetReturnType());
 
     std::vector<llvm::Type*> arg_types;
     // first param is always implicit 'self'
     arg_types.push_back(classes_[&node]->getPointerTo());
+    for (const auto& arg : method->GetArgs()) {
+      arg_types.push_back(GetLlvmBasicOrPointerToClassType(arg.GetType()));
+    }
 
     llvm::FunctionType* func_type =
         llvm::FunctionType::get(return_type, arg_types, false);
@@ -452,10 +479,10 @@ void CodegenVisitor::Visit(const ClassAst& node) {
         llvm::BasicBlock::Create(context_, "entrypoint", func);
     builder_.SetInsertPoint(entry);
 
-    current_func_ = func;
+    current_method_ = method;
+    functions_[current_method_] = func;
     method->GetRootExpr()->Accept(*this);
-    SetLlvmFunction(node.GetName(), method->GetId(), func);
-    current_func_ = nullptr;
+    current_method_ = nullptr;
 
     if (codegened_values_.at(method->GetRootExpr().get())->getType() ==
         return_type) {
@@ -491,10 +518,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;
     for (const auto* attr : class_ast.GetAttributeFeatures()) {
-      llvm::Type* attr_type = GetLlvmBasicType(attr->GetType());
-      if (attr_type == nullptr) {
-        attr_type = GetLlvmClassType(attr->GetType())->getPointerTo();
-      }
+      llvm::Type* attr_type = GetLlvmBasicOrPointerToClassType(attr->GetType());
       class_attributes.push_back(attr_type);
     }
     classes_[&class_ast]->setBody(class_attributes);

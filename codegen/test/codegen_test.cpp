@@ -60,5 +60,6 @@ TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
 TEST(CodegenTest, interactionattrinitmethod) {
   TestCodegen("interaction-attrinit-method.cl");
 }
+TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
 
 }  // namespace
