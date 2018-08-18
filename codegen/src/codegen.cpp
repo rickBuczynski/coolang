@@ -151,6 +151,28 @@ class CodegenVisitor : public ConstAstVisitor {
     return io_out_int_func;
   }
 
+  llvm::Function* CreateStringConcatFunc() {
+    std::vector<llvm::Type*> string_concat_args;
+    string_concat_args.push_back(GetLlvmBasicType("String"));
+    string_concat_args.push_back(GetLlvmBasicType("String"));
+
+    llvm::FunctionType* string_concat_type = llvm::FunctionType::get(
+        GetLlvmBasicType("String"), string_concat_args, false);
+
+    llvm::Function* string_concat_func = llvm::Function::Create(
+        string_concat_type, llvm::Function::ExternalLinkage, "String-concat",
+        module_.get());
+
+    llvm::BasicBlock* string_concat_entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", string_concat_func);
+    builder_.SetInsertPoint(string_concat_entry);
+
+    // TODO actually concat the strings
+    builder_.CreateRet(string_concat_func->arg_begin());
+
+    return string_concat_func;
+  }
+
   void ClearScope() { let_binding_vars_.clear(); }
 
   void RemoveFromScope(const std::string& id) {
@@ -577,6 +599,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   SetLlvmFunction("Object", "abort", CreateAbortFunc());
   SetLlvmFunction("IO", "out_string", CreateIoOutStringFunc());
   SetLlvmFunction("IO", "out_int", CreateIoOutIntFunc());
+  SetLlvmFunction("String", "concat", CreateStringConcatFunc());
 
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;
