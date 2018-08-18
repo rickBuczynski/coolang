@@ -80,8 +80,11 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::Constant* printf_func_;
 
   llvm::Function* CreateAbortFunc() {
+    std::vector<llvm::Type*> abort_args;
+    abort_args.push_back(GetLlvmClassType("Object")->getPointerTo());
+
     llvm::FunctionType* abort_type = llvm::FunctionType::get(
-        GetLlvmClassType("Object")->getPointerTo(), false);
+        GetLlvmClassType("Object")->getPointerTo(), abort_args, false);
 
     llvm::Function* abort_func =
         llvm::Function::Create(abort_type, llvm::Function::ExternalLinkage,
@@ -251,14 +254,15 @@ void CodegenVisitor::Visit(const LetExpr& node) {
   const Expr* in_expr = nullptr;
 
   while (in_expr == nullptr) {
-    llvm::AllocaInst* alloca_inst =
-        builder_.CreateAlloca(GetLlvmBasicOrPointerToClassType(cur_let->GetType()));
+    llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+        GetLlvmBasicOrPointerToClassType(cur_let->GetType()));
     bindings.emplace_back(cur_let->GetId(), alloca_inst);
 
     if (cur_let->GetInitializationExpr()) {
       cur_let->GetInitializationExpr()->Accept(*this);
       builder_.CreateStore(
-          codegened_values_[cur_let->GetInitializationExpr().get()], alloca_inst);
+          codegened_values_[cur_let->GetInitializationExpr().get()],
+          alloca_inst);
     } else {
       builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(cur_let->GetType()),
                            alloca_inst);
