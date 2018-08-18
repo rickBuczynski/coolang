@@ -79,6 +79,24 @@ class CodegenVisitor : public ConstAstVisitor {
   }
   llvm::Constant* printf_func_;
 
+  llvm::Function* CreateAbortFunc() {
+    llvm::FunctionType* abort_type = llvm::FunctionType::get(
+        GetLlvmClassType("Object")->getPointerTo(), false);
+
+    llvm::Function* abort_func =
+        llvm::Function::Create(abort_type, llvm::Function::ExternalLinkage,
+                               "Object-abort", module_.get());
+
+    llvm::BasicBlock* abort_entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", abort_func);
+    builder_.SetInsertPoint(abort_entry);
+
+    // TODO abort the program instead of returning
+    builder_.CreateRetVoid();
+
+    return abort_func;
+  }
+
   llvm::Function* CreateIoOutStringFunc() {
     std::vector<llvm::Type*> io_out_string_args;
     io_out_string_args.push_back(GetLlvmClassType("IO")->getPointerTo());
@@ -228,25 +246,39 @@ void CodegenVisitor::Visit(const StrExpr& node) {
 }
 
 void CodegenVisitor::Visit(const LetExpr& node) {
-  llvm::AllocaInst* alloca_inst =
-      builder_.CreateAlloca(GetLlvmBasicOrPointerToClassType(node.GetType()));
-  AddToScope(node.GetId(), alloca_inst);
+  std::vector<std::pair<std::string, llvm::AllocaInst*>> bindings;
+  const LetExpr* cur_let = &node;
+  const Expr* in_expr = nullptr;
 
-  if (node.GetInitializationExpr()) {
-    node.GetInitializationExpr()->Accept(*this);
-    builder_.CreateStore(codegened_values_[node.GetInitializationExpr().get()],
-                         alloca_inst);
-  } else {
-    builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(node.GetType()),
-                         alloca_inst);
+  while (in_expr == nullptr) {
+    llvm::AllocaInst* alloca_inst =
+        builder_.CreateAlloca(GetLlvmBasicOrPointerToClassType(cur_let->GetType()));
+    bindings.emplace_back(cur_let->GetId(), alloca_inst);
+
+    if (cur_let->GetInitializationExpr()) {
+      cur_let->GetInitializationExpr()->Accept(*this);
+      builder_.CreateStore(
+          codegened_values_[cur_let->GetInitializationExpr().get()], alloca_inst);
+    } else {
+      builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(cur_let->GetType()),
+                           alloca_inst);
+    }
+
+    in_expr = cur_let->GetInExpr().get();
+    cur_let = cur_let->GetChainedLet().get();
   }
 
-  // TODO handle chained let
+  for (const auto& binding : bindings) {
+    AddToScope(binding.first, binding.second);
+  }
 
-  node.GetInExpr()->Accept(*this);
-  RemoveFromScope(node.GetId());
+  in_expr->Accept(*this);
 
-  codegened_values_[&node] = codegened_values_.at(node.GetInExpr().get());
+  for (const auto& binding : bindings) {
+    RemoveFromScope(binding.first);
+  }
+
+  codegened_values_[&node] = codegened_values_.at(in_expr);
 }
 
 void CodegenVisitor::Visit(const IntExpr& node) {
@@ -538,6 +570,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   classes_[node.GetObjectClass()] =
       llvm::StructType::create(context_, node.GetObjectClass()->GetName());
 
+  SetLlvmFunction("Object", "abort", CreateAbortFunc());
   SetLlvmFunction("IO", "out_string", CreateIoOutStringFunc());
   SetLlvmFunction("IO", "out_int", CreateIoOutIntFunc());
 
