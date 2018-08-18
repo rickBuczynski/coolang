@@ -102,11 +102,8 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.CreateCall(printf_func_, args);
     builder_.CreateRet(io_out_string_func->arg_begin());
 
-    SetLlvmFunction("IO", "out_string", io_out_string_func);
-
     return io_out_string_func;
   }
-  llvm::Function* io_out_string_func_;
 
   llvm::Function* CreateIoOutIntFunc() {
     std::vector<llvm::Type*> io_out_int_args;
@@ -130,11 +127,8 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.CreateCall(printf_func_, args);
     builder_.CreateRet(io_out_int_func->arg_begin());
 
-    SetLlvmFunction("IO", "out_int", io_out_int_func);
-
     return io_out_int_func;
   }
-  llvm::Function* io_out_int_func_;
 
   void ClearScope() { let_binding_vars_.clear(); }
 
@@ -543,8 +537,9 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
       llvm::StructType::create(context_, node.GetIoClass()->GetName());
   classes_[node.GetObjectClass()] =
       llvm::StructType::create(context_, node.GetObjectClass()->GetName());
-  io_out_string_func_ = CreateIoOutStringFunc();
-  io_out_int_func_ = CreateIoOutIntFunc();
+
+  SetLlvmFunction("IO", "out_string", CreateIoOutStringFunc());
+  SetLlvmFunction("IO", "out_int", CreateIoOutIntFunc());
 
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;

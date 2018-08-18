@@ -62,5 +62,6 @@ TEST(CodegenTest, interactionattrinitmethod) {
 }
 TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
 TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
+//TEST(CodegenTest, letinit) { TestCodegen("letinit.cl"); }
 
 }  // namespace
