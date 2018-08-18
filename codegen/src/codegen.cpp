@@ -40,7 +40,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const CaseExpr& node) override {}
   void Visit(const StrExpr& node) override;
   void Visit(const WhileExpr& node) override {}
-  void Visit(const LetExpr& node) override {}
+  void Visit(const LetExpr& node) override;
   void Visit(const IntExpr& node) override;
   void Visit(const IsVoidExpr& node) override;
   void Visit(const MethodCallExpr& node) override;
@@ -145,7 +145,7 @@ class CodegenVisitor : public ConstAstVisitor {
     }
   }
 
-  void AddToScope(const std::string& id, llvm::Value* val) {
+  void AddToScope(const std::string& id, llvm::AllocaInst* val) {
     let_binding_vars_[id].push(val);
   }
 
@@ -197,9 +197,24 @@ class CodegenVisitor : public ConstAstVisitor {
     return type;
   }
 
+  llvm::Value* GetLlvmBasicOrPointerDefaultVal(const std::string& type_name) {
+    if (type_name == "Int") {
+      return llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
+    }
+    if (type_name == "String") {
+      return builder_.CreateGlobalStringPtr("");
+    }
+    if (type_name == "Bool") {
+      return llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
+    }
+    return llvm::ConstantPointerNull::get(
+        GetLlvmClassType(type_name)->getPointerTo());
+  }
+
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
 
-  std::unordered_map<std::string, std::stack<llvm::Value*>> let_binding_vars_;
+  std::unordered_map<std::string, std::stack<llvm::AllocaInst*>>
+      let_binding_vars_;
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
   std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
@@ -216,6 +231,28 @@ class CodegenVisitor : public ConstAstVisitor {
 
 void CodegenVisitor::Visit(const StrExpr& node) {
   codegened_values_[&node] = builder_.CreateGlobalStringPtr(node.GetVal());
+}
+
+void CodegenVisitor::Visit(const LetExpr& node) {
+  llvm::AllocaInst* alloca_inst =
+      builder_.CreateAlloca(GetLlvmBasicOrPointerToClassType(node.GetType()));
+  AddToScope(node.GetId(), alloca_inst);
+
+  if (node.GetInitializationExpr()) {
+    node.GetInitializationExpr()->Accept(*this);
+    builder_.CreateStore(codegened_values_[node.GetInitializationExpr().get()],
+                         alloca_inst);
+  } else {
+    builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(node.GetType()),
+                         alloca_inst);
+  }
+
+  // TODO handle chained let
+
+  node.GetInExpr()->Accept(*this);
+  RemoveFromScope(node.GetId());
+
+  codegened_values_[&node] = codegened_values_.at(node.GetInExpr().get());
 }
 
 void CodegenVisitor::Visit(const IntExpr& node) {
@@ -339,7 +376,7 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
   // method params
   auto let_binding = let_binding_vars_.find(node.GetId());
   if (let_binding != let_binding_vars_.end()) {
-    codegened_values_[&node] = let_binding->second.top();
+    codegened_values_[&node] = builder_.CreateLoad(let_binding->second.top());
   }
 
   if (node.GetId() == "self") {
@@ -407,20 +444,8 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
     llvm::Value* element_ptr = builder_.CreateStructGEP(
         classes_[&node], constructor->args().begin(), i);
 
-    llvm::Value* val;
-
-    if (attr->GetType() == "Int") {
-      val = llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
-    } else if (attr->GetType() == "String") {
-      val = builder_.CreateGlobalStringPtr("");
-    } else if (attr->GetType() == "Bool") {
-      val = llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
-    } else {
-      val = llvm::ConstantPointerNull::get(
-          GetLlvmClassType(attr->GetType())->getPointerTo());
-    }
-
-    builder_.CreateStore(val, element_ptr);
+    builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(attr->GetType()),
+                         element_ptr);
   }
 
   auto dummy_constructor_method =
@@ -450,9 +475,15 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
 
 void CodegenVisitor::Visit(const AssignExpr& node) {
   node.GetRhsExpr()->Accept(*this);
-  codegened_values_[&node] = codegened_values_.at(node.GetRhsExpr());
 
-  // TODO actually store the value in a variable
+  const auto let_binding = let_binding_vars_.find(node.GetId());
+  if (let_binding != let_binding_vars_.end()) {
+    builder_.CreateStore(codegened_values_[node.GetRhsExpr()],
+                         let_binding->second.top());
+  }
+  // TODO handle assign of method params and object attributes
+
+  codegened_values_[&node] = codegened_values_.at(node.GetRhsExpr());
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
