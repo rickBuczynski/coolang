@@ -33,9 +33,7 @@ class CodegenVisitor : public ConstAstVisitor {
   explicit CodegenVisitor(const ProgramAst& program_ast)
       : program_ast_(&program_ast),
         module_(new llvm::Module("TODOMODULENAME", context_)),
-        builder_(context_) {
-    printf_func_ = CreateCStdFuncDecl("printf", "Int", {"String"}, true);
-  }
+        builder_(context_) {}
 
   void Visit(const CaseExpr& node) override {}
   void Visit(const StrExpr& node) override;
@@ -82,7 +80,6 @@ class CodegenVisitor : public ConstAstVisitor {
 
     return module_->getOrInsertFunction(func_name, func_type);
   }
-  llvm::Constant* printf_func_;
 
   llvm::Function* CreateAbortFunc() {
     std::vector<llvm::Type*> abort_args;
@@ -180,6 +177,28 @@ class CodegenVisitor : public ConstAstVisitor {
     return string_concat_func;
   }
 
+  llvm::Function* CreateStringLengthFunc() {
+    std::vector<llvm::Type*> string_length_args;
+    string_length_args.push_back(GetLlvmBasicType("String"));
+
+    llvm::FunctionType* string_length_type = llvm::FunctionType::get(
+        GetLlvmBasicType("Int"), string_length_args, false);
+
+    llvm::Function* string_length_func = llvm::Function::Create(
+        string_length_type, llvm::Function::ExternalLinkage, "String-length",
+        module_.get());
+
+    llvm::BasicBlock* string_length_entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", string_length_func);
+    builder_.SetInsertPoint(string_length_entry);
+
+    llvm::Value* len_val =
+        builder_.CreateCall(strlen_func_, {string_length_func->arg_begin()});
+    builder_.CreateRet(len_val);
+
+    return string_length_func;
+  }
+
   void ClearScope() { let_binding_vars_.clear(); }
 
   void RemoveFromScope(const std::string& id) {
@@ -271,6 +290,11 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::LLVMContext context_;
   std::unique_ptr<llvm::Module> module_;
   llvm::IRBuilder<> builder_;
+
+  llvm::Constant* printf_func_ =
+      CreateCStdFuncDecl("printf", "Int", {"String"}, true);
+  llvm::Constant* strlen_func_ =
+      CreateCStdFuncDecl("strlen", "Int", {"String"});
 };
 
 void CodegenVisitor::Visit(const StrExpr& node) {
@@ -607,6 +631,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   SetLlvmFunction("IO", "out_string", CreateIoOutStringFunc());
   SetLlvmFunction("IO", "out_int", CreateIoOutIntFunc());
   SetLlvmFunction("String", "concat", CreateStringConcatFunc());
+  SetLlvmFunction("String", "length", CreateStringLengthFunc());
 
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;
