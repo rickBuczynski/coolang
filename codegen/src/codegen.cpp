@@ -171,8 +171,23 @@ class CodegenVisitor : public ConstAstVisitor {
 
     // TODO actually concat the strings
     auto arg_iter = string_concat_func->arg_begin();
+    llvm::Value* lhs_arg = arg_iter;
     arg_iter++;
-    builder_.CreateRet(arg_iter);
+    llvm::Value* rhs_arg = arg_iter;
+
+    llvm::Value* lhs_len = builder_.CreateCall(strlen_func_, {lhs_arg});
+    llvm::Value* rhs_len = builder_.CreateCall(strlen_func_, {rhs_arg});
+    llvm::Value* const_one = llvm::ConstantInt::get(context_, llvm::APInt(32, 1, true));
+    llvm::Value* concated_len = builder_.CreateAdd(lhs_len, rhs_len);
+    concated_len = builder_.CreateAdd(concated_len, const_one);
+
+    // TODO this malloc leaks memory
+    llvm::Value* concated_val =
+        builder_.CreateCall(malloc_func_, {concated_len});
+    builder_.CreateCall(strcpy_func_, {concated_val, lhs_arg});
+    builder_.CreateCall(strcat_func_, {concated_val, rhs_arg});
+
+    builder_.CreateRet(concated_val);
 
     return string_concat_func;
   }
@@ -295,6 +310,15 @@ class CodegenVisitor : public ConstAstVisitor {
       CreateCStdFuncDecl("printf", "Int", {"String"}, true);
   llvm::Constant* strlen_func_ =
       CreateCStdFuncDecl("strlen", "Int", {"String"});
+  llvm::Constant* strcpy_func_ =
+      CreateCStdFuncDecl("strcpy", "String", {"String", "String"});
+  llvm::Constant* strcat_func_ =
+      CreateCStdFuncDecl("strcat", "String", {"String", "String"});
+
+  // use String (becomes char*) as return type for malloc
+  // since llvm has no void* type
+  llvm::Constant* malloc_func_ =
+      CreateCStdFuncDecl("malloc", "String", {"Int"});
 };
 
 void CodegenVisitor::Visit(const StrExpr& node) {
