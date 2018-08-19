@@ -169,7 +169,6 @@ class CodegenVisitor : public ConstAstVisitor {
         llvm::BasicBlock::Create(context_, "entrypoint", string_concat_func);
     builder_.SetInsertPoint(string_concat_entry);
 
-    // TODO actually concat the strings
     auto arg_iter = string_concat_func->arg_begin();
     llvm::Value* lhs_arg = arg_iter;
     arg_iter++;
@@ -177,7 +176,8 @@ class CodegenVisitor : public ConstAstVisitor {
 
     llvm::Value* lhs_len = builder_.CreateCall(strlen_func_, {lhs_arg});
     llvm::Value* rhs_len = builder_.CreateCall(strlen_func_, {rhs_arg});
-    llvm::Value* const_one = llvm::ConstantInt::get(context_, llvm::APInt(32, 1, true));
+    llvm::Value* const_one =
+        llvm::ConstantInt::get(context_, llvm::APInt(32, 1, true));
     llvm::Value* concated_len = builder_.CreateAdd(lhs_len, rhs_len);
     concated_len = builder_.CreateAdd(concated_len, const_one);
 
@@ -190,6 +190,51 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.CreateRet(concated_val);
 
     return string_concat_func;
+  }
+
+  llvm::Function* CreateStringSubstrFunc() {
+    std::vector<llvm::Type*> string_substr_args;
+    string_substr_args.push_back(GetLlvmBasicType("String"));
+    string_substr_args.push_back(GetLlvmBasicType("Int"));
+    string_substr_args.push_back(GetLlvmBasicType("Int"));
+
+    llvm::FunctionType* string_substr_type = llvm::FunctionType::get(
+        GetLlvmBasicType("String"), string_substr_args, false);
+
+    llvm::Function* string_substr_func = llvm::Function::Create(
+        string_substr_type, llvm::Function::ExternalLinkage, "String-substr",
+        module_.get());
+
+    llvm::BasicBlock* string_substr_entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", string_substr_func);
+    builder_.SetInsertPoint(string_substr_entry);
+
+    auto arg_iter = string_substr_func->arg_begin();
+    llvm::Value* str_lhs = arg_iter;
+    arg_iter++;
+    llvm::Value* int_start_index = arg_iter;
+    arg_iter++;
+    llvm::Value* substr_len = arg_iter;
+
+    llvm::Value* const_one =
+        llvm::ConstantInt::get(context_, llvm::APInt(32, 1, true));
+    llvm::Value* malloc_len = builder_.CreateAdd(substr_len, const_one);
+
+    // TODO this malloc leaks memory
+    llvm::Value* substr_val = builder_.CreateCall(malloc_func_, {malloc_len});
+    llvm::Value* substr_start_ptr =
+        builder_.CreateGEP(str_lhs, int_start_index);
+    builder_.CreateCall(strncpy_func_,
+                        {substr_val, substr_start_ptr, substr_len});
+
+    llvm::Value* substr_last_ptr = builder_.CreateGEP(substr_val, substr_len);
+    builder_.CreateStore(
+        llvm::ConstantInt::get(context_, llvm::APInt(8, 0, true)),
+        substr_last_ptr);
+
+    builder_.CreateRet(substr_val);
+
+    return string_substr_func;
   }
 
   llvm::Function* CreateStringLengthFunc() {
@@ -312,6 +357,8 @@ class CodegenVisitor : public ConstAstVisitor {
       CreateCStdFuncDecl("strlen", "Int", {"String"});
   llvm::Constant* strcpy_func_ =
       CreateCStdFuncDecl("strcpy", "String", {"String", "String"});
+  llvm::Constant* strncpy_func_ =
+      CreateCStdFuncDecl("strncpy", "String", {"String", "String", "Int"});
   llvm::Constant* strcat_func_ =
       CreateCStdFuncDecl("strcat", "String", {"String", "String"});
 
@@ -656,6 +703,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   SetLlvmFunction("IO", "out_int", CreateIoOutIntFunc());
   SetLlvmFunction("String", "concat", CreateStringConcatFunc());
   SetLlvmFunction("String", "length", CreateStringLengthFunc());
+  SetLlvmFunction("String", "substr", CreateStringSubstrFunc());
 
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;
