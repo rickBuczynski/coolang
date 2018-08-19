@@ -50,9 +50,9 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const BinOpExpr& node) override {}
   void Visit(const MultiplyExpr& node) override {}
   void Visit(const LessThanEqualCompareExpr& node) override {}
-  void Visit(const SubtractExpr& node) override {}
+  void Visit(const SubtractExpr& node) override;
   void Visit(const AddExpr& node) override;
-  void Visit(const EqCompareExpr& node) override {}
+  void Visit(const EqCompareExpr& node) override;
   void Visit(const DivideExpr& node) override {}
   void Visit(const LessThanCompareExpr& node) override {}
   void Visit(const NewExpr& node) override {}
@@ -492,6 +492,8 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   if (then_val->getType() != return_type) {
     then_val = builder_.CreateBitCast(then_val, return_type);
   }
+  // Codegen of 'Then' can change the current block, update then_bb for the PHI.
+  then_bb = builder_.GetInsertBlock();
 
   builder_.CreateBr(done_bb);
 
@@ -504,6 +506,8 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   if (else_val->getType() != return_type) {
     else_val = builder_.CreateBitCast(else_val, return_type);
   }
+  // Codegen of 'Else' can change the current block, update else_bb for the PHI.
+  else_bb = builder_.GetInsertBlock();
 
   builder_.CreateBr(done_bb);
 
@@ -564,6 +568,16 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
   }
 }
 
+void CodegenVisitor::Visit(const SubtractExpr& node) {
+  node.GetLhsExpr()->Accept(*this);
+  llvm::Value* lhs_value = codegened_values_.at(node.GetLhsExpr().get());
+
+  node.GetRhsExpr()->Accept(*this);
+  llvm::Value* rhs_value = codegened_values_.at(node.GetRhsExpr().get());
+
+  codegened_values_[&node] = builder_.CreateSub(lhs_value, rhs_value);
+}
+
 void CodegenVisitor::Visit(const AddExpr& node) {
   node.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = codegened_values_.at(node.GetLhsExpr().get());
@@ -572,6 +586,19 @@ void CodegenVisitor::Visit(const AddExpr& node) {
   llvm::Value* rhs_value = codegened_values_.at(node.GetRhsExpr().get());
 
   codegened_values_[&node] = builder_.CreateAdd(lhs_value, rhs_value);
+}
+
+void CodegenVisitor::Visit(const EqCompareExpr& node) {
+  node.GetLhsExpr()->Accept(*this);
+  llvm::Value* lhs_value = codegened_values_.at(node.GetLhsExpr().get());
+
+  node.GetRhsExpr()->Accept(*this);
+  llvm::Value* rhs_value = codegened_values_.at(node.GetRhsExpr().get());
+
+  // TODO handle types other than int
+  if (node.GetLhsExpr()->GetExprType() == "Int") {
+    codegened_values_[&node] = builder_.CreateICmpEQ(lhs_value, rhs_value);
+  }
 }
 
 llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
