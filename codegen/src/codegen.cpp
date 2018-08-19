@@ -34,7 +34,7 @@ class CodegenVisitor : public ConstAstVisitor {
       : program_ast_(&program_ast),
         module_(new llvm::Module("TODOMODULENAME", context_)),
         builder_(context_) {
-    printf_func_ = CreatePrintfFunc();
+    printf_func_ = CreateCStdFuncDecl("printf", "Int", {"String"}, true);
   }
 
   void Visit(const CaseExpr& node) override {}
@@ -68,14 +68,19 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const ProgramAst& node) override;
 
  private:
-  llvm::Constant* CreatePrintfFunc() {
-    std::vector<llvm::Type*> printf_arg_types;
-    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(context_));
+  llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
+                                     const std::string& return_type,
+                                     const std::vector<std::string>& arg_types,
+                                     bool is_var_arg = false) {
+    std::vector<llvm::Type*> llvm_arg_types;
+    for (const auto& arg : arg_types) {
+      llvm_arg_types.push_back(GetLlvmBasicType(arg));
+    }
 
-    llvm::FunctionType* printf_type =
-        llvm::FunctionType::get(builder_.getInt32Ty(), printf_arg_types, true);
+    llvm::FunctionType* func_type = llvm::FunctionType::get(
+        GetLlvmBasicType(return_type), llvm_arg_types, is_var_arg);
 
-    return module_->getOrInsertFunction("printf", printf_type);
+    return module_->getOrInsertFunction(func_name, func_type);
   }
   llvm::Constant* printf_func_;
 
@@ -168,7 +173,9 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.SetInsertPoint(string_concat_entry);
 
     // TODO actually concat the strings
-    builder_.CreateRet(string_concat_func->arg_begin());
+    auto arg_iter = string_concat_func->arg_begin();
+    arg_iter++;
+    builder_.CreateRet(arg_iter);
 
     return string_concat_func;
   }
