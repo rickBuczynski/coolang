@@ -65,5 +65,6 @@ TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
 TEST(CodegenTest, letinit) { TestCodegen("letinit.cl"); }
 TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl"); }
 TEST(CodegenTest, fibo) { TestCodegen("fibo.cl"); }
+TEST(CodegenTest, sequence) { TestCodegen("sequence.cl"); }
 
 }  // namespace

@@ -656,15 +656,31 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
 
 void CodegenVisitor::Visit(const AssignExpr& node) {
   node.GetRhsExpr()->Accept(*this);
+  codegened_values_[&node] = codegened_values_.at(node.GetRhsExpr());
 
   const auto let_binding = let_binding_vars_.find(node.GetId());
   if (let_binding != let_binding_vars_.end()) {
-    builder_.CreateStore(codegened_values_[node.GetRhsExpr()],
+    builder_.CreateStore(codegened_values_.at(node.GetRhsExpr()),
                          let_binding->second.top());
+    return;
   }
-  // TODO handle assign of method params and object attributes
 
-  codegened_values_[&node] = codegened_values_.at(node.GetRhsExpr());
+  // TODO handle assign of method params between let bindings and object attrs
+
+  // TODO maybe need super class attributes?
+  // are attributes private or protected?
+  for (size_t i = 0; i < current_class_->GetAttributeFeatures().size(); i++) {
+    const auto* attr = current_class_->GetAttributeFeatures()[i];
+
+    if (attr->GetId() == node.GetId()) {
+      llvm::Value* element_ptr = builder_.CreateStructGEP(
+          classes_.at(current_class_),
+          functions_.at(current_method_)->args().begin(), i);
+      builder_.CreateStore(codegened_values_.at(node.GetRhsExpr()),
+                           element_ptr);
+      return;
+    }
+  }
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
