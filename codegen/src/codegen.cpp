@@ -259,17 +259,17 @@ class CodegenVisitor : public ConstAstVisitor {
     return string_length_func;
   }
 
-  void ClearScope() { let_binding_vars_.clear(); }
+  void ClearScope() { in_scope_vars_.clear(); }
 
   void RemoveFromScope(const std::string& id) {
-    let_binding_vars_[id].pop();
-    if (let_binding_vars_[id].empty()) {
-      let_binding_vars_.erase(id);
+    in_scope_vars_[id].pop();
+    if (in_scope_vars_[id].empty()) {
+      in_scope_vars_.erase(id);
     }
   }
 
   void AddToScope(const std::string& id, llvm::AllocaInst* val) {
-    let_binding_vars_[id].push(val);
+    in_scope_vars_[id].push(val);
   }
 
   const ClassAst* GetClassByName(std::string name) const {
@@ -336,8 +336,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
 
-  std::unordered_map<std::string, std::stack<llvm::AllocaInst*>>
-      let_binding_vars_;
+  std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
   std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
@@ -532,9 +531,9 @@ void CodegenVisitor::Visit(const BlockExpr& node) {
 void CodegenVisitor::Visit(const ObjectExpr& node) {
   // First check for let binding, it has priority over class attributes and
   // method params
-  auto let_binding = let_binding_vars_.find(node.GetId());
-  if (let_binding != let_binding_vars_.end()) {
-    codegened_values_[&node] = builder_.CreateLoad(let_binding->second.top());
+  auto in_scope_var = in_scope_vars_.find(node.GetId());
+  if (in_scope_var != in_scope_vars_.end()) {
+    codegened_values_[&node] = builder_.CreateLoad(in_scope_var->second.top());
     return;
   }
 
@@ -648,10 +647,10 @@ void CodegenVisitor::Visit(const AssignExpr& node) {
   node.GetRhsExpr()->Accept(*this);
   codegened_values_[&node] = codegened_values_.at(node.GetRhsExpr());
 
-  const auto let_binding = let_binding_vars_.find(node.GetId());
-  if (let_binding != let_binding_vars_.end()) {
+  const auto in_scope_var = in_scope_vars_.find(node.GetId());
+  if (in_scope_var != in_scope_vars_.end()) {
     builder_.CreateStore(codegened_values_.at(node.GetRhsExpr()),
-                         let_binding->second.top());
+                         in_scope_var->second.top());
     return;
   }
 
