@@ -535,22 +535,12 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
   auto let_binding = let_binding_vars_.find(node.GetId());
   if (let_binding != let_binding_vars_.end()) {
     codegened_values_[&node] = builder_.CreateLoad(let_binding->second.top());
+    return;
   }
 
   if (node.GetId() == "self") {
     codegened_values_[&node] = functions_.at(current_method_)->args().begin();
     return;
-  }
-
-  auto arg_iter = functions_.at(current_method_)->arg_begin();
-  arg_iter++;  // skip implicit self param
-  for (const auto& arg : current_method_->GetArgs()) {
-    if (arg.GetId() == node.GetId()) {
-      codegened_values_[&node] = arg_iter;
-      return;
-    }
-
-    arg_iter++;
   }
 
   // TODO maybe need super class attributes?
@@ -665,8 +655,6 @@ void CodegenVisitor::Visit(const AssignExpr& node) {
     return;
   }
 
-  // TODO handle assign of method params between let bindings and object attrs
-
   // TODO maybe need super class attributes?
   // are attributes private or protected?
   for (size_t i = 0; i < current_class_->GetAttributeFeatures().size(); i++) {
@@ -709,8 +697,23 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
     current_method_ = method;
     functions_[current_method_] = func;
+
+    auto arg_iter = func->arg_begin();
+    arg_iter++;  // skip implicit self param
+    for (const auto& arg : method->GetArgs()) {
+      llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+          GetLlvmBasicOrPointerToClassType(arg.GetType()));
+      builder_.CreateStore(arg_iter, alloca_inst);
+      AddToScope(arg.GetId(), alloca_inst);
+      arg_iter++;
+    }
+
     method->GetRootExpr()->Accept(*this);
     current_method_ = nullptr;
+
+    for (const auto& arg : method->GetArgs()) {
+      RemoveFromScope(arg.GetId());
+    }
 
     if (codegened_values_.at(method->GetRootExpr().get())->getType() ==
         return_type) {

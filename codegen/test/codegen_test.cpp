@@ -105,7 +105,10 @@ TEST(CodegenTest, letinit) { TestCodegen("letinit.cl"); }
 // TEST(CodegenTest, many_objects_on_heap) {
 //  TestCodegen("many_objects_on_heap.cl");
 //}
-// TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
+//TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
+TEST(CodegenTest, modparamnointobjcast) {
+  TestCodegen("mod-param-no-int-obj-cast.cl");
+}
 // TEST(CodegenTest, multipledispatch) { TestCodegen("multiple-dispatch.cl"); }
 // TEST(CodegenTest, multiplestaticdispatch) {
 //  TestCodegen("multiple-static-dispatch.cl");
