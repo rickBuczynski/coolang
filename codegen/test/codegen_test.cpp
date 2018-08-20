@@ -56,15 +56,86 @@ void TestCodegen(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
+TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
+TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
 TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
+TEST(CodegenTest, basicequality) { TestCodegen("basicequality.cl"); }
+TEST(CodegenTest, bigexample) { TestCodegen("bigexample.cl"); }
+TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
+TEST(CodegenTest, book_list) { TestCodegen("book_list.cl"); }
+TEST(CodegenTest, boolcl) { TestCodegen("bool.cl"); }
+TEST(CodegenTest, c) { TestCodegen("c.cl"); }
+TEST(CodegenTest, calls) { TestCodegen("calls.cl"); }
+//TEST(CodegenTest, casenone) { TestCodegen("case-none.cl"); }
+//TEST(CodegenTest, caseorder) { TestCodegen("case-order.cl"); }
+TEST(CodegenTest, casevoid) { TestCodegen("casevoid.cl"); }
+TEST(CodegenTest, cells) { TestCodegen("cells.cl"); }
+TEST(CodegenTest, copyselfdispatch) { TestCodegen("copy-self-dispatch.cl"); }
+TEST(CodegenTest, copyselfinit) { TestCodegen("copy-self-init.cl"); }
+TEST(CodegenTest, dispatchoverridedynamic) {
+  TestCodegen("dispatch-override-dynamic.cl");
+}
+TEST(CodegenTest, dispatchoverridestatic) {
+  TestCodegen("dispatch-override-static.cl");
+}
+TEST(CodegenTest, dispatchvoiddynamic) {
+  TestCodegen("dispatch-void-dynamic.cl");
+}
+//TEST(CodegenTest, dispatchvoidstatic) {
+//  TestCodegen("dispatch-void-static.cl");
+//}
+//TEST(CodegenTest, dispatchvoidlet) { TestCodegen("dispatchvoidlet.cl"); }
+TEST(CodegenTest, evalorderargs) { TestCodegen("eval-order-args.cl"); }
+TEST(CodegenTest, evalorderarith) { TestCodegen("eval-order-arith.cl"); }
+TEST(CodegenTest, evalorderself) { TestCodegen("eval-order-self.cl"); }
+TEST(CodegenTest, exp) { TestCodegen("exp.cl"); }
+TEST(CodegenTest, fact) { TestCodegen("fact.cl"); }
+TEST(CodegenTest, fibo) { TestCodegen("fibo.cl"); }
+TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
+TEST(CodegenTest, initdefault) { TestCodegen("init-default.cl"); }
+TEST(CodegenTest, initorderself) { TestCodegen("init-order-self.cl"); }
+TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
 TEST(CodegenTest, interactionattrinitmethod) {
   TestCodegen("interaction-attrinit-method.cl");
 }
-TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
-TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
+TEST(CodegenTest, lamgc) { TestCodegen("lam-gc.cl"); }
+TEST(CodegenTest, lam) { TestCodegen("lam.cl"); }
+TEST(CodegenTest, letnested) { TestCodegen("let-nested.cl"); }
 TEST(CodegenTest, letinit) { TestCodegen("letinit.cl"); }
-TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl"); }
-TEST(CodegenTest, fibo) { TestCodegen("fibo.cl"); }
+TEST(CodegenTest, many_objects_on_heap) {
+  TestCodegen("many_objects_on_heap.cl");
+}
+//TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
+//TEST(CodegenTest, multipledispatch) { TestCodegen("multiple-dispatch.cl"); }
+TEST(CodegenTest, multiplestaticdispatch) {
+  TestCodegen("multiple-static-dispatch.cl");
+}
+TEST(CodegenTest, nestedarith) { TestCodegen("nested-arith.cl"); }
+TEST(CodegenTest, newselfdispatch) { TestCodegen("new-self-dispatch.cl"); }
+TEST(CodegenTest, newselfinit) { TestCodegen("new-self-init.cl"); }
+TEST(CodegenTest, newst) { TestCodegen("new-st.cl"); }
+TEST(CodegenTest, newbasic) { TestCodegen("newbasic.cl"); }
+//TEST(CodegenTest, not) { TestCodegen("not.cl"); }
+TEST(CodegenTest, objectequality) { TestCodegen("objectequality.cl"); }
+TEST(CodegenTest, overridebasic) { TestCodegen("override-basic.cl"); }
+TEST(CodegenTest, overridecl) { TestCodegen("override.cl"); }
+TEST(CodegenTest, primes) { TestCodegen("primes.cl"); }
+TEST(CodegenTest, recclass) { TestCodegen("recclass.cl"); }
+TEST(CodegenTest, scoping) { TestCodegen("scoping.cl"); }
+TEST(CodegenTest, selftypeattribute) { TestCodegen("selftypeattribute.cl"); }
 TEST(CodegenTest, sequence) { TestCodegen("sequence.cl"); }
+TEST(CodegenTest, shadowattrcase) { TestCodegen("shadow-attr-case.cl"); }
+TEST(CodegenTest, shadowattrformal) { TestCodegen("shadow-attr-formal.cl"); }
+TEST(CodegenTest, shadowattrlet) { TestCodegen("shadow-attr-let.cl"); }
+TEST(CodegenTest, shadowcaselet) { TestCodegen("shadow-case-let.cl"); }
+TEST(CodegenTest, shadowformalcase) { TestCodegen("shadow-formal-case.cl"); }
+TEST(CodegenTest, shadowformallet) { TestCodegen("shadow-formal-let.cl"); }
+TEST(CodegenTest, shadowletcase) { TestCodegen("shadow-let-case.cl"); }
+TEST(CodegenTest, shadowletlet) { TestCodegen("shadow-let-let.cl"); }
+TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
+TEST(CodegenTest, sort_list) { TestCodegen("sort_list.cl"); }
+TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl"); }
+TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
+TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
 
 }  // namespace
