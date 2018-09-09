@@ -6,6 +6,7 @@
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
@@ -33,6 +34,7 @@ class CodegenVisitor : public ConstAstVisitor {
   explicit CodegenVisitor(const ProgramAst& program_ast)
       : program_ast_(&program_ast),
         module_(new llvm::Module("TODOMODULENAME", context_)),
+        data_layout_(module_.get()),
         builder_(context_) {}
 
   void Visit(const CaseExpr& node) override {}
@@ -55,7 +57,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const EqCompareExpr& node) override;
   void Visit(const DivideExpr& node) override {}
   void Visit(const LessThanCompareExpr& node) override {}
-  void Visit(const NewExpr& node) override {}
+  void Visit(const NewExpr& node) override;
   void Visit(const AssignExpr& node) override;
   void Visit(const BoolExpr& node) override {}
   void Visit(const ClassAst& node) override;
@@ -348,6 +350,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   llvm::LLVMContext context_;
   std::unique_ptr<llvm::Module> module_;
+  llvm::DataLayout data_layout_;
   llvm::IRBuilder<> builder_;
 
   llvm::Constant* printf_func_ =
@@ -641,6 +644,30 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
 
   builder_.CreateRetVoid();
   return constructor;
+}
+
+void CodegenVisitor::Visit(const NewExpr& node) {
+  if (GetLlvmBasicType(node.GetType()) != nullptr) {
+    // TODO don't ignore "new" for basic types
+    return;
+  }
+
+  llvm::Type* type = GetLlvmClassType(node.GetType());
+
+  auto new_size = data_layout_.getTypeAllocSize(type);
+  llvm::Value* malloc_len_val =
+      llvm::ConstantInt::get(context_, llvm::APInt(32, new_size, true));
+
+  llvm::Value* malloc_val = builder_.CreateCall(malloc_func_, {malloc_len_val});
+
+  llvm::Value* new_val = builder_.CreateBitCast(
+      malloc_val, GetLlvmClassType(node.GetType())->getPointerTo());
+
+  std::vector<llvm::Value*> args;
+  args.push_back(new_val);
+  builder_.CreateCall(GetConstructor(node.GetType()), args);
+
+  codegened_values_[&node] = new_val;
 }
 
 void CodegenVisitor::Visit(const AssignExpr& node) {

@@ -105,7 +105,7 @@ TEST(CodegenTest, letinit) { TestCodegen("letinit.cl"); }
 // TEST(CodegenTest, many_objects_on_heap) {
 //  TestCodegen("many_objects_on_heap.cl");
 //}
-//TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
+// TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
 TEST(CodegenTest, modparamnointobjcast) {
   TestCodegen("mod-param-no-int-obj-cast.cl");
 }
@@ -118,6 +118,7 @@ TEST(CodegenTest, modparamnointobjcast) {
 // TEST(CodegenTest, newselfinit) { TestCodegen("new-self-init.cl"); }
 // TEST(CodegenTest, newst) { TestCodegen("new-st.cl"); }
 // TEST(CodegenTest, newbasic) { TestCodegen("newbasic.cl"); }
+TEST(CodegenTest, nonpolycall) { TestCodegen("non-poly-call.cl"); }
 // TEST(CodegenTest, not) { TestCodegen("not.cl"); }
 // TEST(CodegenTest, objectequality) { TestCodegen("objectequality.cl"); }
 // TEST(CodegenTest, overridebasic) { TestCodegen("override-basic.cl"); }

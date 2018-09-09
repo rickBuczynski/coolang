@@ -1,2 +1,5 @@
 /build
 *.TMP
+*.exe
+*.runout
+*.obj
