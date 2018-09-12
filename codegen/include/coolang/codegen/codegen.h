@@ -10,7 +10,8 @@ class Codegen {
   explicit Codegen(ProgramAst& ast) : ast_(&ast) {}
 
   void GenerateCode() const;
-  void Link() const;
+  void Link(
+      const std::optional<std::string>& exe_filename = std::nullopt) const;
 
   const std::filesystem::path& GetFilePath() const {
     return ast_->GetFilePath();

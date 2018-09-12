@@ -874,7 +874,7 @@ void Codegen::GenerateCode() const {
   ast_->Accept(codegen_visitor);
 }
 
-void Codegen::Link() const {
+void Codegen::Link(const std::optional<std::string>& exe_filename) const {
   std::filesystem::path object_file_path = ast_->GetFilePath();
   object_file_path.replace_extension(".obj");
 
@@ -882,6 +882,11 @@ void Codegen::Link() const {
   obj_input_linker_arg += " ";
 
   std::filesystem::path exe_file_path = ast_->GetFilePath();
+
+  if (exe_filename.has_value()) {
+    exe_file_path.replace_filename(exe_filename.value());
+  }
+
   exe_file_path.replace_extension(".exe");
 
   std::string output_exe_linker_arg = "-OUT:";

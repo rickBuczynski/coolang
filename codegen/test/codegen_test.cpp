@@ -7,6 +7,16 @@
 
 namespace {
 
+std::string ReplacedPatchWithPaatch(std::string str) {
+  const auto patch_substr_loc = str.find("patch");
+  if (patch_substr_loc == std::string::npos) {
+    return str;
+  } else {
+    str.replace(patch_substr_loc, strlen("patch"), "paatch");
+    return str;
+  }
+}
+
 std::string GetExpectedOutput(const std::string& expected_output_file) {
   std::ifstream t(expected_output_file);
   std::stringstream buffer;
@@ -18,6 +28,8 @@ void RunProgram(std::filesystem::path input_file_path) {
   std::filesystem::path output_file_path =
       input_file_path.replace_extension(".runout");
   std::filesystem::path exe_path = input_file_path.replace_extension(".exe");
+  exe_path.replace_filename(
+      ReplacedPatchWithPaatch(exe_path.filename().string()));
 
   std::string command = exe_path.string() + " > " + output_file_path.string();
   std::system(command.c_str());
@@ -43,7 +55,13 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name) {
   const auto codegen = std::make_unique<coolang::Codegen>(
       std::move(std::get<coolang::ProgramAst>(ast_or_err)));
   codegen->GenerateCode();
-  codegen->Link();
+
+  // Windows won't run exe with "patch" in the name...
+  if (input_file_name.find("patch") == std::string::npos) {
+    codegen->Link();
+  } else {
+    codegen->Link(ReplacedPatchWithPaatch(input_file_name));
+  }
 
   RunProgram(codegen->GetFilePath());
   return GetProgramOutput(codegen->GetFilePath());
