@@ -90,9 +90,9 @@ TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
 // TEST(CodegenTest, cells) { TestCodegen("cells.cl"); }
 // TEST(CodegenTest, copyselfdispatch) { TestCodegen("copy-self-dispatch.cl"); }
 // TEST(CodegenTest, copyselfinit) { TestCodegen("copy-self-init.cl"); }
-// TEST(CodegenTest, dispatchoverridedynamic) {
-//  TestCodegen("dispatch-override-dynamic.cl");
-//}
+TEST(CodegenTest, dispatchoverridedynamic) {
+  TestCodegen("dispatch-override-dynamic.cl");
+}
 // TEST(CodegenTest, dispatchoverridestatic) {
 //  TestCodegen("dispatch-override-static.cl");
 //}

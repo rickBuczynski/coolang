@@ -388,9 +388,16 @@ void CodegenVisitor::Visit(const LetExpr& node) {
 
     if (cur_let->GetInitializationExpr()) {
       cur_let->GetInitializationExpr()->Accept(*this);
-      builder_.CreateStore(
-          codegened_values_[cur_let->GetInitializationExpr().get()],
-          alloca_inst);
+
+      llvm::Value* init_val =
+          codegened_values_[cur_let->GetInitializationExpr().get()];
+      llvm::Type* let_type = GetLlvmBasicOrPointerToClassType(node.GetType());
+
+      if (let_type != init_val->getType()) {
+        init_val = builder_.CreateBitCast(init_val, let_type);
+      }
+
+      builder_.CreateStore(init_val, alloca_inst);
     } else {
       builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(cur_let->GetType()),
                            alloca_inst);
