@@ -336,6 +336,8 @@ class CodegenVisitor : public ConstAstVisitor {
         GetLlvmClassType(type_name)->getPointerTo());
   }
 
+  llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
+
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
 
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
@@ -674,11 +676,16 @@ void CodegenVisitor::Visit(const AssignExpr& node) {
   node.GetRhsExpr()->Accept(*this);
   codegened_values_[&node] = codegened_values_.at(node.GetRhsExpr());
 
+  llvm::Value* assign_lhs_ptr = GetAssignmentLhsPtr(node);
+  llvm::Value* assign_rhs_val = codegened_values_.at(node.GetRhsExpr());
+
+  builder_.CreateStore(assign_rhs_val, assign_lhs_ptr);
+}
+
+llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
   const auto in_scope_var = in_scope_vars_.find(node.GetId());
   if (in_scope_var != in_scope_vars_.end()) {
-    builder_.CreateStore(codegened_values_.at(node.GetRhsExpr()),
-                         in_scope_var->second.top());
-    return;
+    return in_scope_var->second.top();
   }
 
   // TODO maybe need super class attributes?
@@ -687,14 +694,13 @@ void CodegenVisitor::Visit(const AssignExpr& node) {
     const auto* attr = current_class_->GetAttributeFeatures()[i];
 
     if (attr->GetId() == node.GetId()) {
-      llvm::Value* element_ptr = builder_.CreateStructGEP(
+      return builder_.CreateStructGEP(
           classes_.at(current_class_),
           functions_.at(current_method_)->args().begin(), i);
-      builder_.CreateStore(codegened_values_.at(node.GetRhsExpr()),
-                           element_ptr);
-      return;
     }
   }
+
+  return nullptr;
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
