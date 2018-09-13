@@ -15,8 +15,6 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
-#include "llvm/IR/TypeBuilder.h"
-#include "llvm/IR/Verifier.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/TargetRegistry.h"
@@ -24,7 +22,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
-#include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
 namespace coolang {
@@ -33,7 +30,8 @@ class CodegenVisitor : public ConstAstVisitor {
  public:
   explicit CodegenVisitor(const ProgramAst& program_ast)
       : program_ast_(&program_ast),
-        module_(new llvm::Module("TODOMODULENAME", context_)),
+        module_(new llvm::Module(program_ast.GetFilePath().filename().string(),
+                                 context_)),
         data_layout_(module_.get()),
         builder_(context_) {}
 
