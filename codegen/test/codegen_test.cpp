@@ -73,7 +73,10 @@ void TestCodegen(const std::string& input_file) {
       GetExpectedOutput(CODEGEN_TEST_DATA_PATH + input_file + ".out");
   EXPECT_EQ(expected_output, parser_output);
 }
-
+TEST(CodegenTest, dispatchoverridedynamic) {
+  TestCodegen("dispatch-override-dynamic.cl");
+}
+/*
 // TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
 TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
@@ -159,5 +162,5 @@ TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
 TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl"); }
 // TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
 // TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
-
+*/
 }  // namespace

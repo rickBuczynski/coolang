@@ -9,6 +9,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/LLVMContext.h"
@@ -342,6 +343,8 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
   std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
+  std::unordered_map<const ClassAst*, llvm::StructType*> class_vtable_types_;
+  std::unordered_map<const ClassAst*, llvm::GlobalValue*> class_vtable_globals_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
   const MethodFeature* current_method_ = nullptr;
@@ -475,6 +478,23 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
 
   const auto called_method =
       GetLlvmFunction(node.GetLhsExpr()->GetExprType(), node.GetMethodName());
+
+  // TODO hack to see if vtable works for this one case
+  if (node.GetMethodName() == "identify") {
+    int vtable_index = 0;  // TODO should be after last attribute
+
+    llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
+        classes_[GetClassByName(node.GetLhsExpr()->GetExprType())], lhs_val,
+        vtable_index);
+    llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
+    int method_offset_in_vtable = 0;  // TODO not always 0
+    llvm::Value* vtable_func_ptr = builder_.CreateStructGEP(
+         nullptr, vtable_ptr, method_offset_in_vtable);
+    llvm::Value* vtable_func = builder_.CreateLoad(vtable_func_ptr);
+
+    codegened_values_[&node] = builder_.CreateCall(vtable_func, arg_vals);
+    return;
+  }
 
   codegened_values_[&node] = builder_.CreateCall(called_method, arg_vals);
 }
@@ -646,6 +666,11 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
     }
   }
 
+  int vtable_index = node.GetAttributeFeatures().size();  // after attributes
+  llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
+      classes_[&node], constructor->args().begin(), vtable_index);
+  builder_.CreateStore(class_vtable_globals_[&node], vtable_ptr_ptr);
+
   current_method_ = nullptr;
   functions_.erase(&dummy_constructor_method);
 
@@ -711,6 +736,11 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
 void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
+  std::vector<llvm::Type*> vtable_method_types;
+  std::vector<llvm::Function*> vtable_functions;
+
+  // todo add methods to this then set body of vtable type like I do with
+  // attributes in ProgramAst visit
   for (const auto* method : node.GetMethodFeatures()) {
     llvm::Type* return_type =
         GetLlvmBasicOrPointerToClassType(method->GetReturnType());
@@ -727,6 +757,9 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     llvm::Function* func = llvm::Function::Create(
         func_type, llvm::Function::ExternalLinkage,
         node.GetName() + "-" + method->GetId(), module_.get());
+
+    vtable_method_types.push_back(func->getType());
+    vtable_functions.push_back(func);
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(context_, "entrypoint", func);
@@ -762,6 +795,19 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     }
   }
 
+  class_vtable_types_[&node]->setBody(vtable_method_types);
+  // TODO leaks memory, make class_vtable_globals_ store unique ptrs
+  auto vtable = new llvm::GlobalVariable(
+      *module_, class_vtable_types_[&node], true,
+      llvm::GlobalValue::LinkageTypes::CommonLinkage, nullptr, "globalvtable");
+
+  class_vtable_globals_[&node] = vtable;
+
+  if (vtable_functions.size() == 1) {
+    vtable->setInitializer(llvm::ConstantStruct::get(class_vtable_types_[&node],
+                                                     {vtable_functions[0]}));
+  }
+
   constructors_[&node] = CreateConstructor(node);
 
   current_class_ = nullptr;
@@ -775,6 +821,8 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
     classes_[&class_ast] =
         llvm::StructType::create(context_, class_ast.GetName());
+    class_vtable_types_[&class_ast] =
+        llvm::StructType::create(context_, class_ast.GetName() + "-vtable");
   }
   classes_[node.GetIoClass()] =
       llvm::StructType::create(context_, node.GetIoClass()->GetName());
@@ -794,6 +842,10 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
       llvm::Type* attr_type = GetLlvmBasicOrPointerToClassType(attr->GetType());
       class_attributes.push_back(attr_type);
     }
+    // TODO this needs to go before attributes since we don't know the type of
+    // a caller at compile table and base and derived can have more or fewer
+    // attributes it needs to be at a fixed location
+    class_attributes.push_back(class_vtable_types_[&class_ast]->getPointerTo());
     classes_[&class_ast]->setBody(class_attributes);
   }
 
