@@ -804,16 +804,15 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
   class_vtable_types_[&node]->setBody(vtable_method_types);
 
-  // TODO leaks memory, make class_vtable_globals_ store unique ptrs
-  auto vtable =
-      new llvm::GlobalVariable(*module_, class_vtable_types_[&node], true,
-                               llvm::GlobalValue::LinkageTypes::ExternalLinkage,
-                               nullptr, node.GetName() + "-vtable-global");
-
-  class_vtable_globals_[&node] = vtable;
-
+  module_->getOrInsertGlobal(node.GetName() + "-vtable-global",
+                             class_vtable_types_[&node]);
+  llvm::GlobalVariable* vtable =
+      module_->getNamedGlobal(node.GetName() + "-vtable-global");
+  vtable->setConstant(true);
+  vtable->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
   vtable->setInitializer(
       llvm::ConstantStruct::get(class_vtable_types_[&node], vtable_functions));
+  class_vtable_globals_[&node] = vtable;
 
   constructors_[&node] = CreateConstructor(node);
 
