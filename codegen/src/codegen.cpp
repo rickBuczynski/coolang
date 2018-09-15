@@ -579,10 +579,11 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
   for (size_t i = 0; i < current_class_->GetAttributeFeatures().size(); i++) {
     const auto* attr = current_class_->GetAttributeFeatures()[i];
 
+    const int attribute_index = i + 1;  // offset 1 since vtable is at 0
     if (attr->GetId() == node.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           classes_[current_class_],
-          functions_.at(current_method_)->args().begin(), i);
+          functions_.at(current_method_)->args().begin(), attribute_index);
       codegened_values_[&node] = builder_.CreateLoad(element_ptr);
       return;
     }
@@ -643,8 +644,9 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
   for (size_t i = 0; i < node.GetAttributeFeatures().size(); i++) {
     const auto* attr = node.GetAttributeFeatures()[i];
 
+    const int attribute_index = i + 1;  // offset 1 since vtable is at 0
     llvm::Value* element_ptr = builder_.CreateStructGEP(
-        classes_[&node], constructor->args().begin(), i);
+        classes_[&node], constructor->args().begin(), attribute_index);
 
     builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(attr->GetType()),
                          element_ptr);
@@ -661,14 +663,15 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
 
     if (attr->GetRootExpr()) {
       attr->GetRootExpr()->Accept(*this);
+      const int attribute_index = i + 1;  // offset 1 since vtable is at 0
       llvm::Value* element_ptr = builder_.CreateStructGEP(
-          classes_[&node], constructor->args().begin(), i);
+          classes_[&node], constructor->args().begin(), attribute_index);
       builder_.CreateStore(codegened_values_.at(attr->GetRootExpr().get()),
                            element_ptr);
     }
   }
 
-  int vtable_index = node.GetAttributeFeatures().size();  // after attributes
+  const int vtable_index = 0;
   llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
       classes_[&node], constructor->args().begin(), vtable_index);
   builder_.CreateStore(class_vtable_globals_[&node], vtable_ptr_ptr);
@@ -726,9 +729,10 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
     const auto* attr = current_class_->GetAttributeFeatures()[i];
 
     if (attr->GetId() == node.GetId()) {
+      const int attribute_index = i + 1;  // offset 1 since vtable is at 0
       return builder_.CreateStructGEP(
           classes_.at(current_class_),
-          functions_.at(current_method_)->args().begin(), i);
+          functions_.at(current_method_)->args().begin(), attribute_index);
     }
   }
 
@@ -841,14 +845,13 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;
+    class_attributes.push_back(class_vtable_types_[&class_ast]->getPointerTo());
+
     for (const auto* attr : class_ast.GetAttributeFeatures()) {
       llvm::Type* attr_type = GetLlvmBasicOrPointerToClassType(attr->GetType());
       class_attributes.push_back(attr_type);
     }
-    // TODO this needs to go before attributes since we don't know the type of
-    // a caller at compile table and base and derived can have more or fewer
-    // attributes it needs to be at a fixed location
-    class_attributes.push_back(class_vtable_types_[&class_ast]->getPointerTo());
+
     classes_[&class_ast]->setBody(class_attributes);
   }
 
