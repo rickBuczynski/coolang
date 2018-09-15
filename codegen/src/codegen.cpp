@@ -481,15 +481,17 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
 
   // TODO hack to see if vtable works for this one case
   if (node.GetMethodName() == "identify") {
-    int vtable_index = 0;  // TODO should be after last attribute
-
+    int vtable_index = 0;  // TODO right now vtable is actually after all
+                           // attributes but need to move it to before all, 0
+                           // works here because the classes calling identify
+                           // have no attributes
     llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
         classes_[GetClassByName(node.GetLhsExpr()->GetExprType())], lhs_val,
         vtable_index);
     llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
     int method_offset_in_vtable = 0;  // TODO not always 0
-    llvm::Value* vtable_func_ptr = builder_.CreateStructGEP(
-         nullptr, vtable_ptr, method_offset_in_vtable);
+    llvm::Value* vtable_func_ptr =
+        builder_.CreateStructGEP(nullptr, vtable_ptr, method_offset_in_vtable);
     llvm::Value* vtable_func = builder_.CreateLoad(vtable_func_ptr);
 
     codegened_values_[&node] = builder_.CreateCall(vtable_func, arg_vals);
@@ -797,9 +799,10 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
   class_vtable_types_[&node]->setBody(vtable_method_types);
   // TODO leaks memory, make class_vtable_globals_ store unique ptrs
-  auto vtable = new llvm::GlobalVariable(
-      *module_, class_vtable_types_[&node], true,
-      llvm::GlobalValue::LinkageTypes::CommonLinkage, nullptr, "globalvtable");
+  auto vtable =
+      new llvm::GlobalVariable(*module_, class_vtable_types_[&node], true,
+                               llvm::GlobalValue::LinkageTypes::ExternalLinkage,
+                               nullptr, "globalvtable");
 
   class_vtable_globals_[&node] = vtable;
 
