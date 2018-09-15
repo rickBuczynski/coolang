@@ -739,7 +739,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
   std::vector<llvm::Type*> vtable_method_types;
-  std::vector<llvm::Function*> vtable_functions;
+  std::vector<llvm::Constant*> vtable_functions;
 
   // todo add methods to this then set body of vtable type like I do with
   // attributes in ProgramAst visit
@@ -798,6 +798,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   }
 
   class_vtable_types_[&node]->setBody(vtable_method_types);
+
   // TODO leaks memory, make class_vtable_globals_ store unique ptrs
   auto vtable =
       new llvm::GlobalVariable(*module_, class_vtable_types_[&node], true,
@@ -806,10 +807,8 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
   class_vtable_globals_[&node] = vtable;
 
-  if (vtable_functions.size() == 1) {
-    vtable->setInitializer(llvm::ConstantStruct::get(class_vtable_types_[&node],
-                                                     {vtable_functions[0]}));
-  }
+  vtable->setInitializer(
+      llvm::ConstantStruct::get(class_vtable_types_[&node], vtable_functions));
 
   constructors_[&node] = CreateConstructor(node);
 
