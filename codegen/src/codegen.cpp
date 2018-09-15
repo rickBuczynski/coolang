@@ -760,6 +760,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
         func_type, llvm::Function::ExternalLinkage,
         node.GetName() + "-" + method->GetId(), module_.get());
 
+    // TODO only pushing class methods now, not super class methods
     vtable_method_types.push_back(func->getType());
     vtable_functions.push_back(func);
 
