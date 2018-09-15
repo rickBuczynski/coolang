@@ -802,7 +802,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   auto vtable =
       new llvm::GlobalVariable(*module_, class_vtable_types_[&node], true,
                                llvm::GlobalValue::LinkageTypes::ExternalLinkage,
-                               nullptr, "globalvtable");
+                               nullptr, node.GetName() + "-vtable-global");
 
   class_vtable_globals_[&node] = vtable;
 
