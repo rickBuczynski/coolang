@@ -745,8 +745,6 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   std::vector<llvm::Type*> vtable_method_types;
   std::vector<llvm::Constant*> vtable_functions;
 
-  // todo add methods to this then set body of vtable type like I do with
-  // attributes in ProgramAst visit
   for (const auto* method : node.GetMethodFeatures()) {
     llvm::Type* return_type =
         GetLlvmBasicOrPointerToClassType(method->GetReturnType());
