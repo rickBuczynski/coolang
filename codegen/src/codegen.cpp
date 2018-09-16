@@ -335,6 +335,10 @@ class CodegenVisitor : public ConstAstVisitor {
         GetLlvmClassType(type_name)->getPointerTo());
   }
 
+  int GetVtableIndexOfMethodFeature(const ClassAst* class_ast,
+                                    const MethodFeature* method_feature);
+  void SetupVtable(const ClassAst* class_ast);
+
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
 
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
@@ -345,6 +349,8 @@ class CodegenVisitor : public ConstAstVisitor {
   std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
   std::unordered_map<const ClassAst*, llvm::StructType*> class_vtable_types_;
   std::unordered_map<const ClassAst*, llvm::GlobalValue*> class_vtable_globals_;
+  std::unordered_map<const ClassAst*, std::vector<llvm::Constant*>>
+      class_vtable_functions_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
   const MethodFeature* current_method_ = nullptr;
@@ -480,16 +486,18 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
       GetLlvmFunction(node.GetLhsExpr()->GetExprType(), node.GetMethodName());
 
   // TODO hack to see if vtable works for this one case
-  if (node.GetMethodName() == "identify") {
-    int vtable_index = 0;  // TODO right now vtable is actually after all
-                           // attributes but need to move it to before all, 0
-                           // works here because the classes calling identify
-                           // have no attributes
+  if (node.GetMethodName() == "identify" ||
+      node.GetMethodName() == "base_and_derived" ||
+      node.GetMethodName() == "base_and_derived_two" ||
+      node.GetMethodName() == "base_only" ||
+      node.GetMethodName() == "derived_only") {
+    int vtable_index = 0;
     llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
         classes_[GetClassByName(node.GetLhsExpr()->GetExprType())], lhs_val,
         vtable_index);
     llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
-    int method_offset_in_vtable = 0;  // TODO not always 0
+    int method_offset_in_vtable =
+        GetVtableIndexOfMethodFeature(class_calling_method, method_feature);
     llvm::Value* vtable_func_ptr =
         builder_.CreateStructGEP(nullptr, vtable_ptr, method_offset_in_vtable);
     llvm::Value* vtable_func = builder_.CreateLoad(vtable_func_ptr);
@@ -740,38 +748,17 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
+  SetupVtable(&node);
+
   current_class_ = &node;
 
-  std::vector<llvm::Type*> vtable_method_types;
-  std::vector<llvm::Constant*> vtable_functions;
-
   for (const auto* method : node.GetMethodFeatures()) {
-    llvm::Type* return_type =
-        GetLlvmBasicOrPointerToClassType(method->GetReturnType());
-
-    std::vector<llvm::Type*> arg_types;
-    // first param is always implicit 'self'
-    arg_types.push_back(classes_[&node]->getPointerTo());
-    for (const auto& arg : method->GetArgs()) {
-      arg_types.push_back(GetLlvmBasicOrPointerToClassType(arg.GetType()));
-    }
-
-    llvm::FunctionType* func_type =
-        llvm::FunctionType::get(return_type, arg_types, false);
-    llvm::Function* func = llvm::Function::Create(
-        func_type, llvm::Function::ExternalLinkage,
-        node.GetName() + "-" + method->GetId(), module_.get());
-
-    // TODO only pushing class methods now, not super class methods
-    vtable_method_types.push_back(func->getType());
-    vtable_functions.push_back(func);
+    current_method_ = method;
+    llvm::Function* func = functions_.at(method);
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(context_, "entrypoint", func);
     builder_.SetInsertPoint(entry);
-
-    current_method_ = method;
-    functions_[current_method_] = func;
 
     auto arg_iter = func->arg_begin();
     arg_iter++;  // skip implicit self param
@@ -790,6 +777,9 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       RemoveFromScope(arg.GetId());
     }
 
+    llvm::Type* return_type =
+        GetLlvmBasicOrPointerToClassType(method->GetReturnType());
+
     if (codegened_values_.at(method->GetRootExpr().get())->getType() ==
         return_type) {
       builder_.CreateRet(codegened_values_.at(method->GetRootExpr().get()));
@@ -800,22 +790,108 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     }
   }
 
-  class_vtable_types_[&node]->setBody(vtable_method_types);
-
-  module_->getOrInsertGlobal(node.GetName() + "-vtable-global",
-                             class_vtable_types_[&node]);
-  llvm::GlobalVariable* vtable =
-      module_->getNamedGlobal(node.GetName() + "-vtable-global");
-  vtable->setConstant(true);
-  vtable->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
-  vtable->setInitializer(
-      llvm::ConstantStruct::get(class_vtable_types_[&node], vtable_functions));
-  class_vtable_globals_[&node] = vtable;
-
   constructors_[&node] = CreateConstructor(node);
 
   current_class_ = nullptr;
   ClearScope();
+}
+
+int CodegenVisitor::GetVtableIndexOfMethodFeature(
+    const ClassAst* class_ast, const MethodFeature* method_feature) {
+  std::vector<const ClassAst*> supers_and_class =
+      class_ast->GetAllSuperClasses();
+  std::reverse(supers_and_class.begin(), supers_and_class.end());
+  supers_and_class.push_back(class_ast);
+  std::set<std::string> already_seen_method_ids;
+  int vtable_method_index = 0;
+  for (const auto* cool_class : supers_and_class) {
+    for (const auto* method : cool_class->GetMethodFeatures()) {
+      if (method->GetId() == method_feature->GetId()) {
+        return vtable_method_index;
+      }
+      if (already_seen_method_ids.find(method->GetId()) ==
+          already_seen_method_ids.end()) {
+        vtable_method_index++;
+      }
+      already_seen_method_ids.insert(method->GetId());
+    }
+  }
+  throw std::invalid_argument("Method: " + method_feature->GetId() +
+                              " not defined in class: " + class_ast->GetName() +
+                              " or its super classes.");
+}
+
+void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
+  current_class_ = class_ast;
+
+  if (class_vtable_globals_.find(class_ast) != class_vtable_globals_.end()) {
+    return;
+  }
+
+  std::vector<llvm::Type*> vtable_method_types;
+  std::vector<llvm::Constant*> vtable_functions;
+
+  if (class_ast->GetSuperClass() != nullptr) {
+    SetupVtable(class_ast->GetSuperClass());
+    current_class_ = class_ast;
+
+    llvm::StructType* super_vtable_type =
+        class_vtable_types_.at(class_ast->GetSuperClass());
+
+    vtable_method_types.insert(vtable_method_types.end(),
+                               super_vtable_type->element_begin(),
+                               super_vtable_type->element_end());
+
+    std::vector<llvm::Constant*> super_vtable_functions =
+        class_vtable_functions_.at(class_ast->GetSuperClass());
+
+    vtable_functions.insert(vtable_functions.end(),
+                            super_vtable_functions.begin(),
+                            super_vtable_functions.end());
+  }
+
+  for (const auto* method : class_ast->GetMethodFeatures()) {
+    llvm::Type* return_type =
+        GetLlvmBasicOrPointerToClassType(method->GetReturnType());
+
+    std::vector<llvm::Type*> arg_types;
+    // first param is always implicit 'self'
+    arg_types.push_back(classes_[class_ast]->getPointerTo());
+    for (const auto& arg : method->GetArgs()) {
+      arg_types.push_back(GetLlvmBasicOrPointerToClassType(arg.GetType()));
+    }
+
+    llvm::FunctionType* func_type =
+        llvm::FunctionType::get(return_type, arg_types, false);
+    llvm::Function* func = llvm::Function::Create(
+        func_type, llvm::Function::ExternalLinkage,
+        class_ast->GetName() + "-" + method->GetId(), module_.get());
+    functions_[method] = func;
+
+    int vtable_method_index = GetVtableIndexOfMethodFeature(class_ast, method);
+    if (vtable_method_index < vtable_method_types.size()) {
+      // redefining a super method
+      vtable_method_types[vtable_method_index] = func->getType();
+      vtable_functions[vtable_method_index] = func;
+    } else {
+      assert(vtable_method_index == vtable_method_types.size());
+      vtable_method_types.push_back(func->getType());
+      vtable_functions.push_back(func);
+    }
+  }
+
+  class_vtable_types_[class_ast]->setBody(vtable_method_types);
+
+  module_->getOrInsertGlobal(class_ast->GetName() + "-vtable-global",
+                             class_vtable_types_[class_ast]);
+  llvm::GlobalVariable* vtable =
+      module_->getNamedGlobal(class_ast->GetName() + "-vtable-global");
+  vtable->setConstant(true);
+  vtable->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
+  vtable->setInitializer(llvm::ConstantStruct::get(
+      class_vtable_types_[class_ast], vtable_functions));
+  class_vtable_functions_[class_ast] = vtable_functions;
+  class_vtable_globals_[class_ast] = vtable;
 }
 
 // instead of pushing constants on to the scope need to access main's struct
@@ -832,10 +908,67 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
       llvm::StructType::create(context_, node.GetIoClass()->GetName());
   classes_[node.GetObjectClass()] =
       llvm::StructType::create(context_, node.GetObjectClass()->GetName());
+  class_vtable_types_[node.GetIoClass()] = llvm::StructType::create(
+      context_, node.GetIoClass()->GetName() + "-vtable");
+  class_vtable_types_[node.GetObjectClass()] = llvm::StructType::create(
+      context_, node.GetObjectClass()->GetName() + "-vtable");
 
-  SetLlvmFunction("Object", "abort", CreateAbortFunc());
-  SetLlvmFunction("IO", "out_string", CreateIoOutStringFunc());
-  SetLlvmFunction("IO", "out_int", CreateIoOutIntFunc());
+  llvm::Function* abort_func = CreateAbortFunc();
+  llvm::Function* io_out_string_func = CreateIoOutStringFunc();
+  llvm::Function* io_out_int_func = CreateIoOutIntFunc();
+
+  // TODO repeating function to match number of method features
+  // need to actually define functions for those
+
+  class_vtable_types_[node.GetObjectClass()]->setBody(
+      abort_func->getType(), abort_func->getType(), abort_func->getType());
+
+  class_vtable_functions_[node.GetObjectClass()].push_back(abort_func);
+  class_vtable_functions_[node.GetObjectClass()].push_back(abort_func);
+  class_vtable_functions_[node.GetObjectClass()].push_back(abort_func);
+
+  class_vtable_types_[node.GetIoClass()]->setBody(
+      abort_func->getType(), abort_func->getType(), abort_func->getType(),
+      io_out_string_func->getType(), io_out_int_func->getType(),
+      io_out_int_func->getType(), io_out_int_func->getType());
+
+  class_vtable_functions_[node.GetIoClass()].push_back(abort_func);
+  class_vtable_functions_[node.GetIoClass()].push_back(abort_func);
+  class_vtable_functions_[node.GetIoClass()].push_back(abort_func);
+  class_vtable_functions_[node.GetIoClass()].push_back(io_out_string_func);
+  class_vtable_functions_[node.GetIoClass()].push_back(io_out_int_func);
+  class_vtable_functions_[node.GetIoClass()].push_back(io_out_int_func);
+  class_vtable_functions_[node.GetIoClass()].push_back(io_out_int_func);
+
+  {
+    module_->getOrInsertGlobal(
+        node.GetObjectClass()->GetName() + "-vtable-global",
+        class_vtable_types_[node.GetObjectClass()]);
+    llvm::GlobalVariable* vtable = module_->getNamedGlobal(
+        node.GetObjectClass()->GetName() + "-vtable-global");
+    vtable->setConstant(true);
+    vtable->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
+    vtable->setInitializer(llvm::ConstantStruct::get(
+        class_vtable_types_[node.GetObjectClass()],
+        class_vtable_functions_[node.GetObjectClass()]));
+    class_vtable_globals_[node.GetObjectClass()] = vtable;
+  }
+  {
+    module_->getOrInsertGlobal(node.GetIoClass()->GetName() + "-vtable-global",
+                               class_vtable_types_[node.GetIoClass()]);
+    llvm::GlobalVariable* vtable = module_->getNamedGlobal(
+        node.GetIoClass()->GetName() + "-vtable-global");
+    vtable->setConstant(true);
+    vtable->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
+    vtable->setInitializer(
+        llvm::ConstantStruct::get(class_vtable_types_[node.GetIoClass()],
+                                  class_vtable_functions_[node.GetIoClass()]));
+    class_vtable_globals_[node.GetIoClass()] = vtable;
+  }
+
+  SetLlvmFunction("Object", "abort", abort_func);
+  SetLlvmFunction("IO", "out_string", io_out_string_func);
+  SetLlvmFunction("IO", "out_int", io_out_int_func);
   SetLlvmFunction("String", "concat", CreateStringConcatFunc());
   SetLlvmFunction("String", "length", CreateStringLengthFunc());
   SetLlvmFunction("String", "substr", CreateStringSubstrFunc());

@@ -93,6 +93,9 @@ TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
 TEST(CodegenTest, dispatchoverridedynamic) {
   TestCodegen("dispatch-override-dynamic.cl");
 }
+TEST(CodegenTest, dispatchoverridedynamiccomplex) {
+  TestCodegen("dispatch-override-dynamic-complex.cl");
+}
 // TEST(CodegenTest, dispatchoverridestatic) {
 //  TestCodegen("dispatch-override-static.cl");
 //}
