@@ -338,7 +338,8 @@ class CodegenVisitor : public ConstAstVisitor {
   int GetVtableIndexOfMethodFeature(const ClassAst* class_ast,
                                     const MethodFeature* method_feature);
   void SetupVtable(const ClassAst* class_ast);
-  void SetupVtable(const ClassAst* class_ast, const std::vector<llvm::Constant*>& vtable_functions);
+  void SetupVtable(const ClassAst* class_ast,
+                   const std::vector<llvm::Constant*>& vtable_functions);
 
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
 
@@ -858,7 +859,8 @@ void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
         class_ast->GetName() + "-" + method->GetId(), module_.get());
     functions_[method] = func;
 
-    const int vtable_method_index = GetVtableIndexOfMethodFeature(class_ast, method);
+    const int vtable_method_index =
+        GetVtableIndexOfMethodFeature(class_ast, method);
     if (vtable_method_index < vtable_functions.size()) {
       // redefining a super method
       vtable_functions[vtable_method_index] = func;
@@ -872,7 +874,8 @@ void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
 }
 
 void CodegenVisitor::SetupVtable(
-    const ClassAst* class_ast, const std::vector<llvm::Constant*>& vtable_functions) {
+    const ClassAst* class_ast,
+    const std::vector<llvm::Constant*>& vtable_functions) {
   std::vector<llvm::Type*> vtable_method_types;
   vtable_method_types.reserve(vtable_functions.size());
   for (auto func : vtable_functions) {
@@ -918,52 +921,10 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   // TODO repeating function to match number of method features
   // need to actually define functions for those
-
-  class_vtable_types_[node.GetObjectClass()]->setBody(
-      abort_func->getType(), abort_func->getType(), abort_func->getType());
-
-  class_vtable_functions_[node.GetObjectClass()].push_back(abort_func);
-  class_vtable_functions_[node.GetObjectClass()].push_back(abort_func);
-  class_vtable_functions_[node.GetObjectClass()].push_back(abort_func);
-
-  class_vtable_types_[node.GetIoClass()]->setBody(
-      abort_func->getType(), abort_func->getType(), abort_func->getType(),
-      io_out_string_func->getType(), io_out_int_func->getType(),
-      io_out_int_func->getType(), io_out_int_func->getType());
-
-  class_vtable_functions_[node.GetIoClass()].push_back(abort_func);
-  class_vtable_functions_[node.GetIoClass()].push_back(abort_func);
-  class_vtable_functions_[node.GetIoClass()].push_back(abort_func);
-  class_vtable_functions_[node.GetIoClass()].push_back(io_out_string_func);
-  class_vtable_functions_[node.GetIoClass()].push_back(io_out_int_func);
-  class_vtable_functions_[node.GetIoClass()].push_back(io_out_int_func);
-  class_vtable_functions_[node.GetIoClass()].push_back(io_out_int_func);
-
-  {
-    module_->getOrInsertGlobal(
-        node.GetObjectClass()->GetName() + "-vtable-global",
-        class_vtable_types_[node.GetObjectClass()]);
-    llvm::GlobalVariable* vtable = module_->getNamedGlobal(
-        node.GetObjectClass()->GetName() + "-vtable-global");
-    vtable->setConstant(true);
-    vtable->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
-    vtable->setInitializer(llvm::ConstantStruct::get(
-        class_vtable_types_[node.GetObjectClass()],
-        class_vtable_functions_[node.GetObjectClass()]));
-    class_vtable_globals_[node.GetObjectClass()] = vtable;
-  }
-  {
-    module_->getOrInsertGlobal(node.GetIoClass()->GetName() + "-vtable-global",
-                               class_vtable_types_[node.GetIoClass()]);
-    llvm::GlobalVariable* vtable = module_->getNamedGlobal(
-        node.GetIoClass()->GetName() + "-vtable-global");
-    vtable->setConstant(true);
-    vtable->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
-    vtable->setInitializer(
-        llvm::ConstantStruct::get(class_vtable_types_[node.GetIoClass()],
-                                  class_vtable_functions_[node.GetIoClass()]));
-    class_vtable_globals_[node.GetIoClass()] = vtable;
-  }
+  SetupVtable(node.GetObjectClass(), {abort_func, abort_func, abort_func});
+  SetupVtable(node.GetIoClass(),
+              {abort_func, abort_func, abort_func, io_out_string_func,
+               io_out_int_func, io_out_int_func, io_out_int_func});
 
   SetLlvmFunction("Object", "abort", abort_func);
   SetLlvmFunction("IO", "out_string", io_out_string_func);
