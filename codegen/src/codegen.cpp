@@ -338,6 +338,7 @@ class CodegenVisitor : public ConstAstVisitor {
   int GetVtableIndexOfMethodFeature(const ClassAst* class_ast,
                                     const MethodFeature* method_feature);
   void SetupVtable(const ClassAst* class_ast);
+  void SetupVtable(const ClassAst* class_ast, const std::vector<llvm::Constant*>& vtable_functions);
 
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
 
@@ -822,25 +823,14 @@ int CodegenVisitor::GetVtableIndexOfMethodFeature(
 }
 
 void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
-  current_class_ = class_ast;
-
   if (class_vtable_globals_.find(class_ast) != class_vtable_globals_.end()) {
     return;
   }
 
-  std::vector<llvm::Type*> vtable_method_types;
   std::vector<llvm::Constant*> vtable_functions;
 
   if (class_ast->GetSuperClass() != nullptr) {
     SetupVtable(class_ast->GetSuperClass());
-    current_class_ = class_ast;
-
-    llvm::StructType* super_vtable_type =
-        class_vtable_types_.at(class_ast->GetSuperClass());
-
-    vtable_method_types.insert(vtable_method_types.end(),
-                               super_vtable_type->element_begin(),
-                               super_vtable_type->element_end());
 
     std::vector<llvm::Constant*> super_vtable_functions =
         class_vtable_functions_.at(class_ast->GetSuperClass());
@@ -868,16 +858,25 @@ void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
         class_ast->GetName() + "-" + method->GetId(), module_.get());
     functions_[method] = func;
 
-    int vtable_method_index = GetVtableIndexOfMethodFeature(class_ast, method);
-    if (vtable_method_index < vtable_method_types.size()) {
+    const int vtable_method_index = GetVtableIndexOfMethodFeature(class_ast, method);
+    if (vtable_method_index < vtable_functions.size()) {
       // redefining a super method
-      vtable_method_types[vtable_method_index] = func->getType();
       vtable_functions[vtable_method_index] = func;
     } else {
-      assert(vtable_method_index == vtable_method_types.size());
-      vtable_method_types.push_back(func->getType());
+      assert(vtable_method_index == vtable_functions.size());
       vtable_functions.push_back(func);
     }
+  }
+
+  SetupVtable(class_ast, vtable_functions);
+}
+
+void CodegenVisitor::SetupVtable(
+    const ClassAst* class_ast, const std::vector<llvm::Constant*>& vtable_functions) {
+  std::vector<llvm::Type*> vtable_method_types;
+  vtable_method_types.reserve(vtable_functions.size());
+  for (auto func : vtable_functions) {
+    vtable_method_types.push_back(func->getType());
   }
 
   class_vtable_types_[class_ast]->setBody(vtable_method_types);
