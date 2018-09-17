@@ -484,31 +484,22 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
     }
   }
 
-  const auto called_method =
-      GetLlvmFunction(node.GetLhsExpr()->GetExprType(), node.GetMethodName());
-
-  // TODO hack to see if vtable works for this one case
-  if (node.GetMethodName() == "identify" ||
-      node.GetMethodName() == "base_and_derived" ||
-      node.GetMethodName() == "base_and_derived_two" ||
-      node.GetMethodName() == "base_only" ||
-      node.GetMethodName() == "derived_only") {
-    int vtable_index = 0;
+  if (node.GetLhsExpr()->GetExprType() == "String") {
+    // don't use a vtable for string methods since it can't be inherited from
+    const auto called_method =
+        GetLlvmFunction(node.GetLhsExpr()->GetExprType(), node.GetMethodName());
+    codegened_values_[&node] = builder_.CreateCall(called_method, arg_vals);
+  } else {
     llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-        classes_[GetClassByName(node.GetLhsExpr()->GetExprType())], lhs_val,
-        vtable_index);
+        classes_[GetClassByName(node.GetLhsExpr()->GetExprType())], lhs_val, 0);
     llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
-    int method_offset_in_vtable =
+    const int method_offset_in_vtable =
         GetVtableIndexOfMethodFeature(class_calling_method, method_feature);
     llvm::Value* vtable_func_ptr =
         builder_.CreateStructGEP(nullptr, vtable_ptr, method_offset_in_vtable);
     llvm::Value* vtable_func = builder_.CreateLoad(vtable_func_ptr);
-
     codegened_values_[&node] = builder_.CreateCall(vtable_func, arg_vals);
-    return;
   }
-
-  codegened_values_[&node] = builder_.CreateCall(called_method, arg_vals);
 }
 
 void CodegenVisitor::Visit(const IfExpr& node) {
@@ -648,6 +639,12 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
       llvm::BasicBlock::Create(context_, "entrypoint", constructor);
   builder_.SetInsertPoint(constructor_entry);
 
+  // store the vtable first since initializers might make dynamic calls
+  const int vtable_index = 0;
+  llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
+      classes_[&node], constructor->args().begin(), vtable_index);
+  builder_.CreateStore(class_vtable_globals_[&node], vtable_ptr_ptr);
+
   // TODO constructor should init super class attrs too
 
   // first store default values
@@ -680,11 +677,6 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
                            element_ptr);
     }
   }
-
-  const int vtable_index = 0;
-  llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-      classes_[&node], constructor->args().begin(), vtable_index);
-  builder_.CreateStore(class_vtable_globals_[&node], vtable_ptr_ptr);
 
   current_method_ = nullptr;
   functions_.erase(&dummy_constructor_method);
