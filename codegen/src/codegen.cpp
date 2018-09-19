@@ -336,7 +336,7 @@ class CodegenVisitor : public ConstAstVisitor {
   }
 
   int GetVtableIndexOfMethodFeature(const ClassAst* class_ast,
-                                    const MethodFeature* method_feature);
+                                    const MethodFeature* method_feature) const;
   void SetupVtable(const ClassAst* class_ast);
   void SetupVtable(const ClassAst* class_ast,
                    const std::vector<llvm::Constant*>& vtable_functions);
@@ -747,7 +747,6 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
   for (const auto* method : node.GetMethodFeatures()) {
-    current_method_ = method;
     llvm::Function* func = functions_.at(method);
 
     llvm::BasicBlock* entry =
@@ -764,6 +763,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       arg_iter++;
     }
 
+    current_method_ = method;
     method->GetRootExpr()->Accept(*this);
     current_method_ = nullptr;
 
@@ -791,7 +791,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 }
 
 int CodegenVisitor::GetVtableIndexOfMethodFeature(
-    const ClassAst* class_ast, const MethodFeature* method_feature) {
+    const ClassAst* class_ast, const MethodFeature* method_feature) const {
   std::vector<const ClassAst*> supers_and_class =
       class_ast->GetAllSuperClasses();
   std::reverse(supers_and_class.begin(), supers_and_class.end());
