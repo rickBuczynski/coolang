@@ -1,9 +1,9 @@
 #include "coolang/codegen/codegen.h"
 
 #include <iostream>
+#include "coolang/codegen/vtable.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/Optional.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
@@ -338,8 +338,6 @@ class CodegenVisitor : public ConstAstVisitor {
   int GetVtableIndexOfMethodFeature(const ClassAst* class_ast,
                                     const MethodFeature* method_feature) const;
   void SetupVtable(const ClassAst* class_ast);
-  void SetupVtable(const ClassAst* class_ast,
-                   const std::vector<llvm::Constant*>& vtable_functions);
 
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
 
@@ -349,10 +347,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
   std::unordered_map<const ClassAst*, llvm::StructType*> classes_;
-  std::unordered_map<const ClassAst*, llvm::StructType*> class_vtable_types_;
-  std::unordered_map<const ClassAst*, llvm::GlobalValue*> class_vtable_globals_;
-  std::unordered_map<const ClassAst*, std::vector<llvm::Constant*>>
-      class_vtable_functions_;
+  std::unordered_map<const ClassAst*, Vtable> vtables_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
   const MethodFeature* current_method_ = nullptr;
@@ -643,7 +638,7 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
   const int vtable_index = 0;
   llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
       classes_[&node], constructor->args().begin(), vtable_index);
-  builder_.CreateStore(class_vtable_globals_[&node], vtable_ptr_ptr);
+  builder_.CreateStore(vtables_.at(&node).GetGlobalInstance(), vtable_ptr_ptr);
 
   // TODO constructor should init super class attrs too
 
@@ -816,7 +811,7 @@ int CodegenVisitor::GetVtableIndexOfMethodFeature(
 }
 
 void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
-  if (class_vtable_globals_.find(class_ast) != class_vtable_globals_.end()) {
+  if (vtables_.at(class_ast).IsBuilt()) {
     return;
   }
 
@@ -825,8 +820,8 @@ void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
   if (class_ast->GetSuperClass() != nullptr) {
     SetupVtable(class_ast->GetSuperClass());
 
-    std::vector<llvm::Constant*> super_vtable_functions =
-        class_vtable_functions_.at(class_ast->GetSuperClass());
+    const std::vector<llvm::Constant*>& super_vtable_functions =
+        vtables_.at(class_ast->GetSuperClass()).GetFunctions();
 
     vtable_functions.insert(vtable_functions.end(),
                             super_vtable_functions.begin(),
@@ -862,30 +857,7 @@ void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
     }
   }
 
-  SetupVtable(class_ast, vtable_functions);
-}
-
-void CodegenVisitor::SetupVtable(
-    const ClassAst* class_ast,
-    const std::vector<llvm::Constant*>& vtable_functions) {
-  std::vector<llvm::Type*> vtable_method_types;
-  vtable_method_types.reserve(vtable_functions.size());
-  for (auto func : vtable_functions) {
-    vtable_method_types.push_back(func->getType());
-  }
-
-  class_vtable_types_[class_ast]->setBody(vtable_method_types);
-
-  module_->getOrInsertGlobal(class_ast->GetName() + "-vtable-global",
-                             class_vtable_types_[class_ast]);
-  llvm::GlobalVariable* vtable =
-      module_->getNamedGlobal(class_ast->GetName() + "-vtable-global");
-  vtable->setConstant(true);
-  vtable->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
-  vtable->setInitializer(llvm::ConstantStruct::get(
-      class_vtable_types_[class_ast], vtable_functions));
-  class_vtable_functions_[class_ast] = vtable_functions;
-  class_vtable_globals_[class_ast] = vtable;
+  vtables_.at(class_ast).BuildVtable(module_.get(), vtable_functions);
 }
 
 // instead of pushing constants on to the scope need to access main's struct
@@ -895,17 +867,16 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
     classes_[&class_ast] =
         llvm::StructType::create(context_, class_ast.GetName());
-    class_vtable_types_[&class_ast] =
-        llvm::StructType::create(context_, class_ast.GetName() + "-vtable");
+    vtables_.insert(std::make_pair(&class_ast, Vtable(context_, &class_ast)));
   }
   classes_[node.GetIoClass()] =
       llvm::StructType::create(context_, node.GetIoClass()->GetName());
   classes_[node.GetObjectClass()] =
       llvm::StructType::create(context_, node.GetObjectClass()->GetName());
-  class_vtable_types_[node.GetIoClass()] = llvm::StructType::create(
-      context_, node.GetIoClass()->GetName() + "-vtable");
-  class_vtable_types_[node.GetObjectClass()] = llvm::StructType::create(
-      context_, node.GetObjectClass()->GetName() + "-vtable");
+  vtables_.insert(
+      std::make_pair(node.GetIoClass(), Vtable(context_, node.GetIoClass())));
+  vtables_.insert(std::make_pair(node.GetObjectClass(),
+                                 Vtable(context_, node.GetObjectClass())));
 
   llvm::Function* abort_func = CreateAbortFunc();
   llvm::Function* io_out_string_func = CreateIoOutStringFunc();
@@ -913,10 +884,12 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   // TODO repeating function to match number of method features
   // need to actually define functions for those
-  SetupVtable(node.GetObjectClass(), {abort_func, abort_func, abort_func});
-  SetupVtable(node.GetIoClass(),
-              {abort_func, abort_func, abort_func, io_out_string_func,
-               io_out_int_func, io_out_int_func, io_out_int_func});
+  vtables_.at(node.GetObjectClass())
+      .BuildVtable(module_.get(), {abort_func, abort_func, abort_func});
+  vtables_.at(node.GetIoClass())
+      .BuildVtable(module_.get(),
+                   {abort_func, abort_func, abort_func, io_out_string_func,
+                    io_out_int_func, io_out_int_func, io_out_int_func});
 
   SetLlvmFunction("Object", "abort", abort_func);
   SetLlvmFunction("IO", "out_string", io_out_string_func);
@@ -927,7 +900,8 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   for (const auto& class_ast : node.GetClasses()) {
     std::vector<llvm::Type*> class_attributes;
-    class_attributes.push_back(class_vtable_types_[&class_ast]->getPointerTo());
+    class_attributes.push_back(
+        vtables_.at(&class_ast).GetStructType()->getPointerTo());
 
     for (const auto* attr : class_ast.GetAttributeFeatures()) {
       llvm::Type* attr_type = GetLlvmBasicOrPointerToClassType(attr->GetType());
