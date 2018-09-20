@@ -1,5 +1,5 @@
-#ifndef COOLANG_VTABLE_VTABLE_H
-#define COOLANG_VTABLE_VTABLE_H
+#ifndef COOLANG_CODEGEN_VTABLE_H
+#define COOLANG_CODEGEN_VTABLE_H
 
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -36,4 +36,4 @@ class Vtable {
 
 }  // namespace coolang
 
-#endif  // COOLANG_VTABLE_VTABLE_H
+#endif  // COOLANG_CODEGEN_VTABLE_H

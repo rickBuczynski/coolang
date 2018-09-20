@@ -1,6 +1,7 @@
 project(codegen)
 
 set(SOURCES
+  src/class_codegen.cpp
   src/codegen.cpp
   src/vtable.cpp
 )
@@ -8,6 +9,7 @@ set(SOURCES
 set(HEADERS
   include/coolang/codegen/codegen.h
   include/coolang/codegen/vtable.h
+  include/coolang/codegen/class_codegen.h
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
