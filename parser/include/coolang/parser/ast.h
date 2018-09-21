@@ -709,6 +709,14 @@ class ClassAst : public AstNode {
     return super_classes;
   }
 
+  void AddSubClass(const ClassAst* sub_class) {
+    sub_classes_.push_back(sub_class);
+  }
+
+  const std::vector<const ClassAst*>& GetSubClasses() const {
+    return sub_classes_;
+  }
+
   void SetSuperClass(const ClassAst* super_class) {
     super_class_ = super_class;
   }
@@ -767,6 +775,7 @@ class ClassAst : public AstNode {
  private:
   std::string name_;
   const ClassAst* super_class_;
+  std::vector<const ClassAst*> sub_classes_;
   std::vector<std::unique_ptr<Feature>> features_;
   std::filesystem::path containing_file_path_;
 };
@@ -794,7 +803,7 @@ class ProgramAst : public AstNode {
             "Bool", object_class_.get(),
             std::vector<std::unique_ptr<Feature>>{}, LineRange(0, 0),
             file_path.filename().string())) {
-    for (const auto& cool_class : classes_) {
+    for (auto& cool_class : classes_) {
       classes_by_name_[cool_class.GetName()] = &cool_class;
     }
     classes_by_name_[object_class_->GetName()] = object_class_.get();
@@ -814,6 +823,34 @@ class ProgramAst : public AstNode {
     } else {
       return class_ast->second;
     }
+  }
+  ClassAst* MutableClassByName(const std::string& name) {
+    const auto class_ast = classes_by_name_.find(name);
+    if (class_ast == classes_by_name_.end()) {
+      return nullptr;
+    } else {
+      return class_ast->second;
+    }
+  }
+
+  std::vector<const ClassAst*> SortedClassesWithSupersBeforeSubs() const {
+    std::vector<const ClassAst*> sorted;
+
+    for (auto* obj_sub_class : object_class_->GetSubClasses()) {
+      if (obj_sub_class != io_class_.get()) {
+        sorted.push_back(obj_sub_class);
+      }
+    }
+    for (auto* io_sub_class : io_class_->GetSubClasses()) {
+      sorted.push_back(io_sub_class);
+    }
+    for (size_t i = 0; i < sorted.size(); i++) {
+      for (auto* sub_class : sorted.at(i)->GetSubClasses()) {
+        sorted.push_back(sub_class);
+      }
+    }
+
+    return sorted;
   }
 
   std::string GetFileName() const { return file_path_.filename().string(); }
@@ -917,7 +954,7 @@ class ProgramAst : public AstNode {
 
   // all classes this points to need to be dynamically allocated
   // or else all the pointers become invalid when this class is moved
-  std::unordered_map<std::string, const ClassAst*> classes_by_name_;
+  std::unordered_map<std::string, ClassAst*> classes_by_name_;
 };
 
 }  // namespace coolang

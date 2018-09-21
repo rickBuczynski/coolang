@@ -29,8 +29,6 @@ void Vtable::BuildVtable(llvm::Module* module,
       llvm::ConstantStruct::get(struct_type_, vtable_functions));
   functions_ = vtable_functions;
   global_instance_ = vtable;
-
-  is_built_ = true;
 }
 
 }  // namespace coolang

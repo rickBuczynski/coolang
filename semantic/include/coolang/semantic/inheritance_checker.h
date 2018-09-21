@@ -43,6 +43,8 @@ class InheritanceChecker {
         } else {
           cool_class.SetSuperClass(
               program_ast.GetClassByName(inherits_type_string));
+          program_ast.MutableClassByName(inherits_type_string)
+              ->AddSubClass(&cool_class);
         }
       }
     }

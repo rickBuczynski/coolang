@@ -726,8 +726,6 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
-  SetupVtable(&node);
-
   ast_to_code_map_.SetCurrentClass(&node);
 
   for (const auto* method : node.GetMethodFeatures()) {
@@ -800,15 +798,9 @@ int CodegenVisitor::GetVtableIndexOfMethodFeature(
 }
 
 void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
-  if (GetVtable(class_ast).IsBuilt()) {
-    return;
-  }
-
   std::vector<llvm::Constant*> vtable_functions;
 
   if (class_ast->GetSuperClass() != nullptr) {
-    SetupVtable(class_ast->GetSuperClass());
-
     const std::vector<llvm::Constant*>& super_vtable_functions =
         GetVtable(class_ast->GetSuperClass()).GetFunctions();
 
@@ -881,6 +873,10 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   for (const auto& class_ast : node.GetClasses()) {
     ast_to_code_map_.AddAttributes(&class_ast);
+  }
+
+  for (const ClassAst* class_ast : node.SortedClassesWithSupersBeforeSubs()) {
+    SetupVtable(class_ast);
   }
 
   for (const auto& class_ast : node.GetClasses()) {

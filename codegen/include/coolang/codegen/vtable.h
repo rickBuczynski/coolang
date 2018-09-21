@@ -24,10 +24,8 @@ class Vtable {
   const std::vector<llvm::Constant*>& GetFunctions() const {
     return functions_;
   }
-  bool IsBuilt() const { return is_built_; }
 
  private:
-  bool is_built_ = false;
   const ClassAst* class_ast_;
   llvm::StructType* struct_type_;
   llvm::GlobalValue* global_instance_ = nullptr;
