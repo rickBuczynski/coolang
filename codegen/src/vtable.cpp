@@ -6,6 +6,7 @@
 #include <llvm/IR/Module.h>
 #include "coolang/codegen/vtable.h"
 #include "coolang/parser/ast.h"
+#include <set>
 
 namespace coolang {
 

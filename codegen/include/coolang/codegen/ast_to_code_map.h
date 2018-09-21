@@ -37,6 +37,8 @@ class AstToCodeMap {
   }
 
   void AddMethods(const ClassAst* class_ast) {
+    current_class_ = class_ast;
+
     std::vector<llvm::Constant*> vtable_functions;
 
     if (class_ast->GetSuperClass() != nullptr) {
@@ -77,7 +79,9 @@ class AstToCodeMap {
       }
     }
 
-    BuildVtable(class_ast, vtable_functions);
+    class_codegens_.at(class_ast).BuildVtable(module_, vtable_functions);
+
+    current_class_ = nullptr;
   }
 
   llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
@@ -103,11 +107,6 @@ class AstToCodeMap {
 
   const Vtable& GetVtable(const ClassAst* class_ast) {
     return class_codegens_.at(class_ast).GetVtable();
-  }
-
-  void BuildVtable(const ClassAst* class_ast,
-                   const std::vector<llvm::Constant*>& vtable_functions) {
-    class_codegens_.at(class_ast).BuildVtable(module_, vtable_functions);
   }
 
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {

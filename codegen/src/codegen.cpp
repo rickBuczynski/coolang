@@ -82,76 +82,90 @@ class CodegenVisitor : public ConstAstVisitor {
     return module_->getOrInsertFunction(func_name, func_type);
   }
 
-  llvm::Function* CreateAbortFunc() {
-    std::vector<llvm::Type*> abort_args;
-    abort_args.push_back(GetLlvmClassType("Object")->getPointerTo());
+  void CreateAbortFunc() {
+    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("Object", "abort");
 
-    llvm::FunctionType* abort_type = llvm::FunctionType::get(
-        GetLlvmClassType("Object")->getPointerTo(), abort_args, false);
-
-    llvm::Function* abort_func =
-        llvm::Function::Create(abort_type, llvm::Function::ExternalLinkage,
-                               "Object-abort", module_.get());
-
-    llvm::BasicBlock* abort_entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", abort_func);
-    builder_.SetInsertPoint(abort_entry);
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+    builder_.SetInsertPoint(entry);
 
     // TODO abort the program instead of returning
     builder_.CreateRetVoid();
-
-    return abort_func;
   }
 
-  llvm::Function* CreateIoOutStringFunc() {
-    std::vector<llvm::Type*> io_out_string_args;
-    io_out_string_args.push_back(GetLlvmClassType("IO")->getPointerTo());
-    io_out_string_args.push_back(builder_.getInt8Ty()->getPointerTo());
+  void CreateTypeNameFunc() {
+    llvm::Function* func =
+        ast_to_code_map_.GetLlvmFunction("Object", "type_name");
 
-    llvm::FunctionType* io_out_string_type = llvm::FunctionType::get(
-        GetLlvmClassType("IO")->getPointerTo(), io_out_string_args, false);
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+    builder_.SetInsertPoint(entry);
 
-    llvm::Function* io_out_string_func = llvm::Function::Create(
-        io_out_string_type, llvm::Function::ExternalLinkage, "IO-out_string",
-        module_.get());
+    // TODO actually implement type_name instead of just returning void
+    builder_.CreateRetVoid();
+  }
 
-    llvm::BasicBlock* io_out_string_entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", io_out_string_func);
-    builder_.SetInsertPoint(io_out_string_entry);
+  void CreateCopyFunc() {
+    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("Object", "copy");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+    builder_.SetInsertPoint(entry);
+
+    // TODO actually implement copy instead of just returning void
+    builder_.CreateRetVoid();
+  }
+
+  void CreateIoOutStringFunc() {
+    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("IO", "out_string");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+    builder_.SetInsertPoint(entry);
 
     llvm::Value* format_str = builder_.CreateGlobalStringPtr("%s");
-    auto arg_iterator = io_out_string_func->arg_begin();
+    auto arg_iterator = func->arg_begin();
     arg_iterator++;
     llvm::Value* args[] = {format_str, arg_iterator};
     builder_.CreateCall(printf_func_, args);
-    builder_.CreateRet(io_out_string_func->arg_begin());
-
-    return io_out_string_func;
+    builder_.CreateRet(func->arg_begin());
   }
 
-  llvm::Function* CreateIoOutIntFunc() {
-    std::vector<llvm::Type*> io_out_int_args;
-    io_out_int_args.push_back(GetLlvmClassType("IO")->getPointerTo());
-    io_out_int_args.push_back(builder_.getInt32Ty());
+  void CreateIoOutIntFunc() {
+    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("IO", "out_int");
 
-    llvm::FunctionType* io_out_int_type = llvm::FunctionType::get(
-        GetLlvmClassType("IO")->getPointerTo(), io_out_int_args, false);
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+    builder_.SetInsertPoint(entry);
 
-    llvm::Function* io_out_int_func =
-        llvm::Function::Create(io_out_int_type, llvm::Function::ExternalLinkage,
-                               "IO-out_int", module_.get());
-
-    llvm::BasicBlock* io_out_int_entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", io_out_int_func);
-    builder_.SetInsertPoint(io_out_int_entry);
     llvm::Value* format_str = builder_.CreateGlobalStringPtr("%d");
-    auto arg_iterator = io_out_int_func->arg_begin();
+    auto arg_iterator = func->arg_begin();
     arg_iterator++;
     llvm::Value* args[] = {format_str, arg_iterator};
     builder_.CreateCall(printf_func_, args);
-    builder_.CreateRet(io_out_int_func->arg_begin());
+    builder_.CreateRet(func->arg_begin());
+  }
 
-    return io_out_int_func;
+  void CreateIoInStringFunc() {
+    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("IO", "in_string");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+    builder_.SetInsertPoint(entry);
+
+    // TODO actually implement in_string instead of just returning void
+    builder_.CreateRetVoid();
+  }
+
+  void CreateIoInIntFunc() {
+    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("IO", "in_int");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+    builder_.SetInsertPoint(entry);
+
+    // TODO actually implement in_int instead of just returning void
+    builder_.CreateRetVoid();
   }
 
   llvm::Function* CreateStringConcatFunc() {
@@ -773,22 +787,18 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   ast_to_code_map_.Insert(node.GetIoClass());
   ast_to_code_map_.Insert(node.GetObjectClass());
 
-  llvm::Function* abort_func = CreateAbortFunc();
-  llvm::Function* io_out_string_func = CreateIoOutStringFunc();
-  llvm::Function* io_out_int_func = CreateIoOutIntFunc();
+  ast_to_code_map_.AddMethods(node.GetObjectClass());
+  ast_to_code_map_.AddMethods(node.GetIoClass());
 
-  // TODO repeating function to match number of method features
-  // need to actually define functions for those
-  ast_to_code_map_.BuildVtable(node.GetObjectClass(),
-                               {abort_func, abort_func, abort_func});
-  ast_to_code_map_.BuildVtable(
-      node.GetIoClass(),
-      {abort_func, abort_func, abort_func, io_out_string_func, io_out_int_func,
-       io_out_int_func, io_out_int_func});
+  CreateAbortFunc();
+  CreateTypeNameFunc();
+  CreateCopyFunc();
 
-  SetLlvmFunction("Object", "abort", abort_func);
-  SetLlvmFunction("IO", "out_string", io_out_string_func);
-  SetLlvmFunction("IO", "out_int", io_out_int_func);
+  CreateIoOutStringFunc();
+  CreateIoOutIntFunc();
+  CreateIoInStringFunc();
+  CreateIoInIntFunc();
+
   SetLlvmFunction("String", "concat", CreateStringConcatFunc());
   SetLlvmFunction("String", "length", CreateStringLengthFunc());
   SetLlvmFunction("String", "substr", CreateStringSubstrFunc());
