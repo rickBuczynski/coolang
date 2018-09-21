@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include "coolang/codegen/ast_to_code_map.h"
-#include "coolang/codegen/class_codegen.h"
 #include "coolang/codegen/vtable.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/Optional.h"
@@ -881,16 +880,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   SetLlvmFunction("String", "substr", CreateStringSubstrFunc());
 
   for (const auto& class_ast : node.GetClasses()) {
-    std::vector<llvm::Type*> class_attributes;
-    class_attributes.push_back(
-        GetVtable(&class_ast).GetStructType()->getPointerTo());
-
-    for (const auto* attr : class_ast.GetAttributeFeatures()) {
-      llvm::Type* attr_type = GetLlvmBasicOrPointerToClassType(attr->GetType());
-      class_attributes.push_back(attr_type);
-    }
-
-    ast_to_code_map_.SetAttributes(&class_ast, class_attributes);
+    ast_to_code_map_.AddAttributes(&class_ast);
   }
 
   for (const auto& class_ast : node.GetClasses()) {

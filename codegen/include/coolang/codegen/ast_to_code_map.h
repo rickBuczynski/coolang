@@ -20,6 +20,19 @@ class AstToCodeMap {
         std::make_pair(class_ast, ClassCodegen(*context_, class_ast)));
   }
 
+   void AddAttributes(const ClassAst* class_ast) {
+    std::vector<llvm::Type*> class_attributes;
+    class_attributes.push_back(
+        GetVtable(class_ast).GetStructType()->getPointerTo());
+
+    for (const auto* attr : class_ast->GetAttributeFeatures()) {
+      llvm::Type* attr_type = GetLlvmBasicOrPointerToClassType(attr->GetType());
+      class_attributes.push_back(attr_type);
+    }
+
+    class_codegens_.at(class_ast).SetAttributes(class_attributes);
+  }
+
   llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
     if (class_name == "Int") {
       return builder_->getInt32Ty();
@@ -50,10 +63,6 @@ class AstToCodeMap {
     class_codegens_.at(class_ast).BuildVtable(module, vtable_functions);
   }
 
-  void SetAttributes(const ClassAst* class_ast,
-                     const std::vector<llvm::Type*>& class_attributes) {
-    class_codegens_.at(class_ast).SetAttributes(class_attributes);
-  }
 
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
     llvm::Type* type = GetLlvmBasicType(type_name);
