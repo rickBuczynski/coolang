@@ -11,16 +11,19 @@ namespace coolang {
 
 class AstToCodeMap {
  public:
-  AstToCodeMap(llvm::LLVMContext* context, llvm::IRBuilder<>* builder,
-               const ProgramAst* program_ast)
-      : context_(context), builder_(builder), program_ast_(program_ast) {}
+  AstToCodeMap(llvm::LLVMContext* context, llvm::Module* module,
+               llvm::IRBuilder<>* builder, const ProgramAst* program_ast)
+      : context_(context),
+        module_(module),
+        builder_(builder),
+        program_ast_(program_ast) {}
 
   void Insert(const ClassAst* class_ast) {
     class_codegens_.insert(
         std::make_pair(class_ast, ClassCodegen(*context_, class_ast)));
   }
 
-   void AddAttributes(const ClassAst* class_ast) {
+  void AddAttributes(const ClassAst* class_ast) {
     std::vector<llvm::Type*> class_attributes;
     class_attributes.push_back(
         GetVtable(class_ast).GetStructType()->getPointerTo());
@@ -58,11 +61,10 @@ class AstToCodeMap {
     return class_codegens_.at(class_ast).GetVtable();
   }
 
-  void BuildVtable(const ClassAst* class_ast, llvm::Module* module,
+  void BuildVtable(const ClassAst* class_ast,
                    const std::vector<llvm::Constant*>& vtable_functions) {
-    class_codegens_.at(class_ast).BuildVtable(module, vtable_functions);
+    class_codegens_.at(class_ast).BuildVtable(module_, vtable_functions);
   }
-
 
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
     llvm::Type* type = GetLlvmBasicType(type_name);
@@ -104,6 +106,7 @@ class AstToCodeMap {
   std::unordered_map<const ClassAst*, ClassCodegen> class_codegens_;
 
   llvm::LLVMContext* context_;
+  llvm::Module* module_;
   llvm::IRBuilder<>* builder_;
 
   const ProgramAst* program_ast_;

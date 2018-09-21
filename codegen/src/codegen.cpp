@@ -34,7 +34,7 @@ class CodegenVisitor : public ConstAstVisitor {
                                  context_)),
         data_layout_(module_.get()),
         builder_(context_),
-        ast_to_code_map_(&context_, &builder_, &program_ast) {}
+        ast_to_code_map_(&context_, module_.get(), &builder_, &program_ast) {}
 
   void Visit(const CaseExpr& node) override {}
   void Visit(const StrExpr& node) override;
@@ -846,7 +846,7 @@ void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
     }
   }
 
-  ast_to_code_map_.BuildVtable(class_ast, module_.get(), vtable_functions);
+  ast_to_code_map_.BuildVtable(class_ast, vtable_functions);
 }
 
 // instead of pushing constants on to the scope need to access main's struct
@@ -865,10 +865,10 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   // TODO repeating function to match number of method features
   // need to actually define functions for those
-  ast_to_code_map_.BuildVtable(node.GetObjectClass(), module_.get(),
+  ast_to_code_map_.BuildVtable(node.GetObjectClass(),
                                {abort_func, abort_func, abort_func});
   ast_to_code_map_.BuildVtable(
-      node.GetIoClass(), module_.get(),
+      node.GetIoClass(),
       {abort_func, abort_func, abort_func, io_out_string_func, io_out_int_func,
        io_out_int_func, io_out_int_func});
 
