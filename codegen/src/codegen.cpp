@@ -1,6 +1,7 @@
 #include "coolang/codegen/codegen.h"
 
 #include <iostream>
+#include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/class_codegen.h"
 #include "coolang/codegen/vtable.h"
 #include "llvm/ADT/APInt.h"
@@ -10,7 +11,6 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
-#include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/LLVMContext.h"
@@ -31,11 +31,11 @@ namespace coolang {
 class CodegenVisitor : public ConstAstVisitor {
  public:
   explicit CodegenVisitor(const ProgramAst& program_ast)
-      : program_ast_(&program_ast),
-        module_(new llvm::Module(program_ast.GetFilePath().filename().string(),
+      : module_(new llvm::Module(program_ast.GetFilePath().filename().string(),
                                  context_)),
         data_layout_(module_.get()),
-        builder_(context_) {}
+        builder_(context_),
+        ast_to_code_map_(&context_, &builder_, &program_ast) {}
 
   void Visit(const CaseExpr& node) override {}
   void Visit(const StrExpr& node) override;
@@ -275,10 +275,7 @@ class CodegenVisitor : public ConstAstVisitor {
   }
 
   const ClassAst* GetClassByName(std::string name) const {
-    if (name == "SELF_TYPE") {
-      name = current_class_->GetName();
-    }
-    return program_ast_->GetClassByName(name);
+    return ast_to_code_map_.GetClassByName(name);
   }
 
   llvm::Function* CreateConstructor(const ClassAst& node);
@@ -297,51 +294,36 @@ class CodegenVisitor : public ConstAstVisitor {
                    ->GetMethodFeatureByName(method_name)] = func;
   }
 
-  llvm::Type* GetLlvmBasicType(const std::string& class_name) {
-    if (class_name == "Int") {
-      return builder_.getInt32Ty();
-    }
-    if (class_name == "String") {
-      return builder_.getInt8PtrTy();
-    }
-    if (class_name == "Bool") {
-      return builder_.getInt1Ty();
-    }
-    return nullptr;
+  llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
+    return ast_to_code_map_.GetLlvmBasicType(class_name);
   }
 
   llvm::Type* GetLlvmClassType(const std::string& class_name) {
-    return GetLlvmClassType(GetClassByName(class_name));
+    return ast_to_code_map_.GetLlvmClassType(class_name);
   }
 
   llvm::Type* GetLlvmClassType(const ClassAst* class_ast) {
-    return class_codegens_.at(class_ast).GetStructType();
+    return ast_to_code_map_.GetLlvmClassType(class_ast);
   }
 
   const Vtable& GetVtable(const ClassAst* class_ast) {
-    return class_codegens_.at(class_ast).GetVtable();
+    return ast_to_code_map_.GetVtable(class_ast);
+  }
+
+  const ClassAst* CurClass() const {
+    return ast_to_code_map_.GetCurrentClass();
+  }
+
+  const ProgramAst* GetProgramAst() const {
+    return ast_to_code_map_.GetProgramAst();
   }
 
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
-    llvm::Type* type = GetLlvmBasicType(type_name);
-    if (type == nullptr) {
-      type = GetLlvmClassType(type_name)->getPointerTo();
-    }
-    return type;
+    return ast_to_code_map_.GetLlvmBasicOrPointerToClassType(type_name);
   }
 
   llvm::Value* GetLlvmBasicOrPointerDefaultVal(const std::string& type_name) {
-    if (type_name == "Int") {
-      return llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true));
-    }
-    if (type_name == "String") {
-      return builder_.CreateGlobalStringPtr("");
-    }
-    if (type_name == "Bool") {
-      return llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
-    }
-    return llvm::ConstantPointerNull::get(
-        GetLlvmClassType(type_name)->getPointerTo());
+    return ast_to_code_map_.GetLlvmBasicOrPointerDefaultVal(type_name);
   }
 
   int GetVtableIndexOfMethodFeature(const ClassAst* class_ast,
@@ -351,21 +333,18 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
 
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
-
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
-  std::unordered_map<const ClassAst*, ClassCodegen> class_codegens_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
   const MethodFeature* current_method_ = nullptr;
-  const ClassAst* current_class_ = nullptr;
-  const ProgramAst* program_ast_;
 
   llvm::LLVMContext context_;
   std::unique_ptr<llvm::Module> module_;
   llvm::DataLayout data_layout_;
   llvm::IRBuilder<> builder_;
+  AstToCodeMap ast_to_code_map_;
 
   llvm::Constant* printf_func_ =
       CreateCStdFuncDecl("printf", "Int", {"String"}, true);
@@ -581,13 +560,13 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
 
   // TODO maybe need super class attributes?
   // are attributes private or protected?
-  for (size_t i = 0; i < current_class_->GetAttributeFeatures().size(); i++) {
-    const auto* attr = current_class_->GetAttributeFeatures()[i];
+  for (size_t i = 0; i < CurClass()->GetAttributeFeatures().size(); i++) {
+    const auto* attr = CurClass()->GetAttributeFeatures()[i];
 
     const int attribute_index = i + 1;  // offset 1 since vtable is at 0
     if (attr->GetId() == node.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
-          GetLlvmClassType(current_class_),
+          GetLlvmClassType(CurClass()),
           functions_.at(current_method_)->args().begin(), attribute_index);
       codegened_values_[&node] = builder_.CreateLoad(element_ptr);
       return;
@@ -733,13 +712,13 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
 
   // TODO maybe need super class attributes?
   // are attributes private or protected?
-  for (size_t i = 0; i < current_class_->GetAttributeFeatures().size(); i++) {
-    const auto* attr = current_class_->GetAttributeFeatures()[i];
+  for (size_t i = 0; i < CurClass()->GetAttributeFeatures().size(); i++) {
+    const auto* attr = CurClass()->GetAttributeFeatures()[i];
 
     if (attr->GetId() == node.GetId()) {
       const int attribute_index = i + 1;  // offset 1 since vtable is at 0
       return builder_.CreateStructGEP(
-          GetLlvmClassType(current_class_),
+          GetLlvmClassType(CurClass()),
           functions_.at(current_method_)->args().begin(), attribute_index);
     }
   }
@@ -750,7 +729,7 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
 void CodegenVisitor::Visit(const ClassAst& node) {
   SetupVtable(&node);
 
-  current_class_ = &node;
+  ast_to_code_map_.SetCurrentClass(&node);
 
   for (const auto* method : node.GetMethodFeatures()) {
     llvm::Function* func = functions_.at(method);
@@ -792,7 +771,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
   constructors_[&node] = CreateConstructor(node);
 
-  current_class_ = nullptr;
+  ast_to_code_map_.SetCurrentClass(nullptr);
   ClearScope();
 }
 
@@ -868,7 +847,7 @@ void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
     }
   }
 
-  class_codegens_.at(class_ast).BuildVtable(module_.get(), vtable_functions);
+  ast_to_code_map_.BuildVtable(class_ast, module_.get(), vtable_functions);
 }
 
 // instead of pushing constants on to the scope need to access main's struct
@@ -876,13 +855,10 @@ void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
 
 void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
-    class_codegens_.insert(
-        std::make_pair(&class_ast, ClassCodegen(context_, &class_ast)));
+    ast_to_code_map_.Insert(&class_ast);
   }
-  class_codegens_.insert(std::make_pair(
-      node.GetIoClass(), ClassCodegen(context_, node.GetIoClass())));
-  class_codegens_.insert(std::make_pair(
-      node.GetObjectClass(), ClassCodegen(context_, node.GetObjectClass())));
+  ast_to_code_map_.Insert(node.GetIoClass());
+  ast_to_code_map_.Insert(node.GetObjectClass());
 
   llvm::Function* abort_func = CreateAbortFunc();
   llvm::Function* io_out_string_func = CreateIoOutStringFunc();
@@ -890,12 +866,12 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   // TODO repeating function to match number of method features
   // need to actually define functions for those
-  class_codegens_.at(node.GetObjectClass())
-      .BuildVtable(module_.get(), {abort_func, abort_func, abort_func});
-  class_codegens_.at(node.GetIoClass())
-      .BuildVtable(module_.get(),
-                   {abort_func, abort_func, abort_func, io_out_string_func,
-                    io_out_int_func, io_out_int_func, io_out_int_func});
+  ast_to_code_map_.BuildVtable(node.GetObjectClass(), module_.get(),
+                               {abort_func, abort_func, abort_func});
+  ast_to_code_map_.BuildVtable(
+      node.GetIoClass(), module_.get(),
+      {abort_func, abort_func, abort_func, io_out_string_func, io_out_int_func,
+       io_out_int_func, io_out_int_func});
 
   SetLlvmFunction("Object", "abort", abort_func);
   SetLlvmFunction("IO", "out_string", io_out_string_func);
@@ -914,7 +890,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
       class_attributes.push_back(attr_type);
     }
 
-    class_codegens_.at(&class_ast).SetAttributes(class_attributes);
+    ast_to_code_map_.SetAttributes(&class_ast, class_attributes);
   }
 
   for (const auto& class_ast : node.GetClasses()) {
@@ -973,7 +949,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
 
   std::error_code ec;
 
-  std::filesystem::path object_file_path = program_ast_->GetFilePath();
+  std::filesystem::path object_file_path = GetProgramAst()->GetFilePath();
   object_file_path.replace_extension(".obj");
 
   llvm::raw_fd_ostream dest(object_file_path.string(), ec,
@@ -995,7 +971,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   pass.run(*module_);
   dest.flush();
 
-  std::cout << "ast_->GetFileName() " << program_ast_->GetFileName() << "\n";
+  std::cout << "ast_->GetFileName() " << GetProgramAst()->GetFileName() << "\n";
 
   std::cout << "Wrote " << object_file_path.string() << "\n";
 }

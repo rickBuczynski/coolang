@@ -1,12 +1,14 @@
 project(codegen)
 
 set(SOURCES
+  src/ast_to_code_map.cpp
   src/class_codegen.cpp
   src/codegen.cpp
   src/vtable.cpp
 )
 
 set(HEADERS
+  include/coolang/codegen/ast_to_code_map.h
   include/coolang/codegen/codegen.h
   include/coolang/codegen/vtable.h
   include/coolang/codegen/class_codegen.h
