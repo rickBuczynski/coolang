@@ -31,4 +31,29 @@ void Vtable::BuildVtable(llvm::Module* module,
   global_instance_ = vtable;
 }
 
+int Vtable::GetIndexOfMethodFeature(const MethodFeature* method_feature) const {
+  std::vector<const ClassAst*> supers_and_class =
+    class_ast_->GetAllSuperClasses();
+  std::reverse(supers_and_class.begin(), supers_and_class.end());
+  supers_and_class.push_back(class_ast_);
+  std::set<std::string> already_seen_method_ids;
+  int vtable_method_index = 0;
+  for (const auto* cool_class : supers_and_class) {
+    for (const auto* method : cool_class->GetMethodFeatures()) {
+      if (method->GetId() == method_feature->GetId()) {
+        return vtable_method_index;
+      }
+      if (already_seen_method_ids.find(method->GetId()) ==
+          already_seen_method_ids.end()) {
+        vtable_method_index++;
+      }
+      already_seen_method_ids.insert(method->GetId());
+    }
+  }
+  throw std::invalid_argument(
+                              "Method: " + method_feature->GetId() +
+                              " not defined in class: " +
+                              class_ast_->GetName() + " or its super classes.");
+}
+
 }  // namespace coolang

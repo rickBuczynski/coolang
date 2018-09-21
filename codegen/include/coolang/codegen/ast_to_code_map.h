@@ -36,6 +36,50 @@ class AstToCodeMap {
     class_codegens_.at(class_ast).SetAttributes(class_attributes);
   }
 
+  void AddMethods(const ClassAst* class_ast) {
+    std::vector<llvm::Constant*> vtable_functions;
+
+    if (class_ast->GetSuperClass() != nullptr) {
+      const std::vector<llvm::Constant*>& super_vtable_functions =
+          GetVtable(class_ast->GetSuperClass()).GetFunctions();
+
+      vtable_functions.insert(vtable_functions.end(),
+                              super_vtable_functions.begin(),
+                              super_vtable_functions.end());
+    }
+
+    for (const auto* method : class_ast->GetMethodFeatures()) {
+      llvm::Type* return_type =
+          GetLlvmBasicOrPointerToClassType(method->GetReturnType());
+
+      std::vector<llvm::Type*> arg_types;
+      // first param is always implicit 'self'
+      arg_types.push_back(GetLlvmClassType(class_ast)->getPointerTo());
+      for (const auto& arg : method->GetArgs()) {
+        arg_types.push_back(GetLlvmBasicOrPointerToClassType(arg.GetType()));
+      }
+
+      llvm::FunctionType* func_type =
+          llvm::FunctionType::get(return_type, arg_types, false);
+      llvm::Function* func = llvm::Function::Create(
+          func_type, llvm::Function::ExternalLinkage,
+          class_ast->GetName() + "-" + method->GetId(), module_);
+      functions_[method] = func;
+
+      const int vtable_method_index =
+          GetVtable(class_ast).GetIndexOfMethodFeature(method);
+      if (vtable_method_index < vtable_functions.size()) {
+        // redefining a super method
+        vtable_functions[vtable_method_index] = func;
+      } else {
+        assert(vtable_method_index == vtable_functions.size());
+        vtable_functions.push_back(func);
+      }
+    }
+
+    BuildVtable(class_ast, vtable_functions);
+  }
+
   llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
     if (class_name == "Int") {
       return builder_->getInt32Ty();
@@ -100,10 +144,42 @@ class AstToCodeMap {
     current_class_ = current_class;
   }
 
+  const MethodFeature* GetCurrentMethod() const { return current_method_; }
+  void SetCurrentMethod(const MethodFeature* current_method) {
+    current_method_ = current_method;
+  }
+
   const ProgramAst* GetProgramAst() const { return program_ast_; }
+
+  llvm::Function* GetLlvmFunction(const std::string& class_name,
+                                  const std::string& method_name) {
+    return functions_.at(
+        GetClassByName(class_name)->GetMethodFeatureByName(method_name));
+  }
+
+  llvm::Function* GetLlvmFunction(const MethodFeature* method_feature) {
+    return functions_.at(method_feature);
+  }
+
+  void SetLlvmFunction(const std::string& class_name,
+                       const std::string& method_name, llvm::Function* func) {
+    functions_[GetClassByName(class_name)
+                   ->GetMethodFeatureByName(method_name)] = func;
+  }
+
+  void SetLlvmFunction(MethodFeature* method_feature, llvm::Function* func) {
+    functions_[method_feature] = func;
+  }
+
+  void EraseMethod(MethodFeature* method_feature) {
+    functions_.erase(method_feature);
+  }
+
+  llvm::Function* CurLlvmFunc() { return functions_.at(current_method_); }
 
  private:
   std::unordered_map<const ClassAst*, ClassCodegen> class_codegens_;
+  std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
 
   llvm::LLVMContext* context_;
   llvm::Module* module_;
@@ -111,6 +187,7 @@ class AstToCodeMap {
 
   const ProgramAst* program_ast_;
   const ClassAst* current_class_ = nullptr;
+  const MethodFeature* current_method_ = nullptr;
 };
 
 }  // namespace coolang

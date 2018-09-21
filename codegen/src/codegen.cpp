@@ -284,13 +284,11 @@ class CodegenVisitor : public ConstAstVisitor {
 
   llvm::Function* GetLlvmFunction(const std::string& class_name,
                                   const std::string& method_name) {
-    return functions_[GetClassByName(class_name)
-                          ->GetMethodFeatureByName(method_name)];
+    return ast_to_code_map_.GetLlvmFunction(class_name, method_name);
   }
   void SetLlvmFunction(const std::string& class_name,
                        const std::string& method_name, llvm::Function* func) {
-    functions_[GetClassByName(class_name)
-                   ->GetMethodFeatureByName(method_name)] = func;
+    ast_to_code_map_.SetLlvmFunction(class_name, method_name, func);
   }
 
   llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
@@ -325,19 +323,12 @@ class CodegenVisitor : public ConstAstVisitor {
     return ast_to_code_map_.GetLlvmBasicOrPointerDefaultVal(type_name);
   }
 
-  int GetVtableIndexOfMethodFeature(const ClassAst* class_ast,
-                                    const MethodFeature* method_feature) const;
-  void SetupVtable(const ClassAst* class_ast);
-
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
 
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
-  std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
-
-  const MethodFeature* current_method_ = nullptr;
 
   llvm::LLVMContext context_;
   std::unique_ptr<llvm::Module> module_;
@@ -476,7 +467,8 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
         GetLlvmClassType(node.GetLhsExpr()->GetExprType()), lhs_val, 0);
     llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
     const int method_offset_in_vtable =
-        GetVtableIndexOfMethodFeature(class_calling_method, method_feature);
+        ast_to_code_map_.GetVtable(class_calling_method)
+            .GetIndexOfMethodFeature(method_feature);
     llvm::Value* vtable_func_ptr =
         builder_.CreateStructGEP(nullptr, vtable_ptr, method_offset_in_vtable);
     llvm::Value* vtable_func = builder_.CreateLoad(vtable_func_ptr);
@@ -489,7 +481,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   llvm::Value* cond_val = codegened_values_.at(node.GetIfConditionExpr());
 
   llvm::BasicBlock* then_bb = llvm::BasicBlock::Create(
-      context_, "then", functions_.at(current_method_));
+      context_, "then", ast_to_code_map_.CurLlvmFunc());
   llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context_, "else");
   llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-if");
 
@@ -512,7 +504,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   builder_.CreateBr(done_bb);
 
   // else block
-  functions_.at(current_method_)->getBasicBlockList().push_back(else_bb);
+  ast_to_code_map_.CurLlvmFunc()->getBasicBlockList().push_back(else_bb);
   builder_.SetInsertPoint(else_bb);
 
   node.GetElseExpr()->Accept(*this);
@@ -526,7 +518,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   builder_.CreateBr(done_bb);
 
   // merge block
-  functions_.at(current_method_)->getBasicBlockList().push_back(done_bb);
+  ast_to_code_map_.CurLlvmFunc()->getBasicBlockList().push_back(done_bb);
   builder_.SetInsertPoint(done_bb);
 
   llvm::PHINode* pn = builder_.CreatePHI(return_type, 2);
@@ -553,7 +545,7 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
   }
 
   if (node.GetId() == "self") {
-    codegened_values_[&node] = functions_.at(current_method_)->args().begin();
+    codegened_values_[&node] = ast_to_code_map_.CurLlvmFunc()->args().begin();
     return;
   }
 
@@ -566,7 +558,7 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
     if (attr->GetId() == node.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           GetLlvmClassType(CurClass()),
-          functions_.at(current_method_)->args().begin(), attribute_index);
+          ast_to_code_map_.CurLlvmFunc()->args().begin(), attribute_index);
       codegened_values_[&node] = builder_.CreateLoad(element_ptr);
       return;
     }
@@ -644,8 +636,8 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
 
   auto dummy_constructor_method =
       MethodFeature(LineRange(0, 0), "constructor", {}, "", {});
-  functions_[&dummy_constructor_method] = constructor;
-  current_method_ = &dummy_constructor_method;
+  ast_to_code_map_.SetLlvmFunction(&dummy_constructor_method, constructor);
+  ast_to_code_map_.SetCurrentMethod(&dummy_constructor_method);
 
   // then store value from init expr
   for (size_t i = 0; i < node.GetAttributeFeatures().size(); i++) {
@@ -662,8 +654,8 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
     }
   }
 
-  current_method_ = nullptr;
-  functions_.erase(&dummy_constructor_method);
+  ast_to_code_map_.SetCurrentMethod(nullptr);
+  ast_to_code_map_.EraseMethod(&dummy_constructor_method);
 
   builder_.CreateRetVoid();
   return constructor;
@@ -713,12 +705,11 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
   // are attributes private or protected?
   for (size_t i = 0; i < CurClass()->GetAttributeFeatures().size(); i++) {
     const auto* attr = CurClass()->GetAttributeFeatures()[i];
-
     if (attr->GetId() == node.GetId()) {
       const int attribute_index = i + 1;  // offset 1 since vtable is at 0
       return builder_.CreateStructGEP(
           GetLlvmClassType(CurClass()),
-          functions_.at(current_method_)->args().begin(), attribute_index);
+          ast_to_code_map_.CurLlvmFunc()->args().begin(), attribute_index);
     }
   }
 
@@ -729,7 +720,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   ast_to_code_map_.SetCurrentClass(&node);
 
   for (const auto* method : node.GetMethodFeatures()) {
-    llvm::Function* func = functions_.at(method);
+    llvm::Function* func = ast_to_code_map_.GetLlvmFunction(method);
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(context_, "entrypoint", func);
@@ -745,9 +736,9 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       arg_iter++;
     }
 
-    current_method_ = method;
+    ast_to_code_map_.SetCurrentMethod(method);
     method->GetRootExpr()->Accept(*this);
-    current_method_ = nullptr;
+    ast_to_code_map_.SetCurrentMethod(nullptr);
 
     for (const auto& arg : method->GetArgs()) {
       RemoveFromScope(arg.GetId());
@@ -770,75 +761,6 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
   ast_to_code_map_.SetCurrentClass(nullptr);
   ClearScope();
-}
-
-int CodegenVisitor::GetVtableIndexOfMethodFeature(
-    const ClassAst* class_ast, const MethodFeature* method_feature) const {
-  std::vector<const ClassAst*> supers_and_class =
-      class_ast->GetAllSuperClasses();
-  std::reverse(supers_and_class.begin(), supers_and_class.end());
-  supers_and_class.push_back(class_ast);
-  std::set<std::string> already_seen_method_ids;
-  int vtable_method_index = 0;
-  for (const auto* cool_class : supers_and_class) {
-    for (const auto* method : cool_class->GetMethodFeatures()) {
-      if (method->GetId() == method_feature->GetId()) {
-        return vtable_method_index;
-      }
-      if (already_seen_method_ids.find(method->GetId()) ==
-          already_seen_method_ids.end()) {
-        vtable_method_index++;
-      }
-      already_seen_method_ids.insert(method->GetId());
-    }
-  }
-  throw std::invalid_argument("Method: " + method_feature->GetId() +
-                              " not defined in class: " + class_ast->GetName() +
-                              " or its super classes.");
-}
-
-void CodegenVisitor::SetupVtable(const ClassAst* class_ast) {
-  std::vector<llvm::Constant*> vtable_functions;
-
-  if (class_ast->GetSuperClass() != nullptr) {
-    const std::vector<llvm::Constant*>& super_vtable_functions =
-        GetVtable(class_ast->GetSuperClass()).GetFunctions();
-
-    vtable_functions.insert(vtable_functions.end(),
-                            super_vtable_functions.begin(),
-                            super_vtable_functions.end());
-  }
-
-  for (const auto* method : class_ast->GetMethodFeatures()) {
-    llvm::Type* return_type =
-        GetLlvmBasicOrPointerToClassType(method->GetReturnType());
-
-    std::vector<llvm::Type*> arg_types;
-    // first param is always implicit 'self'
-    arg_types.push_back(GetLlvmClassType(class_ast)->getPointerTo());
-    for (const auto& arg : method->GetArgs()) {
-      arg_types.push_back(GetLlvmBasicOrPointerToClassType(arg.GetType()));
-    }
-
-    llvm::FunctionType* func_type =
-        llvm::FunctionType::get(return_type, arg_types, false);
-    llvm::Function* func = llvm::Function::Create(
-        func_type, llvm::Function::ExternalLinkage,
-        class_ast->GetName() + "-" + method->GetId(), module_.get());
-    functions_[method] = func;
-
-    const int vtable_method_index =
-        GetVtableIndexOfMethodFeature(class_ast, method);
-    if (vtable_method_index < vtable_functions.size()) {
-      // redefining a super method
-      vtable_functions[vtable_method_index] = func;
-    } else {
-      assert(vtable_method_index == vtable_functions.size());
-      vtable_functions.push_back(func);
-    }
-  }
-
-  ast_to_code_map_.BuildVtable(class_ast, vtable_functions);
 }
 
 // instead of pushing constants on to the scope need to access main's struct
@@ -876,7 +798,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   }
 
   for (const ClassAst* class_ast : node.SortedClassesWithSupersBeforeSubs()) {
-    SetupVtable(class_ast);
+    ast_to_code_map_.AddMethods(class_ast);
   }
 
   for (const auto& class_ast : node.GetClasses()) {
