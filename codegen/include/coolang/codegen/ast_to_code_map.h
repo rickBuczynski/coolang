@@ -87,8 +87,8 @@ class AstToCodeMap {
     return program_ast_->GetClassByName(name);
   }
 
-  const ClassAst* GetCurrentClass() const { return current_class_; }
-  void SetCurrentClass(const ClassAst* current_class) {
+  const ClassAst* CurClass() const { return current_class_; }
+  void SetCurClass(const ClassAst* current_class) {
     current_class_ = current_class;
   }
 

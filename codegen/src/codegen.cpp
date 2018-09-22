@@ -85,22 +85,13 @@ class CodegenVisitor : public ConstAstVisitor {
     in_scope_vars_[id].push(val);
   }
 
-  const ClassAst* GetClassByName(std::string name) const {
-    return ast_to_.GetClassByName(name);
-  }
-
   void GenConstructor(const ClassAst& node);
 
   llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
     return ast_to_.GetLlvmBasicType(class_name);
   }
 
-  const Vtable& GetVtable(const ClassAst* class_ast) {
-    return ast_to_.GetVtable(class_ast);
-  }
-
-  const ClassAst* CurClass() const { return ast_to_.GetCurrentClass(); }
-
+  const ClassAst* CurClass() const { return ast_to_.CurClass(); }
   const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
 
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
@@ -192,7 +183,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
   std::vector<llvm::Value*> arg_vals;
 
   const ClassAst* class_calling_method =
-      GetClassByName(node.GetLhsExpr()->GetExprType());
+      ast_to_.GetClassByName(node.GetLhsExpr()->GetExprType());
 
   const auto method_feature =
       class_calling_method->GetMethodFeatureByName(node.GetMethodName());
@@ -380,7 +371,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
   const int vtable_index = 0;
   llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
       ast_to_.LlvmClass(&node), constructor->args().begin(), vtable_index);
-  builder_.CreateStore(GetVtable(&node).GetGlobalInstance(), vtable_ptr_ptr);
+  builder_.CreateStore(ast_to_.GetVtable(&node).GetGlobalInstance(), vtable_ptr_ptr);
 
   // TODO constructor should init super class attrs too
 
@@ -479,7 +470,7 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
-  ast_to_.SetCurrentClass(&node);
+  ast_to_.SetCurClass(&node);
 
   GenConstructor(node);
 
@@ -521,7 +512,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     }
   }
 
-  ast_to_.SetCurrentClass(nullptr);
+  ast_to_.SetCurClass(nullptr);
   ClearScope();
 }
 
