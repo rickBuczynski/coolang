@@ -53,7 +53,7 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
 
     // String defines methods but it can't be inherited from so no vtable
     if (class_ast->GetName() != "String") {
-      const int vtable_method_index =
+      const size_t vtable_method_index =
           GetVtable(class_ast).GetIndexOfMethodFeature(method);
       if (vtable_method_index < vtable_functions.size()) {
         // redefining a super method

@@ -19,7 +19,7 @@ class Vtable {
   void BuildVtable(llvm::Module* module,
                    const std::vector<llvm::Constant*>& vtable_functions);
 
-  int GetIndexOfMethodFeature(const MethodFeature* method_feature) const;
+  size_t GetIndexOfMethodFeature(const MethodFeature* method_feature) const;
 
   llvm::StructType* GetStructType() const { return struct_type_; }
   llvm::GlobalValue* GetGlobalInstance() const { return global_instance_; }
