@@ -14,6 +14,8 @@ set(HEADERS
   include/coolang/codegen/class_codegen.h
   include/coolang/codegen/io_codegen.h
   include/coolang/codegen/object_codegen.h
+  include/coolang/codegen/string_codegen.h
+  include/coolang/codegen/c_std.h
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})

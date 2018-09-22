@@ -3,26 +3,28 @@
 
 #include <llvm/IR/LLVMContext.h>
 #include "coolang/codegen/ast_to_code_map.h"
+#include "coolang/codegen/c_std.h"
 
 namespace coolang {
 
 class IoCodegen {
  public:
   IoCodegen(llvm::LLVMContext* context, llvm::IRBuilder<>* builder,
-            AstToCodeMap* ast_to_code_map)
+            AstToCodeMap* ast_to_code_map, CStd* c_std)
       : context_(context),
         builder_(builder),
-        ast_to_code_map_(ast_to_code_map) {}
+        ast_to_code_map_(ast_to_code_map),
+        c_std_(c_std) {}
 
-  void GenAllFuncBodies(llvm::Constant* printf_func) const {
-    GenIoOutString(printf_func);
-    GenIoOutInt(printf_func);
+  void GenAllFuncBodies() const {
+    GenIoOutString();
+    GenIoOutInt();
     GenIoInString();
     GenIoInInt();
   }
 
  private:
-  void GenIoOutString(llvm::Constant* printf_func) const {
+  void GenIoOutString() const {
     llvm::Function* func =
         ast_to_code_map_->GetLlvmFunction("IO", "out_string");
 
@@ -34,11 +36,11 @@ class IoCodegen {
     auto arg_iterator = func->arg_begin();
     arg_iterator++;
     llvm::Value* args[] = {format_str, arg_iterator};
-    builder_->CreateCall(printf_func, args);
+    builder_->CreateCall(c_std_->GetPrintfFunc(), args);
     builder_->CreateRet(func->arg_begin());
   }
 
-  void GenIoOutInt(llvm::Constant* printf_func) const {
+  void GenIoOutInt() const {
     llvm::Function* func = ast_to_code_map_->GetLlvmFunction("IO", "out_int");
 
     llvm::BasicBlock* entry =
@@ -49,7 +51,7 @@ class IoCodegen {
     auto arg_iterator = func->arg_begin();
     arg_iterator++;
     llvm::Value* args[] = {format_str, arg_iterator};
-    builder_->CreateCall(printf_func, args);
+    builder_->CreateCall(c_std_->GetPrintfFunc(), args);
     builder_->CreateRet(func->arg_begin());
   }
 
@@ -78,6 +80,7 @@ class IoCodegen {
   llvm::LLVMContext* context_;
   llvm::IRBuilder<>* builder_;
   AstToCodeMap* ast_to_code_map_;
+  CStd* c_std_;
 };
 
 }  // namespace coolang

@@ -2,9 +2,11 @@
 
 #include <iostream>
 #include "coolang/codegen/ast_to_code_map.h"
+#include "coolang/codegen/c_std.h"
 #include "coolang/codegen/io_codegen.h"
 #include "coolang/codegen/object_codegen.h"
 #include "coolang/codegen/vtable.h"
+#include "coolang/codegen/string_codegen.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/IR/BasicBlock.h"
@@ -36,7 +38,8 @@ class CodegenVisitor : public ConstAstVisitor {
                                  context_)),
         data_layout_(module_.get()),
         builder_(context_),
-        ast_to_code_map_(&context_, module_.get(), &builder_, &program_ast) {}
+        ast_to_code_map_(&context_, module_.get(), &builder_, &program_ast),
+        c_std_(module_.get(), &ast_to_code_map_) {}
 
   void Visit(const CaseExpr& node) override {}
   void Visit(const StrExpr& node) override;
@@ -69,97 +72,6 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const ProgramAst& node) override;
 
  private:
-  llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
-                                     const std::string& return_type,
-                                     const std::vector<std::string>& arg_types,
-                                     bool is_var_arg = false) {
-    std::vector<llvm::Type*> llvm_arg_types;
-    for (const auto& arg : arg_types) {
-      llvm_arg_types.push_back(GetLlvmBasicType(arg));
-    }
-
-    llvm::FunctionType* func_type = llvm::FunctionType::get(
-        GetLlvmBasicType(return_type), llvm_arg_types, is_var_arg);
-
-    return module_->getOrInsertFunction(func_name, func_type);
-  }
-
-  void CreateStringConcatFunc() {
-    llvm::Function* string_concat_func =
-        ast_to_code_map_.GetLlvmFunction("String", "concat");
-
-    llvm::BasicBlock* string_concat_entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", string_concat_func);
-    builder_.SetInsertPoint(string_concat_entry);
-
-    auto arg_iter = string_concat_func->arg_begin();
-    llvm::Value* lhs_arg = arg_iter;
-    arg_iter++;
-    llvm::Value* rhs_arg = arg_iter;
-
-    llvm::Value* lhs_len = builder_.CreateCall(strlen_func_, {lhs_arg});
-    llvm::Value* rhs_len = builder_.CreateCall(strlen_func_, {rhs_arg});
-    llvm::Value* const_one =
-        llvm::ConstantInt::get(context_, llvm::APInt(32, 1, true));
-    llvm::Value* concated_len = builder_.CreateAdd(lhs_len, rhs_len);
-    concated_len = builder_.CreateAdd(concated_len, const_one);
-
-    // TODO this malloc leaks memory
-    llvm::Value* concated_val =
-        builder_.CreateCall(malloc_func_, {concated_len});
-    builder_.CreateCall(strcpy_func_, {concated_val, lhs_arg});
-    builder_.CreateCall(strcat_func_, {concated_val, rhs_arg});
-
-    builder_.CreateRet(concated_val);
-  }
-
-  void CreateStringSubstrFunc() {
-    llvm::Function* string_substr_func =
-        ast_to_code_map_.GetLlvmFunction("String", "substr");
-
-    llvm::BasicBlock* string_substr_entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", string_substr_func);
-    builder_.SetInsertPoint(string_substr_entry);
-
-    auto arg_iter = string_substr_func->arg_begin();
-    llvm::Value* str_lhs = arg_iter;
-    arg_iter++;
-    llvm::Value* int_start_index = arg_iter;
-    arg_iter++;
-    llvm::Value* substr_len = arg_iter;
-
-    llvm::Value* const_one =
-        llvm::ConstantInt::get(context_, llvm::APInt(32, 1, true));
-    llvm::Value* malloc_len = builder_.CreateAdd(substr_len, const_one);
-
-    // TODO this malloc leaks memory
-    llvm::Value* substr_val = builder_.CreateCall(malloc_func_, {malloc_len});
-    llvm::Value* substr_start_ptr =
-        builder_.CreateGEP(str_lhs, int_start_index);
-    builder_.CreateCall(strncpy_func_,
-                        {substr_val, substr_start_ptr, substr_len});
-
-    llvm::Value* substr_last_ptr = builder_.CreateGEP(substr_val, substr_len);
-    builder_.CreateStore(
-        llvm::ConstantInt::get(context_, llvm::APInt(8, 0, true)),
-        substr_last_ptr);
-
-    builder_.CreateRet(substr_val);
-  }
-
-  void CreateStringLengthFunc() {
-    llvm::Function* string_length_func =
-        ast_to_code_map_.GetLlvmFunction("String", "length");
-
-    llvm::BasicBlock* string_length_entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", string_length_func);
-    builder_.SetInsertPoint(string_length_entry);
-
-    llvm::Value* len_val =
-        builder_.CreateCall(strlen_func_, {string_length_func->arg_begin()});
-    builder_.CreateRet(len_val);
-  }
-
   void ClearScope() { in_scope_vars_.clear(); }
 
   void RemoveFromScope(const std::string& id) {
@@ -231,22 +143,7 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::DataLayout data_layout_;
   llvm::IRBuilder<> builder_;
   AstToCodeMap ast_to_code_map_;
-
-  llvm::Constant* printf_func_ =
-      CreateCStdFuncDecl("printf", "Int", {"String"}, true);
-  llvm::Constant* strlen_func_ =
-      CreateCStdFuncDecl("strlen", "Int", {"String"});
-  llvm::Constant* strcpy_func_ =
-      CreateCStdFuncDecl("strcpy", "String", {"String", "String"});
-  llvm::Constant* strncpy_func_ =
-      CreateCStdFuncDecl("strncpy", "String", {"String", "String", "Int"});
-  llvm::Constant* strcat_func_ =
-      CreateCStdFuncDecl("strcat", "String", {"String", "String"});
-
-  // use String (becomes char*) as return type for malloc
-  // since llvm has no void* type
-  llvm::Constant* malloc_func_ =
-      CreateCStdFuncDecl("malloc", "String", {"Int"});
+  CStd c_std_;
 };
 
 void CodegenVisitor::Visit(const StrExpr& node) {
@@ -569,7 +466,7 @@ void CodegenVisitor::Visit(const NewExpr& node) {
   llvm::Value* malloc_len_val =
       llvm::ConstantInt::get(context_, llvm::APInt(32, new_size, true));
 
-  llvm::Value* malloc_val = builder_.CreateCall(malloc_func_, {malloc_len_val});
+  llvm::Value* malloc_val = builder_.CreateCall(c_std_.GetMallocFunc(), {malloc_len_val});
 
   llvm::Value* new_val = builder_.CreateBitCast(
       malloc_val, GetLlvmClassType(node.GetType())->getPointerTo());
@@ -678,12 +575,11 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   ObjectCodegen object_codegen(&context_, &builder_, &ast_to_code_map_);
   object_codegen.GenAllFuncBodies();
 
-  IoCodegen io_codegen(&context_, &builder_, &ast_to_code_map_);
-  io_codegen.GenAllFuncBodies(printf_func_);
+  IoCodegen io_codegen(&context_, &builder_, &ast_to_code_map_, &c_std_);
+  io_codegen.GenAllFuncBodies();
 
-  CreateStringConcatFunc();
-  CreateStringLengthFunc();
-  CreateStringSubstrFunc();
+  StringCodegen string_codegen(&context_, &builder_, &ast_to_code_map_, &c_std_);
+  string_codegen.GenAllFuncBodies();
 
   for (const auto& class_ast : node.GetClasses()) {
     ast_to_code_map_.AddAttributes(&class_ast);
