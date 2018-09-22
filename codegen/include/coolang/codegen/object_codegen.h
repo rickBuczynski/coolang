@@ -22,7 +22,7 @@ class ObjectCodegen {
 
  private:
   void GenAbort() const {
-    llvm::Function* func = ast_to_code_map_->GetLlvmFunction("Object", "abort");
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("Object", "abort");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
@@ -33,7 +33,7 @@ class ObjectCodegen {
   }
 
   void GenCopy() const {
-    llvm::Function* func = ast_to_code_map_->GetLlvmFunction("Object", "copy");
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("Object", "copy");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
@@ -45,7 +45,7 @@ class ObjectCodegen {
 
   void GenTypeName() const {
     llvm::Function* func =
-        ast_to_code_map_->GetLlvmFunction("Object", "type_name");
+        ast_to_code_map_->LlvmFunc("Object", "type_name");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);

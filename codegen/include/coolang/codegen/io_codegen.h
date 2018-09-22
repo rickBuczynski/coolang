@@ -26,7 +26,7 @@ class IoCodegen {
  private:
   void GenIoOutString() const {
     llvm::Function* func =
-        ast_to_code_map_->GetLlvmFunction("IO", "out_string");
+        ast_to_code_map_->LlvmFunc("IO", "out_string");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
@@ -41,7 +41,7 @@ class IoCodegen {
   }
 
   void GenIoOutInt() const {
-    llvm::Function* func = ast_to_code_map_->GetLlvmFunction("IO", "out_int");
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("IO", "out_int");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
@@ -56,7 +56,7 @@ class IoCodegen {
   }
 
   void GenIoInString() const {
-    llvm::Function* func = ast_to_code_map_->GetLlvmFunction("IO", "in_string");
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("IO", "in_string");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
@@ -67,7 +67,7 @@ class IoCodegen {
   }
 
   void GenIoInInt() const {
-    llvm::Function* func = ast_to_code_map_->GetLlvmFunction("IO", "in_int");
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("IO", "in_int");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);

@@ -100,13 +100,13 @@ class AstToCodeMap {
 
   const ProgramAst* GetProgramAst() const { return program_ast_; }
 
-  llvm::Function* GetLlvmFunction(const std::string& class_name,
-                                  const std::string& method_name) {
+  llvm::Function* LlvmFunc(const std::string& class_name,
+                           const std::string& method_name) {
     return functions_.at(
         GetClassByName(class_name)->GetMethodFeatureByName(method_name));
   }
 
-  llvm::Function* GetLlvmFunction(const MethodFeature* method_feature) {
+  llvm::Function* LlvmFunc(const MethodFeature* method_feature) {
     return functions_.at(method_feature);
   }
 

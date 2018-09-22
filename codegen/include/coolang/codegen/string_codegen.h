@@ -25,7 +25,7 @@ class StringCodegen {
  private:
   void CreateStringConcatFunc() const {
     llvm::Function* string_concat_func =
-        ast_to_code_map_->GetLlvmFunction("String", "concat");
+        ast_to_code_map_->LlvmFunc("String", "concat");
 
     llvm::BasicBlock* string_concat_entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", string_concat_func);
@@ -56,7 +56,7 @@ class StringCodegen {
 
   void CreateStringSubstrFunc() const {
     llvm::Function* string_substr_func =
-        ast_to_code_map_->GetLlvmFunction("String", "substr");
+        ast_to_code_map_->LlvmFunc("String", "substr");
 
     llvm::BasicBlock* string_substr_entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", string_substr_func);
@@ -91,7 +91,7 @@ class StringCodegen {
 
   void CreateStringLengthFunc() const {
     llvm::Function* string_length_func =
-        ast_to_code_map_->GetLlvmFunction("String", "length");
+        ast_to_code_map_->LlvmFunc("String", "length");
 
     llvm::BasicBlock* string_length_entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", string_length_func);

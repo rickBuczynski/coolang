@@ -38,8 +38,8 @@ class CodegenVisitor : public ConstAstVisitor {
                                  context_)),
         data_layout_(module_.get()),
         builder_(context_),
-        ast_to_code_map_(&context_, module_.get(), &builder_, &program_ast),
-        c_std_(module_.get(), &ast_to_code_map_) {}
+        ast_to_(&context_, module_.get(), &builder_, &program_ast),
+        c_std_(module_.get(), &ast_to_) {}
 
   void Visit(const CaseExpr& node) override {}
   void Visit(const StrExpr& node) override;
@@ -86,46 +86,37 @@ class CodegenVisitor : public ConstAstVisitor {
   }
 
   const ClassAst* GetClassByName(std::string name) const {
-    return ast_to_code_map_.GetClassByName(name);
+    return ast_to_.GetClassByName(name);
   }
 
   void GenConstructor(const ClassAst& node);
 
-  llvm::Function* GetLlvmFunction(const std::string& class_name,
-                                  const std::string& method_name) {
-    return ast_to_code_map_.GetLlvmFunction(class_name, method_name);
-  }
-
   llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
-    return ast_to_code_map_.GetLlvmBasicType(class_name);
+    return ast_to_.GetLlvmBasicType(class_name);
   }
 
   llvm::Type* GetLlvmClassType(const std::string& class_name) {
-    return ast_to_code_map_.GetLlvmClassType(class_name);
+    return ast_to_.GetLlvmClassType(class_name);
   }
 
   llvm::Type* GetLlvmClassType(const ClassAst* class_ast) {
-    return ast_to_code_map_.GetLlvmClassType(class_ast);
+    return ast_to_.GetLlvmClassType(class_ast);
   }
 
   const Vtable& GetVtable(const ClassAst* class_ast) {
-    return ast_to_code_map_.GetVtable(class_ast);
+    return ast_to_.GetVtable(class_ast);
   }
 
-  const ClassAst* CurClass() const {
-    return ast_to_code_map_.GetCurrentClass();
-  }
+  const ClassAst* CurClass() const { return ast_to_.GetCurrentClass(); }
 
-  const ProgramAst* GetProgramAst() const {
-    return ast_to_code_map_.GetProgramAst();
-  }
+  const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
 
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
-    return ast_to_code_map_.GetLlvmBasicOrPointerToClassType(type_name);
+    return ast_to_.GetLlvmBasicOrPointerToClassType(type_name);
   }
 
   llvm::Value* GetLlvmBasicOrPointerDefaultVal(const std::string& type_name) {
-    return ast_to_code_map_.GetLlvmBasicOrPointerDefaultVal(type_name);
+    return ast_to_.GetLlvmBasicOrPointerDefaultVal(type_name);
   }
 
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
@@ -137,7 +128,7 @@ class CodegenVisitor : public ConstAstVisitor {
   std::unique_ptr<llvm::Module> module_;
   llvm::DataLayout data_layout_;
   llvm::IRBuilder<> builder_;
-  AstToCodeMap ast_to_code_map_;
+  AstToCodeMap ast_to_;
   CStd c_std_;
 };
 
@@ -247,15 +238,15 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
 
   if (node.GetLhsExpr()->GetExprType() == "String") {
     // don't use a vtable for string methods since it can't be inherited from
-    const auto called_method =
-        GetLlvmFunction(node.GetLhsExpr()->GetExprType(), node.GetMethodName());
+    const auto called_method = ast_to_.LlvmFunc(
+        node.GetLhsExpr()->GetExprType(), node.GetMethodName());
     codegened_values_[&node] = builder_.CreateCall(called_method, arg_vals);
   } else {
     llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
         GetLlvmClassType(node.GetLhsExpr()->GetExprType()), lhs_val, 0);
     llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
     const int method_offset_in_vtable =
-        ast_to_code_map_.GetVtable(class_calling_method)
+        ast_to_.GetVtable(class_calling_method)
             .GetIndexOfMethodFeature(method_feature);
     llvm::Value* vtable_func_ptr =
         builder_.CreateStructGEP(nullptr, vtable_ptr, method_offset_in_vtable);
@@ -268,8 +259,8 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   node.GetIfConditionExpr()->Accept(*this);
   llvm::Value* cond_val = codegened_values_.at(node.GetIfConditionExpr());
 
-  llvm::BasicBlock* then_bb = llvm::BasicBlock::Create(
-      context_, "then", ast_to_code_map_.CurLlvmFunc());
+  llvm::BasicBlock* then_bb =
+      llvm::BasicBlock::Create(context_, "then", ast_to_.CurLlvmFunc());
   llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context_, "else");
   llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-if");
 
@@ -292,7 +283,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   builder_.CreateBr(done_bb);
 
   // else block
-  ast_to_code_map_.CurLlvmFunc()->getBasicBlockList().push_back(else_bb);
+  ast_to_.CurLlvmFunc()->getBasicBlockList().push_back(else_bb);
   builder_.SetInsertPoint(else_bb);
 
   node.GetElseExpr()->Accept(*this);
@@ -306,7 +297,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   builder_.CreateBr(done_bb);
 
   // merge block
-  ast_to_code_map_.CurLlvmFunc()->getBasicBlockList().push_back(done_bb);
+  ast_to_.CurLlvmFunc()->getBasicBlockList().push_back(done_bb);
   builder_.SetInsertPoint(done_bb);
 
   llvm::PHINode* pn = builder_.CreatePHI(return_type, 2);
@@ -333,7 +324,7 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
   }
 
   if (node.GetId() == "self") {
-    codegened_values_[&node] = ast_to_code_map_.CurLlvmFunc()->args().begin();
+    codegened_values_[&node] = ast_to_.CurLlvmFunc()->args().begin();
     return;
   }
 
@@ -345,8 +336,8 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
     const int attribute_index = i + 1;  // offset 1 since vtable is at 0
     if (attr->GetId() == node.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
-          GetLlvmClassType(CurClass()),
-          ast_to_code_map_.CurLlvmFunc()->args().begin(), attribute_index);
+          GetLlvmClassType(CurClass()), ast_to_.CurLlvmFunc()->args().begin(),
+          attribute_index);
       codegened_values_[&node] = builder_.CreateLoad(element_ptr);
       return;
     }
@@ -387,7 +378,7 @@ void CodegenVisitor::Visit(const EqCompareExpr& node) {
 }
 
 void CodegenVisitor::GenConstructor(const ClassAst& node) {
-  llvm::Function* constructor = ast_to_code_map_.GetConstructor(&node);
+  llvm::Function* constructor = ast_to_.GetConstructor(&node);
 
   llvm::BasicBlock* constructor_entry =
       llvm::BasicBlock::Create(context_, "entrypoint", constructor);
@@ -415,8 +406,8 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
 
   auto dummy_constructor_method =
       MethodFeature(LineRange(0, 0), "constructor", {}, "", {});
-  ast_to_code_map_.SetLlvmFunction(&dummy_constructor_method, constructor);
-  ast_to_code_map_.SetCurrentMethod(&dummy_constructor_method);
+  ast_to_.SetLlvmFunction(&dummy_constructor_method, constructor);
+  ast_to_.SetCurrentMethod(&dummy_constructor_method);
 
   // then store value from init expr
   for (size_t i = 0; i < node.GetAttributeFeatures().size(); i++) {
@@ -433,8 +424,8 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
     }
   }
 
-  ast_to_code_map_.SetCurrentMethod(nullptr);
-  ast_to_code_map_.EraseMethod(&dummy_constructor_method);
+  ast_to_.SetCurrentMethod(nullptr);
+  ast_to_.EraseMethod(&dummy_constructor_method);
 
   builder_.CreateRetVoid();
 }
@@ -459,7 +450,7 @@ void CodegenVisitor::Visit(const NewExpr& node) {
 
   std::vector<llvm::Value*> args;
   args.push_back(new_val);
-  builder_.CreateCall(ast_to_code_map_.GetConstructor(node.GetType()), args);
+  builder_.CreateCall(ast_to_.GetConstructor(node.GetType()), args);
 
   codegened_values_[&node] = new_val;
 }
@@ -486,9 +477,9 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
     const auto* attr = CurClass()->GetAttributeFeatures()[i];
     if (attr->GetId() == node.GetId()) {
       const int attribute_index = i + 1;  // offset 1 since vtable is at 0
-      return builder_.CreateStructGEP(
-          GetLlvmClassType(CurClass()),
-          ast_to_code_map_.CurLlvmFunc()->args().begin(), attribute_index);
+      return builder_.CreateStructGEP(GetLlvmClassType(CurClass()),
+                                      ast_to_.CurLlvmFunc()->args().begin(),
+                                      attribute_index);
     }
   }
 
@@ -496,12 +487,12 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
 }
 
 void CodegenVisitor::Visit(const ClassAst& node) {
-  ast_to_code_map_.SetCurrentClass(&node);
+  ast_to_.SetCurrentClass(&node);
 
   GenConstructor(node);
 
   for (const auto* method : node.GetMethodFeatures()) {
-    llvm::Function* func = ast_to_code_map_.GetLlvmFunction(method);
+    llvm::Function* func = ast_to_.LlvmFunc(method);
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(context_, "entrypoint", func);
@@ -517,9 +508,9 @@ void CodegenVisitor::Visit(const ClassAst& node) {
       arg_iter++;
     }
 
-    ast_to_code_map_.SetCurrentMethod(method);
+    ast_to_.SetCurrentMethod(method);
     method->GetRootExpr()->Accept(*this);
-    ast_to_code_map_.SetCurrentMethod(nullptr);
+    ast_to_.SetCurrentMethod(nullptr);
 
     for (const auto& arg : method->GetArgs()) {
       RemoveFromScope(arg.GetId());
@@ -538,7 +529,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     }
   }
 
-  ast_to_code_map_.SetCurrentClass(nullptr);
+  ast_to_.SetCurrentClass(nullptr);
   ClearScope();
 }
 
@@ -547,34 +538,33 @@ void CodegenVisitor::Visit(const ClassAst& node) {
 
 void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
-    ast_to_code_map_.Insert(&class_ast);
+    ast_to_.Insert(&class_ast);
   }
-  ast_to_code_map_.Insert(node.GetIoClass());
-  ast_to_code_map_.Insert(node.GetObjectClass());
+  ast_to_.Insert(node.GetIoClass());
+  ast_to_.Insert(node.GetObjectClass());
 
-  ast_to_code_map_.AddMethods(node.GetObjectClass());
-  ast_to_code_map_.AddMethods(node.GetIoClass());
+  ast_to_.AddMethods(node.GetObjectClass());
+  ast_to_.AddMethods(node.GetIoClass());
 
   // just sets up ast to function mapping and creates func definitions
-  ast_to_code_map_.AddMethods(node.GetStringClass());
+  ast_to_.AddMethods(node.GetStringClass());
 
-  ObjectCodegen object_codegen(&context_, &builder_, &ast_to_code_map_);
+  ObjectCodegen object_codegen(&context_, &builder_, &ast_to_);
   object_codegen.GenAllFuncBodies();
 
-  IoCodegen io_codegen(&context_, &builder_, &ast_to_code_map_, &c_std_);
+  IoCodegen io_codegen(&context_, &builder_, &ast_to_, &c_std_);
   io_codegen.GenAllFuncBodies();
 
-  StringCodegen string_codegen(&context_, &builder_, &ast_to_code_map_,
-                               &c_std_);
+  StringCodegen string_codegen(&context_, &builder_, &ast_to_, &c_std_);
   string_codegen.GenAllFuncBodies();
 
   for (const auto& class_ast : node.GetClasses()) {
-    ast_to_code_map_.AddAttributes(&class_ast);
-    ast_to_code_map_.AddConstructor(&class_ast);
+    ast_to_.AddAttributes(&class_ast);
+    ast_to_.AddConstructor(&class_ast);
   }
 
   for (const ClassAst* class_ast : node.SortedClassesWithSupersBeforeSubs()) {
-    ast_to_code_map_.AddMethods(class_ast);
+    ast_to_.AddMethods(class_ast);
   }
 
   for (const auto& class_ast : node.GetClasses()) {
@@ -594,8 +584,8 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   std::vector<llvm::Value*> args;
   args.push_back(main_class);
 
-  builder_.CreateCall(ast_to_code_map_.GetConstructor("Main"), args);
-  builder_.CreateCall(GetLlvmFunction("Main", "main"), args);
+  builder_.CreateCall(ast_to_.GetConstructor("Main"), args);
+  builder_.CreateCall(ast_to_.LlvmFunc("Main", "main"), args);
   builder_.CreateRetVoid();
 
   module_->print(llvm::errs(), nullptr);
