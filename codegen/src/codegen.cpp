@@ -95,14 +95,6 @@ class CodegenVisitor : public ConstAstVisitor {
     return ast_to_.GetLlvmBasicType(class_name);
   }
 
-  llvm::Type* GetLlvmClassType(const std::string& class_name) {
-    return ast_to_.GetLlvmClassType(class_name);
-  }
-
-  llvm::Type* GetLlvmClassType(const ClassAst* class_ast) {
-    return ast_to_.GetLlvmClassType(class_ast);
-  }
-
   const Vtable& GetVtable(const ClassAst* class_ast) {
     return ast_to_.GetVtable(class_ast);
   }
@@ -216,7 +208,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
     arg_vals.push_back(lhs_val);
   } else {
     auto* dest_type =
-        GetLlvmClassType(class_that_defines_method)->getPointerTo();
+        ast_to_.LlvmClass(class_that_defines_method)->getPointerTo();
     auto* casted_value = builder_.CreateBitCast(lhs_val, dest_type);
     arg_vals.push_back(casted_value);
   }
@@ -228,7 +220,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
       arg_vals.push_back(codegened_values_.at(node.GetArgs()[i].get()));
     } else {
       const auto dest_type =
-          GetLlvmClassType(method_feature->GetArgs()[i].GetType())
+          ast_to_.LlvmClass(method_feature->GetArgs()[i].GetType())
               ->getPointerTo();
       auto* casted_value = builder_.CreateBitCast(
           codegened_values_.at(node.GetArgs()[i].get()), dest_type);
@@ -243,7 +235,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& node) {
     codegened_values_[&node] = builder_.CreateCall(called_method, arg_vals);
   } else {
     llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-        GetLlvmClassType(node.GetLhsExpr()->GetExprType()), lhs_val, 0);
+        ast_to_.LlvmClass(node.GetLhsExpr()->GetExprType()), lhs_val, 0);
     llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
     const int method_offset_in_vtable =
         ast_to_.GetVtable(class_calling_method)
@@ -336,7 +328,7 @@ void CodegenVisitor::Visit(const ObjectExpr& node) {
     const int attribute_index = i + 1;  // offset 1 since vtable is at 0
     if (attr->GetId() == node.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
-          GetLlvmClassType(CurClass()), ast_to_.CurLlvmFunc()->args().begin(),
+          ast_to_.LlvmClass(CurClass()), ast_to_.CurLlvmFunc()->args().begin(),
           attribute_index);
       codegened_values_[&node] = builder_.CreateLoad(element_ptr);
       return;
@@ -387,7 +379,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
   // store the vtable first since initializers might make dynamic calls
   const int vtable_index = 0;
   llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-      GetLlvmClassType(&node), constructor->args().begin(), vtable_index);
+      ast_to_.LlvmClass(&node), constructor->args().begin(), vtable_index);
   builder_.CreateStore(GetVtable(&node).GetGlobalInstance(), vtable_ptr_ptr);
 
   // TODO constructor should init super class attrs too
@@ -398,7 +390,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
 
     const int attribute_index = i + 1;  // offset 1 since vtable is at 0
     llvm::Value* element_ptr = builder_.CreateStructGEP(
-        GetLlvmClassType(&node), constructor->args().begin(), attribute_index);
+        ast_to_.LlvmClass(&node), constructor->args().begin(), attribute_index);
 
     builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(attr->GetType()),
                          element_ptr);
@@ -417,7 +409,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
       attr->GetRootExpr()->Accept(*this);
       const int attribute_index = i + 1;  // offset 1 since vtable is at 0
       llvm::Value* element_ptr = builder_.CreateStructGEP(
-          GetLlvmClassType(&node), constructor->args().begin(),
+          ast_to_.LlvmClass(&node), constructor->args().begin(),
           attribute_index);
       builder_.CreateStore(codegened_values_.at(attr->GetRootExpr().get()),
                            element_ptr);
@@ -436,7 +428,7 @@ void CodegenVisitor::Visit(const NewExpr& node) {
     return;
   }
 
-  llvm::Type* type = GetLlvmClassType(node.GetType());
+  llvm::Type* type = ast_to_.LlvmClass(node.GetType());
 
   auto new_size = data_layout_.getTypeAllocSize(type);
   llvm::Value* malloc_len_val =
@@ -446,7 +438,7 @@ void CodegenVisitor::Visit(const NewExpr& node) {
       builder_.CreateCall(c_std_.GetMallocFunc(), {malloc_len_val});
 
   llvm::Value* new_val = builder_.CreateBitCast(
-      malloc_val, GetLlvmClassType(node.GetType())->getPointerTo());
+      malloc_val, ast_to_.LlvmClass(node.GetType())->getPointerTo());
 
   std::vector<llvm::Value*> args;
   args.push_back(new_val);
@@ -477,7 +469,7 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
     const auto* attr = CurClass()->GetAttributeFeatures()[i];
     if (attr->GetId() == node.GetId()) {
       const int attribute_index = i + 1;  // offset 1 since vtable is at 0
-      return builder_.CreateStructGEP(GetLlvmClassType(CurClass()),
+      return builder_.CreateStructGEP(ast_to_.LlvmClass(CurClass()),
                                       ast_to_.CurLlvmFunc()->args().begin(),
                                       attribute_index);
     }
@@ -580,7 +572,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   builder_.SetInsertPoint(entry);
 
   llvm::AllocaInst* main_class =
-      builder_.CreateAlloca(GetLlvmClassType("Main"));
+      builder_.CreateAlloca(ast_to_.LlvmClass("Main"));
   std::vector<llvm::Value*> args;
   args.push_back(main_class);
 

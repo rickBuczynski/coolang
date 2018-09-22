@@ -40,11 +40,11 @@ class AstToCodeMap {
     return nullptr;
   }
 
-  llvm::Type* GetLlvmClassType(const std::string& class_name) {
-    return GetLlvmClassType(GetClassByName(class_name));
+  llvm::Type* LlvmClass(const std::string& class_name) {
+    return LlvmClass(GetClassByName(class_name));
   }
 
-  llvm::Type* GetLlvmClassType(const ClassAst* class_ast) {
+  llvm::Type* LlvmClass(const ClassAst* class_ast) {
     return types_.at(class_ast);
   }
 
@@ -62,7 +62,7 @@ class AstToCodeMap {
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
     llvm::Type* type = GetLlvmBasicType(type_name);
     if (type == nullptr) {
-      type = GetLlvmClassType(type_name)->getPointerTo();
+      type = LlvmClass(type_name)->getPointerTo();
     }
     return type;
   }
@@ -77,8 +77,7 @@ class AstToCodeMap {
     if (type_name == "Bool") {
       return llvm::ConstantInt::get(*context_, llvm::APInt(1, 0, false));
     }
-    return llvm::ConstantPointerNull::get(
-        GetLlvmClassType(type_name)->getPointerTo());
+    return llvm::ConstantPointerNull::get(LlvmClass(type_name)->getPointerTo());
   }
 
   const ClassAst* GetClassByName(std::string name) const {

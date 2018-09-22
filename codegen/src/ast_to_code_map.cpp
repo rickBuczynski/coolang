@@ -77,7 +77,7 @@ void AstToCodeMap::AddConstructor(const ClassAst* class_ast) {
 
   std::vector<llvm::Type*> constructor_arg_types;
 
-  constructor_arg_types.push_back(GetLlvmClassType(class_ast)->getPointerTo());
+  constructor_arg_types.push_back(LlvmClass(class_ast)->getPointerTo());
 
   llvm::FunctionType* constructor_func_type = llvm::FunctionType::get(
       builder_->getVoidTy(), constructor_arg_types, false);
