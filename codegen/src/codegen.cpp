@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include "coolang/codegen/ast_to_code_map.h"
+#include "coolang/codegen/io_codegen.h"
+#include "coolang/codegen/object_codegen.h"
 #include "coolang/codegen/vtable.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/Optional.h"
@@ -80,92 +82,6 @@ class CodegenVisitor : public ConstAstVisitor {
         GetLlvmBasicType(return_type), llvm_arg_types, is_var_arg);
 
     return module_->getOrInsertFunction(func_name, func_type);
-  }
-
-  void CreateAbortFunc() {
-    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("Object", "abort");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", func);
-    builder_.SetInsertPoint(entry);
-
-    // TODO abort the program instead of returning
-    builder_.CreateRetVoid();
-  }
-
-  void CreateTypeNameFunc() {
-    llvm::Function* func =
-        ast_to_code_map_.GetLlvmFunction("Object", "type_name");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", func);
-    builder_.SetInsertPoint(entry);
-
-    // TODO actually implement type_name instead of just returning void
-    builder_.CreateRetVoid();
-  }
-
-  void CreateCopyFunc() {
-    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("Object", "copy");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", func);
-    builder_.SetInsertPoint(entry);
-
-    // TODO actually implement copy instead of just returning void
-    builder_.CreateRetVoid();
-  }
-
-  void CreateIoOutStringFunc() {
-    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("IO", "out_string");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", func);
-    builder_.SetInsertPoint(entry);
-
-    llvm::Value* format_str = builder_.CreateGlobalStringPtr("%s");
-    auto arg_iterator = func->arg_begin();
-    arg_iterator++;
-    llvm::Value* args[] = {format_str, arg_iterator};
-    builder_.CreateCall(printf_func_, args);
-    builder_.CreateRet(func->arg_begin());
-  }
-
-  void CreateIoOutIntFunc() {
-    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("IO", "out_int");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", func);
-    builder_.SetInsertPoint(entry);
-
-    llvm::Value* format_str = builder_.CreateGlobalStringPtr("%d");
-    auto arg_iterator = func->arg_begin();
-    arg_iterator++;
-    llvm::Value* args[] = {format_str, arg_iterator};
-    builder_.CreateCall(printf_func_, args);
-    builder_.CreateRet(func->arg_begin());
-  }
-
-  void CreateIoInStringFunc() {
-    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("IO", "in_string");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", func);
-    builder_.SetInsertPoint(entry);
-
-    // TODO actually implement in_string instead of just returning void
-    builder_.CreateRetVoid();
-  }
-
-  void CreateIoInIntFunc() {
-    llvm::Function* func = ast_to_code_map_.GetLlvmFunction("IO", "in_int");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", func);
-    builder_.SetInsertPoint(entry);
-
-    // TODO actually implement in_int instead of just returning void
-    builder_.CreateRetVoid();
   }
 
   llvm::Function* CreateStringConcatFunc() {
@@ -790,14 +706,11 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   ast_to_code_map_.AddMethods(node.GetObjectClass());
   ast_to_code_map_.AddMethods(node.GetIoClass());
 
-  CreateAbortFunc();
-  CreateTypeNameFunc();
-  CreateCopyFunc();
+  ObjectCodegen object_codegen(&context_, &builder_, &ast_to_code_map_);
+  object_codegen.GenAllFuncBodies();
 
-  CreateIoOutStringFunc();
-  CreateIoOutIntFunc();
-  CreateIoInStringFunc();
-  CreateIoInIntFunc();
+  IoCodegen io_codegen(&context_, &builder_, &ast_to_code_map_);
+  io_codegen.GenAllFuncBodies(printf_func_);
 
   SetLlvmFunction("String", "concat", CreateStringConcatFunc());
   SetLlvmFunction("String", "length", CreateStringLengthFunc());
