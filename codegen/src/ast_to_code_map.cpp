@@ -1,7 +1,6 @@
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
 #include "coolang/codegen/ast_to_code_map.h"
-#include "coolang/codegen/class_codegen.h"
 #include "coolang/codegen/vtable.h"
 #include "coolang/parser/ast.h"
 
@@ -17,7 +16,7 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
     class_attributes.push_back(attr_type);
   }
 
-  class_codegens_.at(class_ast).SetAttributes(class_attributes);
+  types_.at(class_ast)->setBody(class_attributes);
 }
 
 void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
@@ -67,7 +66,7 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
   }
 
   if (class_ast->GetName() != "String") {
-    class_codegens_.at(class_ast).BuildVtable(module_, vtable_functions);
+    vtables_.at(class_ast).BuildVtable(module_, vtable_functions);
   }
 
   current_class_ = nullptr;
@@ -86,7 +85,7 @@ void AstToCodeMap::AddConstructor(const ClassAst* class_ast) {
       constructor_func_type, llvm::Function::ExternalLinkage,
       "construct"s + "-" + class_ast->GetName(), module_);
 
-  class_codegens_.at(class_ast).SetConstructor(constructor);
+  constructors_.insert(std::make_pair(class_ast, constructor));
 }
 
 }  // namespace coolang

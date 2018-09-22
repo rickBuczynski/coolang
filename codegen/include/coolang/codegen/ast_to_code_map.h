@@ -3,7 +3,6 @@
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
-#include "coolang/codegen/class_codegen.h"
 #include "coolang/codegen/vtable.h"
 #include "coolang/parser/ast.h"
 
@@ -19,8 +18,9 @@ class AstToCodeMap {
         program_ast_(program_ast) {}
 
   void Insert(const ClassAst* class_ast) {
-    class_codegens_.insert(
-        std::make_pair(class_ast, ClassCodegen(*context_, class_ast)));
+    types_.insert(std::make_pair(
+        class_ast, llvm::StructType::create(*context_, class_ast->GetName())));
+    vtables_.insert(std::make_pair(class_ast, Vtable(*context_, class_ast)));
   }
 
   void AddAttributes(const ClassAst* class_ast);
@@ -45,15 +45,15 @@ class AstToCodeMap {
   }
 
   llvm::Type* GetLlvmClassType(const ClassAst* class_ast) {
-    return class_codegens_.at(class_ast).GetStructType();
+    return types_.at(class_ast);
   }
 
   const Vtable& GetVtable(const ClassAst* class_ast) {
-    return class_codegens_.at(class_ast).GetVtable();
+    return vtables_.at(class_ast);
   }
 
   llvm::Function* GetConstructor(const ClassAst* class_ast) {
-    return class_codegens_.at(class_ast).GetConstructor();
+    return constructors_.at(class_ast);
   }
   llvm::Function* GetConstructor(const std::string& type_name) {
     return GetConstructor(GetClassByName(type_name));
@@ -127,7 +127,10 @@ class AstToCodeMap {
   llvm::Function* CurLlvmFunc() { return functions_.at(current_method_); }
 
  private:
-  std::unordered_map<const ClassAst*, ClassCodegen> class_codegens_;
+  std::unordered_map<const ClassAst*, llvm::StructType*> types_;
+  std::unordered_map<const ClassAst*, Vtable> vtables_;
+  std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
+
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
 
   llvm::LLVMContext* context_;
