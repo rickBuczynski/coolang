@@ -88,6 +88,10 @@ class CodegenVisitor : public ConstAstVisitor {
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
   void GenConstructor(const ClassAst& node);
+  void GenMethodBodies(const ClassAst& node);
+
+  void GenMainFunc();
+
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
 
   const ClassAst* CurClass() const { return ast_to_.CurClass(); }
@@ -402,6 +406,46 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
   builder_.CreateRetVoid();
 }
 
+void CodegenVisitor::GenMethodBodies(const ClassAst& node) {
+  for (const auto* method : node.GetMethodFeatures()) {
+    llvm::Function* func = ast_to_.LlvmFunc(method);
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(context_, "entrypoint", func);
+    builder_.SetInsertPoint(entry);
+
+    auto arg_iter = func->arg_begin();
+    arg_iter++;  // skip implicit self param
+    for (const auto& arg : method->GetArgs()) {
+      llvm::AllocaInst* alloca_inst =
+          builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(arg.GetType()));
+      builder_.CreateStore(arg_iter, alloca_inst);
+      AddToScope(arg.GetId(), alloca_inst);
+      arg_iter++;
+    }
+
+    ast_to_.SetCurrentMethod(method);
+    method->GetRootExpr()->Accept(*this);
+    ast_to_.SetCurrentMethod(nullptr);
+
+    for (const auto& arg : method->GetArgs()) {
+      RemoveFromScope(arg.GetId());
+    }
+
+    llvm::Type* return_type =
+        ast_to_.LlvmBasicOrClassPtrTy(method->GetReturnType());
+
+    if (codegened_values_.at(method->GetRootExpr().get())->getType() ==
+        return_type) {
+      builder_.CreateRet(codegened_values_.at(method->GetRootExpr().get()));
+    } else {
+      auto* casted_value = builder_.CreateBitCast(
+          codegened_values_.at(method->GetRootExpr().get()), return_type);
+      builder_.CreateRet(casted_value);
+    }
+  }
+}
+
 void CodegenVisitor::Visit(const NewExpr& node) {
   if (ast_to_.LlvmBasicType(node.GetType()) != nullptr) {
     // TODO don't ignore "new" for basic types
@@ -462,51 +506,30 @@ void CodegenVisitor::Visit(const ClassAst& node) {
   ast_to_.SetCurClass(&node);
 
   GenConstructor(node);
-
-  for (const auto* method : node.GetMethodFeatures()) {
-    llvm::Function* func = ast_to_.LlvmFunc(method);
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(context_, "entrypoint", func);
-    builder_.SetInsertPoint(entry);
-
-    auto arg_iter = func->arg_begin();
-    arg_iter++;  // skip implicit self param
-    for (const auto& arg : method->GetArgs()) {
-      llvm::AllocaInst* alloca_inst =
-          builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(arg.GetType()));
-      builder_.CreateStore(arg_iter, alloca_inst);
-      AddToScope(arg.GetId(), alloca_inst);
-      arg_iter++;
-    }
-
-    ast_to_.SetCurrentMethod(method);
-    method->GetRootExpr()->Accept(*this);
-    ast_to_.SetCurrentMethod(nullptr);
-
-    for (const auto& arg : method->GetArgs()) {
-      RemoveFromScope(arg.GetId());
-    }
-
-    llvm::Type* return_type =
-        ast_to_.LlvmBasicOrClassPtrTy(method->GetReturnType());
-
-    if (codegened_values_.at(method->GetRootExpr().get())->getType() ==
-        return_type) {
-      builder_.CreateRet(codegened_values_.at(method->GetRootExpr().get()));
-    } else {
-      auto* casted_value = builder_.CreateBitCast(
-          codegened_values_.at(method->GetRootExpr().get()), return_type);
-      builder_.CreateRet(casted_value);
-    }
-  }
+  GenMethodBodies(node);
 
   ast_to_.SetCurClass(nullptr);
   ClearScope();
 }
 
-// instead of pushing constants on to the scope need to access main's struct
-// data
+void CodegenVisitor::GenMainFunc() {
+  llvm::FunctionType* func_type =
+      llvm::FunctionType::get(builder_.getVoidTy(), false);
+  llvm::Function* func = llvm::Function::Create(
+      func_type, llvm::Function::ExternalLinkage, "main", module_.get());
+  llvm::BasicBlock* entry =
+      llvm::BasicBlock::Create(context_, "entrypoint", func);
+  builder_.SetInsertPoint(entry);
+
+  llvm::AllocaInst* main_class =
+      builder_.CreateAlloca(ast_to_.LlvmClass("Main"));
+  std::vector<llvm::Value*> args;
+  args.push_back(main_class);
+
+  builder_.CreateCall(ast_to_.GetConstructor("Main"), args);
+  builder_.CreateCall(ast_to_.LlvmFunc("Main", "main"), args);
+  builder_.CreateRetVoid();
+}
 
 void CodegenVisitor::Visit(const ProgramAst& node) {
   for (const auto& class_ast : node.GetClasses()) {
@@ -543,22 +566,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
     class_ast.Accept(*this);
   }
 
-  llvm::FunctionType* func_type =
-      llvm::FunctionType::get(builder_.getVoidTy(), false);
-  llvm::Function* func = llvm::Function::Create(
-      func_type, llvm::Function::ExternalLinkage, "main", module_.get());
-  llvm::BasicBlock* entry =
-      llvm::BasicBlock::Create(context_, "entrypoint", func);
-  builder_.SetInsertPoint(entry);
-
-  llvm::AllocaInst* main_class =
-      builder_.CreateAlloca(ast_to_.LlvmClass("Main"));
-  std::vector<llvm::Value*> args;
-  args.push_back(main_class);
-
-  builder_.CreateCall(ast_to_.GetConstructor("Main"), args);
-  builder_.CreateCall(ast_to_.LlvmFunc("Main", "main"), args);
-  builder_.CreateRetVoid();
+  GenMainFunc();
 
   module_->print(llvm::errs(), nullptr);
 
