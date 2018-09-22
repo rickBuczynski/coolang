@@ -84,17 +84,9 @@ class CodegenVisitor : public ConstAstVisitor {
     return module_->getOrInsertFunction(func_name, func_type);
   }
 
-  llvm::Function* CreateStringConcatFunc() {
-    std::vector<llvm::Type*> string_concat_args;
-    string_concat_args.push_back(GetLlvmBasicType("String"));
-    string_concat_args.push_back(GetLlvmBasicType("String"));
-
-    llvm::FunctionType* string_concat_type = llvm::FunctionType::get(
-        GetLlvmBasicType("String"), string_concat_args, false);
-
-    llvm::Function* string_concat_func = llvm::Function::Create(
-        string_concat_type, llvm::Function::ExternalLinkage, "String-concat",
-        module_.get());
+  void CreateStringConcatFunc() {
+    llvm::Function* string_concat_func =
+        ast_to_code_map_.GetLlvmFunction("String", "concat");
 
     llvm::BasicBlock* string_concat_entry =
         llvm::BasicBlock::Create(context_, "entrypoint", string_concat_func);
@@ -119,22 +111,11 @@ class CodegenVisitor : public ConstAstVisitor {
     builder_.CreateCall(strcat_func_, {concated_val, rhs_arg});
 
     builder_.CreateRet(concated_val);
-
-    return string_concat_func;
   }
 
-  llvm::Function* CreateStringSubstrFunc() {
-    std::vector<llvm::Type*> string_substr_args;
-    string_substr_args.push_back(GetLlvmBasicType("String"));
-    string_substr_args.push_back(GetLlvmBasicType("Int"));
-    string_substr_args.push_back(GetLlvmBasicType("Int"));
-
-    llvm::FunctionType* string_substr_type = llvm::FunctionType::get(
-        GetLlvmBasicType("String"), string_substr_args, false);
-
-    llvm::Function* string_substr_func = llvm::Function::Create(
-        string_substr_type, llvm::Function::ExternalLinkage, "String-substr",
-        module_.get());
+  void CreateStringSubstrFunc() {
+    llvm::Function* string_substr_func =
+        ast_to_code_map_.GetLlvmFunction("String", "substr");
 
     llvm::BasicBlock* string_substr_entry =
         llvm::BasicBlock::Create(context_, "entrypoint", string_substr_func);
@@ -164,20 +145,11 @@ class CodegenVisitor : public ConstAstVisitor {
         substr_last_ptr);
 
     builder_.CreateRet(substr_val);
-
-    return string_substr_func;
   }
 
-  llvm::Function* CreateStringLengthFunc() {
-    std::vector<llvm::Type*> string_length_args;
-    string_length_args.push_back(GetLlvmBasicType("String"));
-
-    llvm::FunctionType* string_length_type = llvm::FunctionType::get(
-        GetLlvmBasicType("Int"), string_length_args, false);
-
-    llvm::Function* string_length_func = llvm::Function::Create(
-        string_length_type, llvm::Function::ExternalLinkage, "String-length",
-        module_.get());
+  void CreateStringLengthFunc() {
+    llvm::Function* string_length_func =
+        ast_to_code_map_.GetLlvmFunction("String", "length");
 
     llvm::BasicBlock* string_length_entry =
         llvm::BasicBlock::Create(context_, "entrypoint", string_length_func);
@@ -186,8 +158,6 @@ class CodegenVisitor : public ConstAstVisitor {
     llvm::Value* len_val =
         builder_.CreateCall(strlen_func_, {string_length_func->arg_begin()});
     builder_.CreateRet(len_val);
-
-    return string_length_func;
   }
 
   void ClearScope() { in_scope_vars_.clear(); }
@@ -215,10 +185,6 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::Function* GetLlvmFunction(const std::string& class_name,
                                   const std::string& method_name) {
     return ast_to_code_map_.GetLlvmFunction(class_name, method_name);
-  }
-  void SetLlvmFunction(const std::string& class_name,
-                       const std::string& method_name, llvm::Function* func) {
-    ast_to_code_map_.SetLlvmFunction(class_name, method_name, func);
   }
 
   llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
@@ -706,15 +672,18 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   ast_to_code_map_.AddMethods(node.GetObjectClass());
   ast_to_code_map_.AddMethods(node.GetIoClass());
 
+  // just sets up ast to function mapping and creates func definitions
+  ast_to_code_map_.AddMethods(node.GetStringClass());
+
   ObjectCodegen object_codegen(&context_, &builder_, &ast_to_code_map_);
   object_codegen.GenAllFuncBodies();
 
   IoCodegen io_codegen(&context_, &builder_, &ast_to_code_map_);
   io_codegen.GenAllFuncBodies(printf_func_);
 
-  SetLlvmFunction("String", "concat", CreateStringConcatFunc());
-  SetLlvmFunction("String", "length", CreateStringLengthFunc());
-  SetLlvmFunction("String", "substr", CreateStringSubstrFunc());
+  CreateStringConcatFunc();
+  CreateStringLengthFunc();
+  CreateStringSubstrFunc();
 
   for (const auto& class_ast : node.GetClasses()) {
     ast_to_code_map_.AddAttributes(&class_ast);

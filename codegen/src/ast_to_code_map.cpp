@@ -40,7 +40,7 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
 
     std::vector<llvm::Type*> arg_types;
     // first param is always implicit 'self'
-    arg_types.push_back(GetLlvmClassType(class_ast)->getPointerTo());
+    arg_types.push_back(GetLlvmBasicOrPointerToClassType(class_ast->GetName()));
     for (const auto& arg : method->GetArgs()) {
       arg_types.push_back(GetLlvmBasicOrPointerToClassType(arg.GetType()));
     }
@@ -52,18 +52,23 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
         class_ast->GetName() + "-" + method->GetId(), module_);
     functions_[method] = func;
 
-    const int vtable_method_index =
-        GetVtable(class_ast).GetIndexOfMethodFeature(method);
-    if (vtable_method_index < vtable_functions.size()) {
-      // redefining a super method
-      vtable_functions[vtable_method_index] = func;
-    } else {
-      assert(vtable_method_index == vtable_functions.size());
-      vtable_functions.push_back(func);
+    // String defines methods but it can't be inherited from so no vtable
+    if (class_ast->GetName() != "String") {
+      const int vtable_method_index =
+          GetVtable(class_ast).GetIndexOfMethodFeature(method);
+      if (vtable_method_index < vtable_functions.size()) {
+        // redefining a super method
+        vtable_functions[vtable_method_index] = func;
+      } else {
+        assert(vtable_method_index == vtable_functions.size());
+        vtable_functions.push_back(func);
+      }
     }
   }
 
-  class_codegens_.at(class_ast).BuildVtable(module_, vtable_functions);
+  if (class_ast->GetName() != "String") {
+    class_codegens_.at(class_ast).BuildVtable(module_, vtable_functions);
+  }
 
   current_class_ = nullptr;
 }
