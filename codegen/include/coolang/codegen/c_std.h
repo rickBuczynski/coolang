@@ -25,11 +25,11 @@ class CStd {
                                      bool is_var_arg = false) {
     std::vector<llvm::Type*> llvm_arg_types;
     for (const auto& arg : arg_types) {
-      llvm_arg_types.push_back(ast_to_code_map_->GetLlvmBasicType(arg));
+      llvm_arg_types.push_back(ast_to_code_map_->LlvmBasicType(arg));
     }
 
     llvm::FunctionType* func_type =
-        llvm::FunctionType::get(ast_to_code_map_->GetLlvmBasicType(return_type),
+        llvm::FunctionType::get(ast_to_code_map_->LlvmBasicType(return_type),
                                 llvm_arg_types, is_var_arg);
 
     return module_->getOrInsertFunction(func_name, func_type);

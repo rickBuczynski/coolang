@@ -87,10 +87,6 @@ class CodegenVisitor : public ConstAstVisitor {
 
   void GenConstructor(const ClassAst& node);
 
-  llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
-    return ast_to_.GetLlvmBasicType(class_name);
-  }
-
   const ClassAst* CurClass() const { return ast_to_.CurClass(); }
   const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
 
@@ -371,7 +367,8 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
   const int vtable_index = 0;
   llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
       ast_to_.LlvmClass(&node), constructor->args().begin(), vtable_index);
-  builder_.CreateStore(ast_to_.GetVtable(&node).GetGlobalInstance(), vtable_ptr_ptr);
+  builder_.CreateStore(ast_to_.GetVtable(&node).GetGlobalInstance(),
+                       vtable_ptr_ptr);
 
   // TODO constructor should init super class attrs too
 
@@ -414,7 +411,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
 }
 
 void CodegenVisitor::Visit(const NewExpr& node) {
-  if (GetLlvmBasicType(node.GetType()) != nullptr) {
+  if (ast_to_.LlvmBasicType(node.GetType()) != nullptr) {
     // TODO don't ignore "new" for basic types
     return;
   }

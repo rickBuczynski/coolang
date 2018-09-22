@@ -27,7 +27,7 @@ class AstToCodeMap {
   void AddMethods(const ClassAst* class_ast);
   void AddConstructor(const ClassAst* class_ast);
 
-  llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
+  llvm::Type* LlvmBasicType(const std::string& class_name) const {
     if (class_name == "Int") {
       return builder_->getInt32Ty();
     }
@@ -60,7 +60,7 @@ class AstToCodeMap {
   }
 
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
-    llvm::Type* type = GetLlvmBasicType(type_name);
+    llvm::Type* type = LlvmBasicType(type_name);
     if (type == nullptr) {
       type = LlvmClass(type_name)->getPointerTo();
     }
