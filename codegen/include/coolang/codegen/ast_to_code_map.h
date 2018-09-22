@@ -25,6 +25,7 @@ class AstToCodeMap {
 
   void AddAttributes(const ClassAst* class_ast);
   void AddMethods(const ClassAst* class_ast);
+  void AddConstructor(const ClassAst* class_ast);
 
   llvm::Type* GetLlvmBasicType(const std::string& class_name) const {
     if (class_name == "Int") {
@@ -49,6 +50,13 @@ class AstToCodeMap {
 
   const Vtable& GetVtable(const ClassAst* class_ast) {
     return class_codegens_.at(class_ast).GetVtable();
+  }
+
+  llvm::Function* GetConstructor(const ClassAst* class_ast) {
+    return class_codegens_.at(class_ast).GetConstructor();
+  }
+  llvm::Function* GetConstructor(const std::string& type_name) {
+    return GetConstructor(GetClassByName(type_name));
   }
 
   llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {

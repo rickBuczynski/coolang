@@ -73,4 +73,20 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
   current_class_ = nullptr;
 }
 
+void AstToCodeMap::AddConstructor(const ClassAst* class_ast) {
+  using namespace std::string_literals;
+
+  std::vector<llvm::Type*> constructor_arg_types;
+
+  constructor_arg_types.push_back(GetLlvmClassType(class_ast)->getPointerTo());
+
+  llvm::FunctionType* constructor_func_type = llvm::FunctionType::get(
+      builder_->getVoidTy(), constructor_arg_types, false);
+  llvm::Function* constructor = llvm::Function::Create(
+      constructor_func_type, llvm::Function::ExternalLinkage,
+      "construct"s + "-" + class_ast->GetName(), module_);
+
+  class_codegens_.at(class_ast).SetConstructor(constructor);
+}
+
 }  // namespace coolang

@@ -28,9 +28,15 @@ class ClassCodegen {
     struct_type_->setBody(class_attributes);
   }
 
+  llvm::Function* GetConstructor() const { return constructor_; }
+  void SetConstructor(llvm::Function* constructor) {
+    constructor_ = constructor;
+  }
+
  private:
   llvm::StructType* struct_type_;
   Vtable vtable_;
+  llvm::Function* constructor_ = nullptr;
 };
 
 }  // namespace coolang

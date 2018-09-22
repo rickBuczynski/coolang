@@ -5,8 +5,8 @@
 #include "coolang/codegen/c_std.h"
 #include "coolang/codegen/io_codegen.h"
 #include "coolang/codegen/object_codegen.h"
-#include "coolang/codegen/vtable.h"
 #include "coolang/codegen/string_codegen.h"
+#include "coolang/codegen/vtable.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/IR/BasicBlock.h"
@@ -89,10 +89,7 @@ class CodegenVisitor : public ConstAstVisitor {
     return ast_to_code_map_.GetClassByName(name);
   }
 
-  llvm::Function* CreateConstructor(const ClassAst& node);
-  llvm::Function* GetConstructor(const std::string& class_name) {
-    return constructors_[GetClassByName(class_name)];
-  }
+  void GenConstructor(const ClassAst& node);
 
   llvm::Function* GetLlvmFunction(const std::string& class_name,
                                   const std::string& method_name) {
@@ -135,8 +132,6 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
-
-  std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
   llvm::LLVMContext context_;
   std::unique_ptr<llvm::Module> module_;
@@ -391,18 +386,9 @@ void CodegenVisitor::Visit(const EqCompareExpr& node) {
   }
 }
 
-llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
-  using namespace std::string_literals;
+void CodegenVisitor::GenConstructor(const ClassAst& node) {
+  llvm::Function* constructor = ast_to_code_map_.GetConstructor(&node);
 
-  std::vector<llvm::Type*> constructor_arg_types;
-
-  constructor_arg_types.push_back(GetLlvmClassType(&node)->getPointerTo());
-
-  llvm::FunctionType* constructor_func_type = llvm::FunctionType::get(
-      builder_.getVoidTy(), constructor_arg_types, false);
-  llvm::Function* constructor = llvm::Function::Create(
-      constructor_func_type, llvm::Function::ExternalLinkage,
-      "construct"s + "-" + node.GetName(), module_.get());
   llvm::BasicBlock* constructor_entry =
       llvm::BasicBlock::Create(context_, "entrypoint", constructor);
   builder_.SetInsertPoint(constructor_entry);
@@ -451,7 +437,6 @@ llvm::Function* CodegenVisitor::CreateConstructor(const ClassAst& node) {
   ast_to_code_map_.EraseMethod(&dummy_constructor_method);
 
   builder_.CreateRetVoid();
-  return constructor;
 }
 
 void CodegenVisitor::Visit(const NewExpr& node) {
@@ -466,14 +451,15 @@ void CodegenVisitor::Visit(const NewExpr& node) {
   llvm::Value* malloc_len_val =
       llvm::ConstantInt::get(context_, llvm::APInt(32, new_size, true));
 
-  llvm::Value* malloc_val = builder_.CreateCall(c_std_.GetMallocFunc(), {malloc_len_val});
+  llvm::Value* malloc_val =
+      builder_.CreateCall(c_std_.GetMallocFunc(), {malloc_len_val});
 
   llvm::Value* new_val = builder_.CreateBitCast(
       malloc_val, GetLlvmClassType(node.GetType())->getPointerTo());
 
   std::vector<llvm::Value*> args;
   args.push_back(new_val);
-  builder_.CreateCall(GetConstructor(node.GetType()), args);
+  builder_.CreateCall(ast_to_code_map_.GetConstructor(node.GetType()), args);
 
   codegened_values_[&node] = new_val;
 }
@@ -511,6 +497,8 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& node) {
 
 void CodegenVisitor::Visit(const ClassAst& node) {
   ast_to_code_map_.SetCurrentClass(&node);
+
+  GenConstructor(node);
 
   for (const auto* method : node.GetMethodFeatures()) {
     llvm::Function* func = ast_to_code_map_.GetLlvmFunction(method);
@@ -550,8 +538,6 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     }
   }
 
-  constructors_[&node] = CreateConstructor(node);
-
   ast_to_code_map_.SetCurrentClass(nullptr);
   ClearScope();
 }
@@ -578,11 +564,13 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   IoCodegen io_codegen(&context_, &builder_, &ast_to_code_map_, &c_std_);
   io_codegen.GenAllFuncBodies();
 
-  StringCodegen string_codegen(&context_, &builder_, &ast_to_code_map_, &c_std_);
+  StringCodegen string_codegen(&context_, &builder_, &ast_to_code_map_,
+                               &c_std_);
   string_codegen.GenAllFuncBodies();
 
   for (const auto& class_ast : node.GetClasses()) {
     ast_to_code_map_.AddAttributes(&class_ast);
+    ast_to_code_map_.AddConstructor(&class_ast);
   }
 
   for (const ClassAst* class_ast : node.SortedClassesWithSupersBeforeSubs()) {
@@ -606,7 +594,7 @@ void CodegenVisitor::Visit(const ProgramAst& node) {
   std::vector<llvm::Value*> args;
   args.push_back(main_class);
 
-  builder_.CreateCall(GetConstructor("Main"), args);
+  builder_.CreateCall(ast_to_code_map_.GetConstructor("Main"), args);
   builder_.CreateCall(GetLlvmFunction("Main", "main"), args);
   builder_.CreateRetVoid();
 
