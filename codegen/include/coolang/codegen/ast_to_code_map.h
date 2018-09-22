@@ -59,7 +59,7 @@ class AstToCodeMap {
     return GetConstructor(GetClassByName(type_name));
   }
 
-  llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
+  llvm::Type* LlvmBasicOrClassPtrTy(const std::string& type_name) {
     llvm::Type* type = LlvmBasicType(type_name);
     if (type == nullptr) {
       type = LlvmClass(type_name)->getPointerTo();

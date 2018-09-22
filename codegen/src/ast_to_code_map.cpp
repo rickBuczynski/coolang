@@ -12,7 +12,7 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
       GetVtable(class_ast).GetStructType()->getPointerTo());
 
   for (const auto* attr : class_ast->GetAttributeFeatures()) {
-    llvm::Type* attr_type = GetLlvmBasicOrPointerToClassType(attr->GetType());
+    llvm::Type* attr_type = LlvmBasicOrClassPtrTy(attr->GetType());
     class_attributes.push_back(attr_type);
   }
 
@@ -34,14 +34,13 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
   }
 
   for (const auto* method : class_ast->GetMethodFeatures()) {
-    llvm::Type* return_type =
-        GetLlvmBasicOrPointerToClassType(method->GetReturnType());
+    llvm::Type* return_type = LlvmBasicOrClassPtrTy(method->GetReturnType());
 
     std::vector<llvm::Type*> arg_types;
     // first param is always implicit 'self'
-    arg_types.push_back(GetLlvmBasicOrPointerToClassType(class_ast->GetName()));
+    arg_types.push_back(LlvmBasicOrClassPtrTy(class_ast->GetName()));
     for (const auto& arg : method->GetArgs()) {
-      arg_types.push_back(GetLlvmBasicOrPointerToClassType(arg.GetType()));
+      arg_types.push_back(LlvmBasicOrClassPtrTy(arg.GetType()));
     }
 
     llvm::FunctionType* func_type =

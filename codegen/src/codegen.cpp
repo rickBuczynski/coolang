@@ -90,10 +90,6 @@ class CodegenVisitor : public ConstAstVisitor {
   const ClassAst* CurClass() const { return ast_to_.CurClass(); }
   const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
 
-  llvm::Type* GetLlvmBasicOrPointerToClassType(const std::string& type_name) {
-    return ast_to_.GetLlvmBasicOrPointerToClassType(type_name);
-  }
-
   llvm::Value* GetLlvmBasicOrPointerDefaultVal(const std::string& type_name) {
     return ast_to_.GetLlvmBasicOrPointerDefaultVal(type_name);
   }
@@ -122,7 +118,7 @@ void CodegenVisitor::Visit(const LetExpr& node) {
 
   while (in_expr == nullptr) {
     llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
-        GetLlvmBasicOrPointerToClassType(cur_let->GetType()));
+        ast_to_.LlvmBasicOrClassPtrTy(cur_let->GetType()));
     bindings.emplace_back(cur_let->GetId(), alloca_inst);
 
     if (cur_let->GetInitializationExpr()) {
@@ -130,7 +126,7 @@ void CodegenVisitor::Visit(const LetExpr& node) {
 
       llvm::Value* init_val =
           codegened_values_[cur_let->GetInitializationExpr().get()];
-      llvm::Type* let_type = GetLlvmBasicOrPointerToClassType(node.GetType());
+      llvm::Type* let_type = ast_to_.LlvmBasicOrClassPtrTy(node.GetType());
 
       if (let_type != init_val->getType()) {
         init_val = builder_.CreateBitCast(init_val, let_type);
@@ -243,8 +239,7 @@ void CodegenVisitor::Visit(const IfExpr& node) {
   llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context_, "else");
   llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-if");
 
-  llvm::Type* return_type =
-      GetLlvmBasicOrPointerToClassType(node.GetExprType());
+  llvm::Type* return_type = ast_to_.LlvmBasicOrClassPtrTy(node.GetExprType());
 
   builder_.CreateCondBr(cond_val, then_bb, else_bb);
 
@@ -481,8 +476,8 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     auto arg_iter = func->arg_begin();
     arg_iter++;  // skip implicit self param
     for (const auto& arg : method->GetArgs()) {
-      llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
-          GetLlvmBasicOrPointerToClassType(arg.GetType()));
+      llvm::AllocaInst* alloca_inst =
+          builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(arg.GetType()));
       builder_.CreateStore(arg_iter, alloca_inst);
       AddToScope(arg.GetId(), alloca_inst);
       arg_iter++;
@@ -497,7 +492,7 @@ void CodegenVisitor::Visit(const ClassAst& node) {
     }
 
     llvm::Type* return_type =
-        GetLlvmBasicOrPointerToClassType(method->GetReturnType());
+        ast_to_.LlvmBasicOrClassPtrTy(method->GetReturnType());
 
     if (codegened_values_.at(method->GetRootExpr().get())->getType() ==
         return_type) {
