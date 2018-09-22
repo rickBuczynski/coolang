@@ -85,19 +85,15 @@ class CodegenVisitor : public ConstAstVisitor {
     in_scope_vars_[id].push(val);
   }
 
+  std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
+
   void GenConstructor(const ClassAst& node);
+  llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
 
   const ClassAst* CurClass() const { return ast_to_.CurClass(); }
   const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
 
-  llvm::Value* GetLlvmBasicOrPointerDefaultVal(const std::string& type_name) {
-    return ast_to_.GetLlvmBasicOrPointerDefaultVal(type_name);
-  }
-
-  llvm::Value* GetAssignmentLhsPtr(const AssignExpr& node);
-
   std::unordered_map<const Expr*, llvm::Value*> codegened_values_;
-  std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
   llvm::LLVMContext context_;
   std::unique_ptr<llvm::Module> module_;
@@ -134,8 +130,9 @@ void CodegenVisitor::Visit(const LetExpr& node) {
 
       builder_.CreateStore(init_val, alloca_inst);
     } else {
-      builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(cur_let->GetType()),
-                           alloca_inst);
+      builder_.CreateStore(
+          ast_to_.LlvmBasicOrClassPtrDefaultVal(cur_let->GetType()),
+          alloca_inst);
     }
 
     in_expr = cur_let->GetInExpr().get();
@@ -375,7 +372,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& node) {
     llvm::Value* element_ptr = builder_.CreateStructGEP(
         ast_to_.LlvmClass(&node), constructor->args().begin(), attribute_index);
 
-    builder_.CreateStore(GetLlvmBasicOrPointerDefaultVal(attr->GetType()),
+    builder_.CreateStore(ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()),
                          element_ptr);
   }
 

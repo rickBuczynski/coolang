@@ -67,7 +67,7 @@ class AstToCodeMap {
     return type;
   }
 
-  llvm::Value* GetLlvmBasicOrPointerDefaultVal(const std::string& type_name) {
+  llvm::Value* LlvmBasicOrClassPtrDefaultVal(const std::string& type_name) {
     if (type_name == "Int") {
       return llvm::ConstantInt::get(*context_, llvm::APInt(32, 0, true));
     }
