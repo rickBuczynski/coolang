@@ -88,7 +88,7 @@ TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
 // TEST(CodegenTest, caseorder) { TestCodegen("case-order.cl"); }
 // TEST(CodegenTest, casevoid) { TestCodegen("casevoid.cl"); }
 // TEST(CodegenTest, cells) { TestCodegen("cells.cl"); }
-// TEST(CodegenTest, copyselfdispatch) { TestCodegen("copy-self-dispatch.cl"); }
+TEST(CodegenTest, copyselfdispatch) { TestCodegen("copy-self-dispatch.cl"); }
 // TEST(CodegenTest, copyselfinit) { TestCodegen("copy-self-init.cl"); }
 TEST(CodegenTest, dispatchoverridedynamic) {
   TestCodegen("dispatch-override-dynamic.cl");
@@ -151,10 +151,10 @@ TEST(CodegenTest, nonpolycall) { TestCodegen("non-poly-call.cl"); }
 TEST(CodegenTest, sequence) { TestCodegen("sequence.cl"); }
 // TEST(CodegenTest, shadowattrcase) { TestCodegen("shadow-attr-case.cl"); }
 TEST(CodegenTest, shadowattrformal) { TestCodegen("shadow-attr-formal.cl"); }
-// TEST(CodegenTest, shadowattrlet) { TestCodegen("shadow-attr-let.cl"); }
+TEST(CodegenTest, shadowattrlet) { TestCodegen("shadow-attr-let.cl"); }
 // TEST(CodegenTest, shadowcaselet) { TestCodegen("shadow-case-let.cl"); }
 // TEST(CodegenTest, shadowformalcase) { TestCodegen("shadow-formal-case.cl"); }
-// TEST(CodegenTest, shadowformallet) { TestCodegen("shadow-formal-let.cl"); }
+TEST(CodegenTest, shadowformallet) { TestCodegen("shadow-formal-let.cl"); }
 // TEST(CodegenTest, shadowletcase) { TestCodegen("shadow-let-case.cl"); }
 TEST(CodegenTest, shadowletlet) { TestCodegen("shadow-let-let.cl"); }
 TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
