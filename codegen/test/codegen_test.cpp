@@ -82,6 +82,7 @@ TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
 TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
 // TEST(CodegenTest, book_list) { TestCodegen("book_list.cl"); }
 // TEST(CodegenTest, boolcl) { TestCodegen("bool.cl"); }
+TEST(CodegenTest, boolliteral) { TestCodegen("bool-literal.cl"); }
 // TEST(CodegenTest, c) { TestCodegen("c.cl"); }
 // TEST(CodegenTest, calls) { TestCodegen("calls.cl"); }
 // TEST(CodegenTest, casenone) { TestCodegen("case-none.cl"); }
@@ -122,6 +123,7 @@ TEST(CodegenTest, interactionattrinitmethod) {
 // TEST(CodegenTest, lamgc) { TestCodegen("lam-gc.cl"); }
 // TEST(CodegenTest, lam) { TestCodegen("lam.cl"); }
 // TEST(CodegenTest, letnested) { TestCodegen("let-nested.cl"); }
+TEST(CodegenTest, letuseprev) { TestCodegen("let-use-prev.cl"); }
 TEST(CodegenTest, letinit) { TestCodegen("letinit.cl"); }
 // TEST(CodegenTest, many_objects_on_heap) {
 //  TestCodegen("many_objects_on_heap.cl");

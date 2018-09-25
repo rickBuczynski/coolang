@@ -63,7 +63,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const LessThanCompareExpr& lt_expr) override {}
   void Visit(const NewExpr& new_expr) override;
   void Visit(const AssignExpr& assign) override;
-  void Visit(const BoolExpr& bool_expr) override {}
+  void Visit(const BoolExpr& bool_expr) override;
   void Visit(const ClassAst& class_ast) override;
   void Visit(const CaseBranch& case_branch) override {}
   void Visit(const MethodFeature& method_feature) override {}
@@ -124,13 +124,12 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
   while (in_expr == nullptr) {
     llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
         ast_to_.LlvmBasicOrClassPtrTy(cur_let->GetType()));
-    bindings.emplace_back(cur_let->GetId(), alloca_inst);
 
     if (cur_let->GetInitializationExpr()) {
       cur_let->GetInitializationExpr()->Accept(*this);
 
       llvm::Value* init_val =
-          codegened_values_[cur_let->GetInitializationExpr().get()];
+          codegened_values_.at(cur_let->GetInitializationExpr().get());
       llvm::Type* let_type = ast_to_.LlvmBasicOrClassPtrTy(let_expr.GetType());
 
       if (let_type != init_val->getType()) {
@@ -144,12 +143,11 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
           alloca_inst);
     }
 
+    AddToScope(cur_let->GetId(), alloca_inst);
+    bindings.emplace_back(cur_let->GetId(), alloca_inst);
+
     in_expr = cur_let->GetInExpr().get();
     cur_let = cur_let->GetChainedLet().get();
-  }
-
-  for (const auto& binding : bindings) {
-    AddToScope(binding.first, binding.second);
   }
 
   in_expr->Accept(*this);
@@ -491,6 +489,16 @@ void CodegenVisitor::Visit(const AssignExpr& assign) {
   llvm::Value* assign_rhs_val = codegened_values_.at(assign.GetRhsExpr());
 
   builder_.CreateStore(assign_rhs_val, assign_lhs_ptr);
+}
+
+void CodegenVisitor::Visit(const BoolExpr& bool_expr) {
+  if (bool_expr.GetVal()) {
+    codegened_values_[&bool_expr] =
+        llvm::ConstantInt::get(context_, llvm::APInt(1, 1, false));
+  } else if (!bool_expr.GetVal()) {
+    codegened_values_[&bool_expr] =
+        llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
+  }
 }
 
 llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& assign) {

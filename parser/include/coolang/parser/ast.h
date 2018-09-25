@@ -209,8 +209,9 @@ class BoolExpr : public Expr {
  public:
   BoolExpr(LineRange line_range, bool val) : Expr(line_range), val_(val) {}
 
-  std::string ToString(int indent_depth) const override;
+  bool GetVal() const { return val_; }
 
+  std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 

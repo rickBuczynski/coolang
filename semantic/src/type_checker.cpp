@@ -270,16 +270,13 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
                            "'self' cannot be bound in a 'let' expression.",
                            program_ast_->GetFileName());
     } else {
+      AddToScope(cur_let->GetId(), cur_let->GetType());
       bindings.emplace_back(cur_let->GetId(), cur_let->GetType(),
                             LineRange(0, 0));
     }
 
     in_expr = cur_let->GetInExpr().get();
     cur_let = cur_let->GetChainedLet().get();
-  }
-
-  for (const Formal& f : bindings) {
-    AddToScope(f.GetId(), f.GetType());
   }
 
   in_expr->Accept(*this);
