@@ -160,7 +160,7 @@ TEST(CodegenTest, shadowletlet) { TestCodegen("shadow-let-let.cl"); }
 TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
 // TEST(CodegenTest, sort_list) { TestCodegen("sort_list.cl"); }
 TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl"); }
-// TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
+TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
 // TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
 
 }  // namespace

@@ -44,15 +44,17 @@ class ObjectCodegen {
   }
 
   void GenTypeName() const {
-    llvm::Function* func =
-        ast_to_code_map_->LlvmFunc("Object", "type_name");
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("Object", "type_name");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    // TODO actually implement type_name instead of just returning void
-    builder_->CreateRetVoid();
+    const int typename_index = 1;
+    llvm::Value* typename_ptr =
+        builder_->CreateStructGEP(ast_to_code_map_->LlvmClass("Object"),
+                                  func->arg_begin(), typename_index);
+    builder_->CreateRet(builder_->CreateLoad(typename_ptr));
   }
 
   llvm::LLVMContext* context_;

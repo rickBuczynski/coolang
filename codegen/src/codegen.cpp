@@ -109,7 +109,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
 int StructAttrIndex(int class_ast_attribute_index) {
   // offset 1 for vtable and 1 for type_name
-  return class_ast_attribute_index + 1;
+  return class_ast_attribute_index + 2;
 }
 
 void CodegenVisitor::Visit(const StrExpr& str) {
@@ -373,6 +373,13 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   builder_.CreateStore(ast_to_.GetVtable(&class_ast).GetGlobalInstance(),
                        vtable_ptr_ptr);
 
+  // store the class type_name second
+  const int type_index = 1;
+  llvm::Value* typename_ptr_ptr = builder_.CreateStructGEP(
+      ast_to_.LlvmClass(&class_ast), constructor->args().begin(), type_index);
+  builder_.CreateStore(builder_.CreateGlobalStringPtr(class_ast.GetName()),
+                       typename_ptr_ptr);
+
   // TODO constructor should init super class attrs too
 
   // first store default values
@@ -544,6 +551,16 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
 
   ast_to_.AddMethods(prog.GetObjectClass());
   ast_to_.AddMethods(prog.GetIoClass());
+
+  ast_to_.AddAttributes(prog.GetObjectClass());
+  ast_to_.AddAttributes(prog.GetIoClass());
+
+  ast_to_.AddConstructor(prog.GetObjectClass());
+  ast_to_.AddConstructor(prog.GetIoClass());
+
+  // TODO adding attributes and constructor for object and io
+  // but not calling GenConstructor so the vtable never gets stored
+  // and any calls to a "new Object" or "new IO" will fail
 
   // just sets up ast to function mapping and creates func definitions
   ast_to_.AddMethods(prog.GetStringClass());

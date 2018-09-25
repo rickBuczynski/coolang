@@ -10,6 +10,7 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   std::vector<llvm::Type*> class_attributes;
   class_attributes.push_back(
       GetVtable(class_ast).GetStructType()->getPointerTo());
+  class_attributes.push_back(builder_->getInt8PtrTy());
 
   for (const auto* attr : class_ast->GetAttributeFeatures()) {
     llvm::Type* attr_type = LlvmBasicOrClassPtrTy(attr->GetType());
