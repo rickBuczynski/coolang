@@ -107,6 +107,11 @@ class CodegenVisitor : public ConstAstVisitor {
   CStd c_std_;
 };
 
+int StructAttrIndex(int class_ast_attribute_index) {
+  // offset 1 for vtable and 1 for type_name
+  return class_ast_attribute_index + 1;
+}
+
 void CodegenVisitor::Visit(const StrExpr& str) {
   codegened_values_[&str] = builder_.CreateGlobalStringPtr(str.GetVal());
 }
@@ -311,11 +316,10 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
   for (size_t i = 0; i < CurClass()->GetAttributeFeatures().size(); i++) {
     const auto* attr = CurClass()->GetAttributeFeatures()[i];
 
-    const int attribute_index = i + 1;  // offset 1 since vtable is at 0
     if (attr->GetId() == obj.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           ast_to_.LlvmClass(CurClass()), ast_to_.CurLlvmFunc()->args().begin(),
-          attribute_index);
+          StructAttrIndex(i));
       codegened_values_[&obj] = builder_.CreateLoad(element_ptr);
       return;
     }
@@ -375,9 +379,9 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   for (size_t i = 0; i < class_ast.GetAttributeFeatures().size(); i++) {
     const auto* attr = class_ast.GetAttributeFeatures()[i];
 
-    const int attr_index = i + 1;  // offset 1 since vtable is at 0
     llvm::Value* element_ptr = builder_.CreateStructGEP(
-        ast_to_.LlvmClass(&class_ast), constructor->args().begin(), attr_index);
+        ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+        StructAttrIndex(i));
     builder_.CreateStore(ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()),
                          element_ptr);
   }
@@ -393,10 +397,9 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
     if (attr->GetRootExpr()) {
       attr->GetRootExpr()->Accept(*this);
-      const int attribute_index = i + 1;  // offset 1 since vtable is at 0
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-          attribute_index);
+          StructAttrIndex(i));
       builder_.CreateStore(codegened_values_.at(attr->GetRootExpr().get()),
                            element_ptr);
     }
@@ -494,10 +497,9 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& assign) {
   for (size_t i = 0; i < CurClass()->GetAttributeFeatures().size(); i++) {
     const auto* attr = CurClass()->GetAttributeFeatures()[i];
     if (attr->GetId() == assign.GetId()) {
-      const int attribute_index = i + 1;  // offset 1 since vtable is at 0
       return builder_.CreateStructGEP(ast_to_.LlvmClass(CurClass()),
                                       ast_to_.CurLlvmFunc()->args().begin(),
-                                      attribute_index);
+                                      StructAttrIndex(i));
     }
   }
 
