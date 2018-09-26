@@ -565,10 +565,6 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   ast_to_.AddConstructor(prog.GetObjectClass());
   ast_to_.AddConstructor(prog.GetIoClass());
 
-  // TODO adding attributes and constructor for object and io
-  // but not calling GenConstructor so the vtable never gets stored
-  // and any calls to a "new Object" or "new IO" will fail
-
   // just sets up ast to function mapping and creates func definitions
   ast_to_.AddMethods(prog.GetStringClass());
   ast_to_.AddMethods(prog.GetIntClass());
@@ -591,6 +587,9 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   for (const ClassAst* class_ast : prog.SortedClassesWithSupersBeforeSubs()) {
     ast_to_.AddMethods(class_ast);
   }
+
+  GenConstructor(*prog.GetObjectClass());
+  GenConstructor(*prog.GetIoClass());
 
   for (const auto& class_ast : prog.GetClasses()) {
     class_ast.Accept(*this);
