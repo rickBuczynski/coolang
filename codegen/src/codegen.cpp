@@ -116,6 +116,11 @@ void CodegenVisitor::Visit(const StrExpr& str) {
   codegened_values_[&str] = builder_.CreateGlobalStringPtr(str.GetVal());
 }
 
+// TODO when assigning/let binding/initializing/etc from Int/String/Bool to
+// Object Just generate a "new Object" expr and then set the typename The
+// original value of the Int/String/Bool doesn't matter since there's no way
+// to extract it from the Object. You can never assign (super <- sub) and
+// there's no casting in COOL
 void CodegenVisitor::Visit(const LetExpr& let_expr) {
   std::vector<std::pair<std::string, llvm::AllocaInst*>> bindings;
   const LetExpr* cur_let = &let_expr;
