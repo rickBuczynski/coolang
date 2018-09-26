@@ -130,7 +130,7 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
 
       llvm::Value* init_val =
           codegened_values_.at(cur_let->GetInitializationExpr().get());
-      llvm::Type* let_type = ast_to_.LlvmBasicOrClassPtrTy(let_expr.GetType());
+      llvm::Type* let_type = ast_to_.LlvmBasicOrClassPtrTy(cur_let->GetType());
 
       if (let_type != init_val->getType()) {
         init_val = builder_.CreateBitCast(init_val, let_type);
