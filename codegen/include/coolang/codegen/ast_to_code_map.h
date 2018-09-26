@@ -27,6 +27,14 @@ class AstToCodeMap {
   void AddMethods(const ClassAst* class_ast);
   void AddConstructor(const ClassAst* class_ast);
 
+  static bool TypeUsesVtable(const std::string& class_name) {
+    // Int Bool and String are implemented as unboxed values so there's nowhere
+    // to store a vtable pointer. And they can't be inherited from so there's no
+    // need for a vtable anyway
+    return !(class_name == "Int" || class_name == "String" ||
+             class_name == "Bool");
+  }
+
   llvm::Type* LlvmBasicType(const std::string& class_name) const {
     if (class_name == "Int") {
       return builder_->getInt32Ty();

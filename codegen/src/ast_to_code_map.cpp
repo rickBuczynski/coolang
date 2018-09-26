@@ -51,8 +51,7 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
         class_ast->GetName() + "-" + method->GetId(), module_);
     functions_[method] = func;
 
-    // String defines methods but it can't be inherited from so no vtable
-    if (class_ast->GetName() != "String") {
+    if (TypeUsesVtable(class_ast->GetName())) {
       const size_t vtable_method_index =
           GetVtable(class_ast).GetIndexOfMethodFeature(method);
       if (vtable_method_index < vtable_functions.size()) {
@@ -65,7 +64,7 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
     }
   }
 
-  if (class_ast->GetName() != "String") {
+  if (TypeUsesVtable(class_ast->GetName())) {
     vtables_.at(class_ast).BuildVtable(module_, vtable_functions);
   }
 

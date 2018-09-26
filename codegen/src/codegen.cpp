@@ -215,8 +215,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
     }
   }
 
-  if (call_expr.GetLhsExpr()->GetExprType() == "String") {
-    // don't use a vtable for string methods since it can't be inherited from
+  if (!ast_to_.TypeUsesVtable(call_expr.GetLhsExpr()->GetExprType())) {
     const auto called_method = ast_to_.LlvmFunc(
         call_expr.GetLhsExpr()->GetExprType(), call_expr.GetMethodName());
     codegened_values_[&call_expr] =
@@ -572,6 +571,8 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
 
   // just sets up ast to function mapping and creates func definitions
   ast_to_.AddMethods(prog.GetStringClass());
+  ast_to_.AddMethods(prog.GetIntClass());
+  ast_to_.AddMethods(prog.GetBoolClass());
 
   ObjectCodegen object_codegen(&context_, &builder_, &ast_to_);
   object_codegen.GenAllFuncBodies();

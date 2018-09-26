@@ -795,14 +795,13 @@ class ProgramAst : public AstNode {
                                              IoClassFeatures(), LineRange(0, 0),
                                              file_path.filename().string())),
         int_class_(std::make_unique<ClassAst>(
-            "Int", object_class_.get(), std::vector<std::unique_ptr<Feature>>{},
-            LineRange(0, 0), file_path.filename().string())),
+            "Int", object_class_.get(), IntClassFeatures(), LineRange(0, 0),
+            file_path.filename().string())),
         string_class_(std::make_unique<ClassAst>(
             "String", object_class_.get(), StringClassFeatures(),
             LineRange(0, 0), file_path.filename().string())),
         bool_class_(std::make_unique<ClassAst>(
-            "Bool", object_class_.get(),
-            std::vector<std::unique_ptr<Feature>>{}, LineRange(0, 0),
+            "Bool", object_class_.get(), BoolClassFeatures(), LineRange(0, 0),
             file_path.filename().string())) {
     for (auto& cool_class : classes_) {
       classes_by_name_[cool_class.GetName()] = &cool_class;
@@ -859,6 +858,8 @@ class ProgramAst : public AstNode {
   const ClassAst* GetObjectClass() const { return object_class_.get(); }
   const ClassAst* GetIoClass() const { return io_class_.get(); }
   const ClassAst* GetStringClass() const { return string_class_.get(); }
+  const ClassAst* GetIntClass() const { return int_class_.get(); }
+  const ClassAst* GetBoolClass() const { return bool_class_.get(); }
 
   std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& vis) override { vis.Visit(*this); }
@@ -934,10 +935,26 @@ class ProgramAst : public AstNode {
         std::make_unique<MethodFeature>(LineRange(0, 0), "substr", substr_args,
                                         "String", std::unique_ptr<Expr>{});
 
+    std::vector<std::unique_ptr<Feature>> obj_features = ObjectClassFeatures();
     std::vector<std::unique_ptr<Feature>> features;
+    features.push_back(std::move(obj_features.at(1)));  // overrides typename
     features.push_back(std::move(length_method_feature));
     features.push_back(std::move(concat_method_feature));
     features.push_back(std::move(substr_method_feature));
+    return features;
+  }
+
+  static std::vector<std::unique_ptr<Feature>> IntClassFeatures() {
+    std::vector<std::unique_ptr<Feature>> obj_features = ObjectClassFeatures();
+    std::vector<std::unique_ptr<Feature>> features;
+    features.push_back(std::move(obj_features.at(1)));  // overrides typename
+    return features;
+  }
+
+  static std::vector<std::unique_ptr<Feature>> BoolClassFeatures() {
+    std::vector<std::unique_ptr<Feature>> obj_features = ObjectClassFeatures();
+    std::vector<std::unique_ptr<Feature>> features;
+    features.push_back(std::move(obj_features.at(1)));  // overrides typename
     return features;
   }
 

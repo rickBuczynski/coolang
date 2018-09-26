@@ -18,6 +18,8 @@ class ObjectCodegen {
     GenAbort();
     GenCopy();
     GenTypeName();
+
+    GenBoolTypeName();
   }
 
  private:
@@ -56,6 +58,18 @@ class ObjectCodegen {
                                   func->arg_begin(), typename_index);
     builder_->CreateRet(builder_->CreateLoad(typename_ptr));
   }
+
+  void GenBoolTypeName() const {
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("Bool", "type_name");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(*context_, "entrypoint", func);
+    builder_->SetInsertPoint(entry);
+
+    builder_->CreateRet(builder_->CreateGlobalStringPtr("Bool"));
+  }
+
+  // TODO GenIntTypeName GenStringTypeName
 
   llvm::LLVMContext* context_;
   llvm::IRBuilder<>* builder_;
