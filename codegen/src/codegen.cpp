@@ -137,7 +137,12 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
           codegened_values_.at(cur_let->GetInitializationExpr().get());
       llvm::Type* let_type = ast_to_.LlvmBasicOrClassPtrTy(cur_let->GetType());
 
-      if (let_type != init_val->getType()) {
+      if (AstToCodeMap::IsBasicType(
+              cur_let->GetInitializationExpr()->GetExprType()) &&
+          cur_let->GetType() == "Object") {
+        init_val = ast_to_.GetBoxedBasicTypeGlobal(
+            cur_let->GetInitializationExpr()->GetExprType());
+      } else if (let_type != init_val->getType()) {
         init_val = builder_.CreateBitCast(init_val, let_type);
       }
 
@@ -369,16 +374,16 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   builder_.SetInsertPoint(constructor_entry);
 
   // store the vtable first since initializers might make dynamic calls
-  const int vtable_index = 0;
   llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(), vtable_index);
+      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+      AstToCodeMap::obj_vtable_index);
   builder_.CreateStore(ast_to_.GetVtable(&class_ast).GetGlobalInstance(),
                        vtable_ptr_ptr);
 
   // store the class type_name second
-  const int type_index = 1;
   llvm::Value* typename_ptr_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(), type_index);
+      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+      AstToCodeMap::obj_typename_index);
   builder_.CreateStore(builder_.CreateGlobalStringPtr(class_ast.GetName()),
                        typename_ptr_ptr);
 
@@ -544,6 +549,11 @@ void CodegenVisitor::GenMainFunc() {
       llvm::BasicBlock::Create(context_, "entrypoint", func);
   builder_.SetInsertPoint(entry);
 
+  // need to do this in main since we have to store the typename in the global
+  // at runtime. There's no way to put a i8* into a global constant.
+  ast_to_.InsertBoxedBasicTypeGlobal("Bool");
+  // TODO string and int need boxed globals too
+
   llvm::AllocaInst* main_class =
       builder_.CreateAlloca(ast_to_.LlvmClass("Main"));
   std::vector<llvm::Value*> args;
@@ -596,11 +606,11 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   GenConstructor(*prog.GetObjectClass());
   GenConstructor(*prog.GetIoClass());
 
+  GenMainFunc();
+
   for (const auto& class_ast : prog.GetClasses()) {
     class_ast.Accept(*this);
   }
-
-  GenMainFunc();
 
   module_->print(llvm::errs(), nullptr);
 

@@ -17,6 +17,9 @@ class AstToCodeMap {
         builder_(builder),
         program_ast_(program_ast) {}
 
+  static constexpr int obj_vtable_index = 0;
+  static constexpr int obj_typename_index = 1;
+
   void Insert(const ClassAst* class_ast) {
     types_.insert(std::make_pair(
         class_ast, llvm::StructType::create(*context_, class_ast->GetName())));
@@ -26,6 +29,37 @@ class AstToCodeMap {
   void AddAttributes(const ClassAst* class_ast);
   void AddMethods(const ClassAst* class_ast);
   void AddConstructor(const ClassAst* class_ast);
+
+  static bool IsBasicType(const std::string& class_name) {
+    return class_name == "Int" || class_name == "String" ||
+           class_name == "Bool";
+  }
+
+  void InsertBoxedBasicTypeGlobal(const std::string& basic_type) {
+    const std::string global_name = "boxed-" + basic_type + "-global";
+
+    module_->getOrInsertGlobal(global_name, LlvmClass("Object"));
+    llvm::GlobalVariable* boxed = module_->getNamedGlobal(global_name);
+    boxed->setConstant(false);
+    boxed->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
+
+    boxed->setInitializer(llvm::ConstantStruct::get(
+        LlvmClass("Object"),
+        {GetVtable("Object").GetGlobalInstance(),
+         llvm::ConstantPointerNull::get(builder_->getInt8PtrTy())}));
+
+    llvm::Value* typename_ptr_ptr = builder_->CreateStructGEP(
+        LlvmClass("Object"), boxed, obj_typename_index);
+
+    builder_->CreateStore(builder_->CreateGlobalStringPtr(basic_type),
+                          typename_ptr_ptr);
+
+    boxed_basic_type_globals_[basic_type] = boxed;
+  }
+
+  llvm::GlobalValue* GetBoxedBasicTypeGlobal(const std::string& basic_type) {
+    return boxed_basic_type_globals_.at(basic_type);
+  }
 
   static bool TypeUsesVtable(const std::string& class_name) {
     // Int Bool and String are implemented as unboxed values so there's nowhere
@@ -48,16 +82,20 @@ class AstToCodeMap {
     return nullptr;
   }
 
-  llvm::Type* LlvmClass(const std::string& class_name) {
+  llvm::StructType* LlvmClass(const std::string& class_name) {
     return LlvmClass(GetClassByName(class_name));
   }
 
-  llvm::Type* LlvmClass(const ClassAst* class_ast) {
+  llvm::StructType* LlvmClass(const ClassAst* class_ast) {
     return types_.at(class_ast);
   }
 
   const Vtable& GetVtable(const ClassAst* class_ast) {
     return vtables_.at(class_ast);
+  }
+
+  const Vtable& GetVtable(const std::string& class_name) {
+    return vtables_.at(GetClassByName(class_name));
   }
 
   llvm::Function* GetConstructor(const ClassAst* class_ast) {
@@ -139,6 +177,8 @@ class AstToCodeMap {
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
+
+  std::unordered_map<std::string, llvm::GlobalValue*> boxed_basic_type_globals_;
 
   llvm::LLVMContext* context_;
   llvm::Module* module_;
