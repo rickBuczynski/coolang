@@ -194,9 +194,15 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
   const auto method_feature =
       class_calling_method->GetMethodFeatureByName(call_expr.GetMethodName());
 
+  const bool is_static_dispatch = call_expr.GetStaticDispatchType().has_value();
+
   const ClassAst* class_that_defines_method =
       class_calling_method->GetClassOrSuperClassThatDefinesMethod(
           method_feature);
+  if (is_static_dispatch) {
+    class_that_defines_method =
+        ast_to_.GetClassByName(call_expr.GetStaticDispatchType().value());
+  }
 
   call_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_val = codegened_values_.at(call_expr.GetLhsExpr());
@@ -225,7 +231,13 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
     }
   }
 
-  if (!ast_to_.TypeUsesVtable(call_expr.GetLhsExpr()->GetExprType())) {
+  if (is_static_dispatch) {
+    const auto called_method = ast_to_.LlvmFunc(
+        call_expr.GetStaticDispatchType().value(), call_expr.GetMethodName());
+    codegened_values_[&call_expr] =
+        builder_.CreateCall(called_method, arg_vals);
+  } else if (!AstToCodeMap::TypeUsesVtable(
+                 call_expr.GetLhsExpr()->GetExprType())) {
     const auto called_method = ast_to_.LlvmFunc(
         call_expr.GetLhsExpr()->GetExprType(), call_expr.GetMethodName());
     codegened_values_[&call_expr] =

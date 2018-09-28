@@ -98,9 +98,9 @@ TEST(CodegenTest, dispatchoverridedynamic) {
 TEST(CodegenTest, dispatchoverridedynamiccomplex) {
   TestCodegen("dispatch-override-dynamic-complex.cl");
 }
-// TEST(CodegenTest, dispatchoverridestatic) {
-//  TestCodegen("dispatch-override-static.cl");
-//}
+TEST(CodegenTest, dispatchoverridestatic) {
+  TestCodegen("dispatch-override-static.cl");
+}
 // TEST(CodegenTest, dispatchvoiddynamic) {
 //  TestCodegen("dispatch-void-dynamic.cl");
 //}
