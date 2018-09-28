@@ -107,9 +107,15 @@ class CodegenVisitor : public ConstAstVisitor {
   CStd c_std_;
 };
 
-int StructAttrIndex(int class_ast_attribute_index) {
+int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
+  int super_attr_count = 0;
+  for (const ClassAst* super : class_ast->GetAllSuperClasses()) {
+    super_attr_count += super->GetAttributeFeatures().size();
+  }
+
   // offset 1 for vtable and 1 for type_name
-  return class_ast_attribute_index + 2;
+  const int vtable_and_typename_offset = 2;
+  return super_attr_count + attribute_index + vtable_and_typename_offset;
 }
 
 void CodegenVisitor::Visit(const StrExpr& str) {
@@ -338,7 +344,7 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
     if (attr->GetId() == obj.GetId()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           ast_to_.LlvmClass(CurClass()), ast_to_.CurLlvmFunc()->args().begin(),
-          StructAttrIndex(i));
+          StructAttrIndex(CurClass(), i));
       codegened_values_[&obj] = builder_.CreateLoad(element_ptr);
       return;
     }
@@ -399,17 +405,17 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   builder_.CreateStore(builder_.CreateGlobalStringPtr(class_ast.GetName()),
                        typename_ptr_ptr);
 
-  // TODO constructor should init super class attrs too
-
   // first store default values
-  for (size_t i = 0; i < class_ast.GetAttributeFeatures().size(); i++) {
-    const auto* attr = class_ast.GetAttributeFeatures()[i];
+  for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
+    for (size_t i = 0; i < cur_class->GetAttributeFeatures().size(); i++) {
+      const AttributeFeature* attr = cur_class->GetAttributeFeatures()[i];
 
-    llvm::Value* element_ptr = builder_.CreateStructGEP(
-        ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-        StructAttrIndex(i));
-    builder_.CreateStore(ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()),
-                         element_ptr);
+      llvm::Value* element_ptr = builder_.CreateStructGEP(
+          ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+          StructAttrIndex(cur_class, i));
+      builder_.CreateStore(
+          ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()), element_ptr);
+    }
   }
 
   auto dummy_constructor_method =
@@ -418,16 +424,18 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   ast_to_.SetCurrentMethod(&dummy_constructor_method);
 
   // then store value from init expr
-  for (size_t i = 0; i < class_ast.GetAttributeFeatures().size(); i++) {
-    const auto* attr = class_ast.GetAttributeFeatures()[i];
+  for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
+    for (size_t i = 0; i < cur_class->GetAttributeFeatures().size(); i++) {
+      const AttributeFeature* attr = cur_class->GetAttributeFeatures()[i];
 
-    if (attr->GetRootExpr()) {
-      attr->GetRootExpr()->Accept(*this);
-      llvm::Value* element_ptr = builder_.CreateStructGEP(
-          ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-          StructAttrIndex(i));
-      builder_.CreateStore(codegened_values_.at(attr->GetRootExpr().get()),
-                           element_ptr);
+      if (attr->GetRootExpr()) {
+        attr->GetRootExpr()->Accept(*this);
+        llvm::Value* element_ptr = builder_.CreateStructGEP(
+            ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+            StructAttrIndex(cur_class, i));
+        builder_.CreateStore(codegened_values_.at(attr->GetRootExpr().get()),
+                             element_ptr);
+      }
     }
   }
 
@@ -535,7 +543,7 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& assign) {
     if (attr->GetId() == assign.GetId()) {
       return builder_.CreateStructGEP(ast_to_.LlvmClass(CurClass()),
                                       ast_to_.CurLlvmFunc()->args().begin(),
-                                      StructAttrIndex(i));
+                                      StructAttrIndex(CurClass(), i));
     }
   }
 

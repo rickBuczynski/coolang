@@ -74,6 +74,8 @@ void TestCodegen(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
+// TODO copyselfinit boolcl
+
 // TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
 TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
@@ -117,7 +119,7 @@ TEST(CodegenTest, fibo) { TestCodegen("fibo.cl"); }
 // TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
 // TEST(CodegenTest, initdefault) { TestCodegen("init-default.cl"); }
 TEST(CodegenTest, initorderself) { TestCodegen("init-order-self.cl"); }
-// TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
+TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
 TEST(CodegenTest, interactionattrinitmethod) {
   TestCodegen("interaction-attrinit-method.cl");
 }

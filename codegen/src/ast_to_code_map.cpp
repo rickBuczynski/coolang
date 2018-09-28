@@ -12,9 +12,11 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
       GetVtable(class_ast).GetStructType()->getPointerTo());
   class_attributes.push_back(builder_->getInt8PtrTy());
 
-  for (const auto* attr : class_ast->GetAttributeFeatures()) {
-    llvm::Type* attr_type = LlvmBasicOrClassPtrTy(attr->GetType());
-    class_attributes.push_back(attr_type);
+  for (const ClassAst* cur_class : class_ast->SupersThenThis()) {
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
+      llvm::Type* attr_type = LlvmBasicOrClassPtrTy(attr->GetType());
+      class_attributes.push_back(attr_type);
+    }
   }
 
   types_.at(class_ast)->setBody(class_attributes);

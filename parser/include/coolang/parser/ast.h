@@ -710,6 +710,14 @@ class ClassAst : public AstNode {
     return super_classes;
   }
 
+  std::vector<const ClassAst*> SupersThenThis() const {
+    std::vector<const ClassAst*> supers_and_class = GetAllSuperClasses();
+    std::reverse(supers_and_class.begin(), supers_and_class.end());
+    supers_and_class.push_back(this);
+
+    return supers_and_class;
+  }
+
   void AddSubClass(const ClassAst* sub_class) {
     sub_classes_.push_back(sub_class);
   }
