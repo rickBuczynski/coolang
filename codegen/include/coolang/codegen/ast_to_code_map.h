@@ -11,10 +11,12 @@ namespace coolang {
 class AstToCodeMap {
  public:
   AstToCodeMap(llvm::LLVMContext* context, llvm::Module* module,
-               llvm::IRBuilder<>* builder, const ProgramAst* program_ast)
+               llvm::IRBuilder<>* builder, llvm::DataLayout* data_layout,
+               const ProgramAst* program_ast)
       : context_(context),
         module_(module),
         builder_(builder),
+        data_layout_(data_layout),
         program_ast_(program_ast) {}
 
   static constexpr int obj_vtable_index = 0;
@@ -44,11 +46,14 @@ class AstToCodeMap {
     boxed->setConstant(false);
     boxed->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
 
+    const auto obj_class_size =
+        data_layout_->getTypeAllocSize(LlvmClass("Object"));
+
     boxed->setInitializer(llvm::ConstantStruct::get(
         LlvmClass("Object"),
         {GetVtable("Object").GetGlobalInstance(),
          llvm::ConstantPointerNull::get(builder_->getInt8PtrTy()),
-         LlvmConstInt32Zero()}));
+         LlvmConstInt32(obj_class_size)}));
 
     llvm::Value* typename_ptr_ptr = builder_->CreateStructGEP(
         LlvmClass("Object"), boxed, obj_typename_index);
@@ -71,7 +76,11 @@ class AstToCodeMap {
              class_name == "Bool");
   }
 
-  llvm::Type* LlvmBasicType(const std::string& class_name) const {
+  llvm::Type* LlvmBasicType(std::string class_name) const {
+    if (class_name == "SELF_TYPE") {
+      class_name = current_class_->GetName();
+    }
+
     if (class_name == "Int") {
       return builder_->getInt32Ty();
     }
@@ -115,13 +124,13 @@ class AstToCodeMap {
     return type;
   }
 
-  llvm::ConstantInt* LlvmConstInt32Zero() const {
-    return llvm::ConstantInt::get(*context_, llvm::APInt(32, 0, true));
+  llvm::ConstantInt* LlvmConstInt32(uint64_t i) const {
+    return llvm::ConstantInt::get(*context_, llvm::APInt(32, i, true));
   }
 
   llvm::Value* LlvmBasicOrClassPtrDefaultVal(const std::string& type_name) {
     if (type_name == "Int") {
-      return LlvmConstInt32Zero();
+      return LlvmConstInt32(0);
     }
     if (type_name == "String") {
       return builder_->CreateGlobalStringPtr("");
@@ -189,6 +198,7 @@ class AstToCodeMap {
   llvm::LLVMContext* context_;
   llvm::Module* module_;
   llvm::IRBuilder<>* builder_;
+  llvm::DataLayout* data_layout_;
 
   const ProgramAst* program_ast_;
   const ClassAst* current_class_ = nullptr;

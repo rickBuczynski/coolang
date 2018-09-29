@@ -946,6 +946,7 @@ class ProgramAst : public AstNode {
     std::vector<std::unique_ptr<Feature>> obj_features = ObjectClassFeatures();
     std::vector<std::unique_ptr<Feature>> features;
     features.push_back(std::move(obj_features.at(1)));  // overrides typename
+    features.push_back(std::move(obj_features.at(2)));  // overrides copy
     features.push_back(std::move(length_method_feature));
     features.push_back(std::move(concat_method_feature));
     features.push_back(std::move(substr_method_feature));
@@ -956,6 +957,7 @@ class ProgramAst : public AstNode {
     std::vector<std::unique_ptr<Feature>> obj_features = ObjectClassFeatures();
     std::vector<std::unique_ptr<Feature>> features;
     features.push_back(std::move(obj_features.at(1)));  // overrides typename
+    features.push_back(std::move(obj_features.at(2)));  // overrides copy
     return features;
   }
 
@@ -963,6 +965,7 @@ class ProgramAst : public AstNode {
     std::vector<std::unique_ptr<Feature>> obj_features = ObjectClassFeatures();
     std::vector<std::unique_ptr<Feature>> features;
     features.push_back(std::move(obj_features.at(1)));  // overrides typename
+    features.push_back(std::move(obj_features.at(2)));  // overrides copy
     return features;
   }
 

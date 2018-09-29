@@ -20,7 +20,9 @@ class ObjectCodegen {
     GenCopy();
     GenTypeName();
 
+    // TODO string and int copy and type name
     GenBoolTypeName();
+    GenBoolCopy();
   }
 
  private:
@@ -75,6 +77,16 @@ class ObjectCodegen {
     builder_->SetInsertPoint(entry);
 
     builder_->CreateRet(builder_->CreateGlobalStringPtr("Bool"));
+  }
+
+  void GenBoolCopy() const {
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("Bool", "copy");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(*context_, "entrypoint", func);
+    builder_->SetInsertPoint(entry);
+
+    builder_->CreateRet(func->arg_begin());
   }
 
   // TODO GenIntTypeName GenStringTypeName

@@ -38,7 +38,8 @@ class CodegenVisitor : public ConstAstVisitor {
                                  context_)),
         data_layout_(module_.get()),
         builder_(context_),
-        ast_to_(&context_, module_.get(), &builder_, &program_ast),
+        ast_to_(&context_, module_.get(), &builder_, &data_layout_,
+                &program_ast),
         c_std_(module_.get(), &ast_to_) {}
 
   void Visit(const CaseExpr& case_expr) override {}
@@ -503,7 +504,7 @@ void CodegenVisitor::Visit(const NewExpr& new_expr) {
 
   llvm::Type* type = ast_to_.LlvmClass(new_expr.GetType());
 
-  auto new_size = data_layout_.getTypeAllocSize(type);
+  const auto new_size = data_layout_.getTypeAllocSize(type);
   llvm::Value* malloc_len_val =
       llvm::ConstantInt::get(context_, llvm::APInt(32, new_size, true));
 

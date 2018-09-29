@@ -74,8 +74,6 @@ void TestCodegen(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
-// TODO copyselfinit boolcl
-
 // TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
 TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
@@ -83,7 +81,7 @@ TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
 // TEST(CodegenTest, bigexample) { TestCodegen("bigexample.cl"); }
 TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
 // TEST(CodegenTest, book_list) { TestCodegen("book_list.cl"); }
-// TEST(CodegenTest, boolcl) { TestCodegen("bool.cl"); }
+TEST(CodegenTest, boolcl) { TestCodegen("bool.cl"); }
 TEST(CodegenTest, boolliteral) { TestCodegen("bool-literal.cl"); }
 TEST(CodegenTest, booltypename) { TestCodegen("bool-typename.cl"); }
 // TEST(CodegenTest, c) { TestCodegen("c.cl"); }
