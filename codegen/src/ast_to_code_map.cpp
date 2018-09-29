@@ -8,9 +8,13 @@ namespace coolang {
 
 void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   std::vector<llvm::Type*> class_attributes;
+  // vtable ptr
   class_attributes.push_back(
       GetVtable(class_ast).GetStructType()->getPointerTo());
+  // typename
   class_attributes.push_back(builder_->getInt8PtrTy());
+  // object size (to allow copying without a different function per type)
+  class_attributes.push_back(builder_->getInt32Ty());
 
   for (const ClassAst* cur_class : class_ast->SupersThenThis()) {
     for (const auto* attr : cur_class->GetAttributeFeatures()) {

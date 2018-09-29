@@ -9,10 +9,11 @@ namespace coolang {
 class ObjectCodegen {
  public:
   ObjectCodegen(llvm::LLVMContext* context, llvm::IRBuilder<>* builder,
-                AstToCodeMap* ast_to_code_map)
+                AstToCodeMap* ast_to_code_map, CStd* std)
       : context_(context),
         builder_(builder),
-        ast_to_code_map_(ast_to_code_map) {}
+        ast_to_code_map_(ast_to_code_map),
+        c_std_(std) {}
 
   void GenAllFuncBodies() const {
     GenAbort();
@@ -41,8 +42,16 @@ class ObjectCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    // TODO actually implement copy instead of just returning void
-    builder_->CreateRetVoid();
+    llvm::Value* typesize_ptr = builder_->CreateStructGEP(
+        ast_to_code_map_->LlvmClass("Object"), func->arg_begin(),
+        AstToCodeMap::obj_typesize_index);
+    llvm::Value* typesize = builder_->CreateLoad(typesize_ptr);
+
+    llvm::Value* copy =
+        builder_->CreateCall(c_std_->GetMallocFunc(), {typesize});
+    builder_->CreateMemCpy(copy, func->arg_begin(), typesize, 0);
+
+    builder_->CreateRet(copy);
   }
 
   void GenTypeName() const {
@@ -52,10 +61,9 @@ class ObjectCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    const int typename_index = 1;
-    llvm::Value* typename_ptr =
-        builder_->CreateStructGEP(ast_to_code_map_->LlvmClass("Object"),
-                                  func->arg_begin(), typename_index);
+    llvm::Value* typename_ptr = builder_->CreateStructGEP(
+        ast_to_code_map_->LlvmClass("Object"), func->arg_begin(),
+        AstToCodeMap::obj_typename_index);
     builder_->CreateRet(builder_->CreateLoad(typename_ptr));
   }
 
@@ -74,6 +82,7 @@ class ObjectCodegen {
   llvm::LLVMContext* context_;
   llvm::IRBuilder<>* builder_;
   AstToCodeMap* ast_to_code_map_;
+  CStd* c_std_;
 };
 
 }  // namespace coolang

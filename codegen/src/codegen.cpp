@@ -114,8 +114,8 @@ int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
   }
 
   // offset 1 for vtable and 1 for type_name
-  const int vtable_and_typename_offset = 2;
-  return super_attr_count + attribute_index + vtable_and_typename_offset;
+  const int vtable_typename_typesize_offset = 3;
+  return super_attr_count + attribute_index + vtable_typename_typesize_offset;
 }
 
 void CodegenVisitor::Visit(const StrExpr& str) {
@@ -405,6 +405,16 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   builder_.CreateStore(builder_.CreateGlobalStringPtr(class_ast.GetName()),
                        typename_ptr_ptr);
 
+  // store the type_size third
+  const auto type_size =
+      data_layout_.getTypeAllocSize(ast_to_.LlvmClass(&class_ast));
+  llvm::Value* typesize_ptr = builder_.CreateStructGEP(
+      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+      AstToCodeMap::obj_typesize_index);
+  builder_.CreateStore(
+      llvm::ConstantInt::get(context_, llvm::APInt(32, type_size, true)),
+      typesize_ptr);
+
   // first store default values
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
     for (size_t i = 0; i < cur_class->GetAttributeFeatures().size(); i++) {
@@ -517,6 +527,12 @@ void CodegenVisitor::Visit(const AssignExpr& assign) {
   llvm::Value* assign_lhs_ptr = GetAssignmentLhsPtr(assign);
   llvm::Value* assign_rhs_val = codegened_values_.at(assign.GetRhsExpr());
 
+  if (assign_lhs_ptr->getType()->getPointerElementType() !=
+      assign_rhs_val->getType()) {
+    assign_rhs_val = builder_.CreateBitCast(
+        assign_rhs_val, assign_lhs_ptr->getType()->getPointerElementType());
+  }
+
   builder_.CreateStore(assign_rhs_val, assign_lhs_ptr);
 }
 
@@ -605,7 +621,7 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   ast_to_.AddMethods(prog.GetIntClass());
   ast_to_.AddMethods(prog.GetBoolClass());
 
-  ObjectCodegen object_codegen(&context_, &builder_, &ast_to_);
+  ObjectCodegen object_codegen(&context_, &builder_, &ast_to_, &c_std_);
   object_codegen.GenAllFuncBodies();
 
   IoCodegen io_codegen(&context_, &builder_, &ast_to_, &c_std_);

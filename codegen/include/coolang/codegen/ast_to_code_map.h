@@ -19,6 +19,7 @@ class AstToCodeMap {
 
   static constexpr int obj_vtable_index = 0;
   static constexpr int obj_typename_index = 1;
+  static constexpr int obj_typesize_index = 2;
 
   void Insert(const ClassAst* class_ast) {
     types_.insert(std::make_pair(
@@ -46,7 +47,8 @@ class AstToCodeMap {
     boxed->setInitializer(llvm::ConstantStruct::get(
         LlvmClass("Object"),
         {GetVtable("Object").GetGlobalInstance(),
-         llvm::ConstantPointerNull::get(builder_->getInt8PtrTy())}));
+         llvm::ConstantPointerNull::get(builder_->getInt8PtrTy()),
+         LlvmConstInt32Zero()}));
 
     llvm::Value* typename_ptr_ptr = builder_->CreateStructGEP(
         LlvmClass("Object"), boxed, obj_typename_index);
@@ -113,9 +115,13 @@ class AstToCodeMap {
     return type;
   }
 
+  llvm::ConstantInt* LlvmConstInt32Zero() const {
+    return llvm::ConstantInt::get(*context_, llvm::APInt(32, 0, true));
+  }
+
   llvm::Value* LlvmBasicOrClassPtrDefaultVal(const std::string& type_name) {
     if (type_name == "Int") {
-      return llvm::ConstantInt::get(*context_, llvm::APInt(32, 0, true));
+      return LlvmConstInt32Zero();
     }
     if (type_name == "String") {
       return builder_->CreateGlobalStringPtr("");

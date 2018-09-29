@@ -92,6 +92,7 @@ TEST(CodegenTest, booltypename) { TestCodegen("bool-typename.cl"); }
 // TEST(CodegenTest, caseorder) { TestCodegen("case-order.cl"); }
 // TEST(CodegenTest, casevoid) { TestCodegen("casevoid.cl"); }
 // TEST(CodegenTest, cells) { TestCodegen("cells.cl"); }
+TEST(CodegenTest, copyobject) { TestCodegen("copy-object.cl"); }
 TEST(CodegenTest, copyselfdispatch) { TestCodegen("copy-self-dispatch.cl"); }
 // TEST(CodegenTest, copyselfinit) { TestCodegen("copy-self-init.cl"); }
 TEST(CodegenTest, dispatchoverridedynamic) {
