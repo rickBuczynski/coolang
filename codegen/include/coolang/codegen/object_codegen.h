@@ -33,6 +33,15 @@ class ObjectCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
+    // TODO what happens if you call abort with an int string or bool as LHS?
+    llvm::Value* type_name = builder_->CreateCall(
+        ast_to_code_map_->LlvmFunc("Object", "type_name"), {func->arg_begin()});
+
+    builder_->CreateCall(
+        c_std_->GetPrintfFunc(),
+        {builder_->CreateGlobalStringPtr("Abort called from class %s\n"),
+         type_name});
+
     // TODO actually implement abort instead of just returning void
     builder_->CreateRetVoid();
   }
