@@ -18,6 +18,7 @@ class CStd {
   llvm::Constant* GetStrcatFunc() const { return strcat_func_; }
   llvm::Constant* GetMallocFunc() const { return malloc_func_; }
   llvm::Constant* GetExitFunc() const { return exit_func_; }
+  llvm::Constant* GetStrCmpFunc() const { return strcmp_func_; }
 
  private:
   llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
@@ -55,6 +56,8 @@ class CStd {
       CreateCStdFuncDecl("strncpy", "String", {"String", "String", "Int"});
   llvm::Constant* strcat_func_ =
       CreateCStdFuncDecl("strcat", "String", {"String", "String"});
+  llvm::Constant* strcmp_func_ =
+      CreateCStdFuncDecl("strcmp", "Int", {"String", "String"});
   llvm::Constant* exit_func_ = CreateCStdFuncDecl("exit", "Void", {"Int"});
   // use String (becomes char*) as return type for malloc
   // since llvm has no void* type

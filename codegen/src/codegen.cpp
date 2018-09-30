@@ -88,6 +88,10 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
+  llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
+                                           std::string cur_type,
+                                           std::string dest_type);
+
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
 
@@ -121,6 +125,19 @@ int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
 
 void CodegenVisitor::Visit(const StrExpr& str) {
   codegened_values_[&str] = builder_.CreateGlobalStringPtr(str.GetVal());
+}
+
+llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
+                                         std::string cur_type,
+                                         std::string dest_type) {
+  if (AstToCodeMap::IsBasicType(cur_type) && dest_type == "Object") {
+    return ast_to_.GetBoxedBasicTypeGlobal(cur_type);
+  }
+  if (cur_type != dest_type) {
+    return builder_.CreateBitCast(convert_me,
+                                  ast_to_.LlvmBasicOrClassPtrTy(dest_type));
+  }
+  return convert_me;
 }
 
 // TODO when assigning/let binding/initializing/etc from Int/String/Bool to
@@ -261,6 +278,13 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
     llvm::Value* vtable_func = builder_.CreateLoad(vtable_func_ptr);
     codegened_values_[&call_expr] = builder_.CreateCall(vtable_func, arg_vals);
   }
+
+  llvm::Type* return_type =
+      ast_to_.LlvmBasicOrClassPtrTy(call_expr.GetExprType());
+  if (codegened_values_[&call_expr]->getType() != return_type) {
+    codegened_values_[&call_expr] =
+        builder_.CreateBitCast(codegened_values_[&call_expr], return_type);
+  }
 }
 
 void CodegenVisitor::Visit(const IfExpr& if_expr) {
@@ -272,9 +296,6 @@ void CodegenVisitor::Visit(const IfExpr& if_expr) {
   llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context_, "else");
   llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-if");
 
-  llvm::Type* return_type =
-      ast_to_.LlvmBasicOrClassPtrTy(if_expr.GetExprType());
-
   builder_.CreateCondBr(cond_val, then_bb, else_bb);
 
   // then block
@@ -282,9 +303,9 @@ void CodegenVisitor::Visit(const IfExpr& if_expr) {
 
   if_expr.GetThenExpr()->Accept(*this);
   llvm::Value* then_val = codegened_values_.at(if_expr.GetThenExpr());
-  if (then_val->getType() != return_type) {
-    then_val = builder_.CreateBitCast(then_val, return_type);
-  }
+  then_val = ConvertType(then_val, if_expr.GetThenExpr()->GetExprType(),
+                         if_expr.GetExprType());
+
   // Codegen of 'Then' can change the current block, update then_bb for the PHI.
   then_bb = builder_.GetInsertBlock();
 
@@ -296,9 +317,8 @@ void CodegenVisitor::Visit(const IfExpr& if_expr) {
 
   if_expr.GetElseExpr()->Accept(*this);
   llvm::Value* else_val = codegened_values_.at(if_expr.GetElseExpr());
-  if (else_val->getType() != return_type) {
-    else_val = builder_.CreateBitCast(else_val, return_type);
-  }
+  else_val = ConvertType(else_val, if_expr.GetElseExpr()->GetExprType(),
+                         if_expr.GetExprType());
   // Codegen of 'Else' can change the current block, update else_bb for the PHI.
   else_bb = builder_.GetInsertBlock();
 
@@ -308,7 +328,8 @@ void CodegenVisitor::Visit(const IfExpr& if_expr) {
   ast_to_.CurLlvmFunc()->getBasicBlockList().push_back(done_bb);
   builder_.SetInsertPoint(done_bb);
 
-  llvm::PHINode* pn = builder_.CreatePHI(return_type, 2);
+  llvm::PHINode* pn = builder_.CreatePHI(
+      ast_to_.LlvmBasicOrClassPtrTy(if_expr.GetExprType()), 2);
   pn->addIncoming(then_val, then_bb);
   pn->addIncoming(else_val, else_bb);
 
@@ -379,10 +400,21 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   eq_expr.GetRhsExpr()->Accept(*this);
   llvm::Value* rhs_value = codegened_values_.at(eq_expr.GetRhsExpr().get());
 
-  // TODO handle types other than int
-  if (eq_expr.GetLhsExpr()->GetExprType() == "Int") {
+  if (eq_expr.GetLhsExpr()->GetExprType() == "Int" ||
+      eq_expr.GetLhsExpr()->GetExprType() == "Bool") {
     codegened_values_[&eq_expr] = builder_.CreateICmpEQ(lhs_value, rhs_value);
+    return;
   }
+
+  if (eq_expr.GetLhsExpr()->GetExprType() == "String") {
+    llvm::Value* strcmp_result =
+        builder_.CreateCall(c_std_.GetStrCmpFunc(), {lhs_value, rhs_value});
+    codegened_values_[&eq_expr] =
+        builder_.CreateICmpEQ(strcmp_result, ast_to_.LlvmConstInt32(0));
+    return;
+  }
+
+  // TODO check pointer equaltity for non basic types
 }
 
 void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
@@ -588,8 +620,10 @@ void CodegenVisitor::GenMainFunc() {
 
   // need to do this in main since we have to store the typename in the global
   // at runtime. There's no way to put a i8* into a global constant.
+  // TODO test type_name for boxed String and Int
   ast_to_.InsertBoxedBasicTypeGlobal("Bool");
-  // TODO string and int need boxed globals too
+  ast_to_.InsertBoxedBasicTypeGlobal("String");
+  ast_to_.InsertBoxedBasicTypeGlobal("Int");
 
   llvm::AllocaInst* main_class =
       builder_.CreateAlloca(ast_to_.LlvmClass("Main"));

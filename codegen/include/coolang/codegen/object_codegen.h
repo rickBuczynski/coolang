@@ -23,6 +23,7 @@ class ObjectCodegen {
     // TODO string and int copy and type name
     GenBoolTypeName();
     GenBoolCopy();
+    GenStringCopy();
   }
 
  private:
@@ -45,8 +46,8 @@ class ObjectCodegen {
     builder_->CreateCall(c_std_->GetExitFunc(),
                          {ast_to_code_map_->LlvmConstInt32(0)});
 
-    // TODO actually implement abort instead of just returning void
-    builder_->CreateRetVoid();
+    // return value can never be used but needs to match COOL spec
+    builder_->CreateRet(func->arg_begin());
   }
 
   void GenCopy() const {
@@ -101,7 +102,17 @@ class ObjectCodegen {
     builder_->CreateRet(func->arg_begin());
   }
 
-  // TODO GenIntTypeName GenStringTypeName
+  void GenStringCopy() const {
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("String", "copy");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(*context_, "entrypoint", func);
+    builder_->SetInsertPoint(entry);
+
+    // TODO either need to make an actual copy of somehow mark that this points
+    // to same string for when I do GC
+    builder_->CreateRet(func->arg_begin());
+  }
 
   llvm::LLVMContext* context_;
   llvm::IRBuilder<>* builder_;

@@ -78,7 +78,7 @@ TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
 TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
-// TEST(CodegenTest, basicequality) { TestCodegen("basicequality.cl"); }
+TEST(CodegenTest, basicequality) { TestCodegen("basicequality.cl"); }
 // TEST(CodegenTest, bigexample) { TestCodegen("bigexample.cl"); }
 TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
 // TEST(CodegenTest, book_list) { TestCodegen("book_list.cl"); }
