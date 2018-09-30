@@ -42,6 +42,9 @@ class ObjectCodegen {
         {builder_->CreateGlobalStringPtr("Abort called from class %s\n"),
          type_name});
 
+    builder_->CreateCall(c_std_->GetExitFunc(),
+                         {ast_to_code_map_->LlvmConstInt32(0)});
+
     // TODO actually implement abort instead of just returning void
     builder_->CreateRetVoid();
   }

@@ -17,10 +17,11 @@ class CStd {
   llvm::Constant* GetStrncpyFunc() const { return strncpy_func_; }
   llvm::Constant* GetStrcatFunc() const { return strcat_func_; }
   llvm::Constant* GetMallocFunc() const { return malloc_func_; }
+  llvm::Constant* GetExitFunc() const { return exit_func_; }
 
  private:
   llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
-                                     const std::string& return_type,
+                                     const std::string& return_type_str,
                                      const std::vector<std::string>& arg_types,
                                      bool is_var_arg = false) {
     std::vector<llvm::Type*> llvm_arg_types;
@@ -28,9 +29,15 @@ class CStd {
       llvm_arg_types.push_back(ast_to_code_map_->LlvmBasicType(arg));
     }
 
+    llvm::Type* return_type;
+    if (return_type_str == "Void") {
+      return_type = ast_to_code_map_->LlvmVoidType();
+    } else {
+      return_type = ast_to_code_map_->LlvmBasicType(return_type_str);
+    }
+
     llvm::FunctionType* func_type =
-        llvm::FunctionType::get(ast_to_code_map_->LlvmBasicType(return_type),
-                                llvm_arg_types, is_var_arg);
+        llvm::FunctionType::get(return_type, llvm_arg_types, is_var_arg);
 
     return module_->getOrInsertFunction(func_name, func_type);
   }
@@ -48,6 +55,7 @@ class CStd {
       CreateCStdFuncDecl("strncpy", "String", {"String", "String", "Int"});
   llvm::Constant* strcat_func_ =
       CreateCStdFuncDecl("strcat", "String", {"String", "String"});
+  llvm::Constant* exit_func_ = CreateCStdFuncDecl("exit", "Void", {"Int"});
   // use String (becomes char*) as return type for malloc
   // since llvm has no void* type
   llvm::Constant* malloc_func_ =

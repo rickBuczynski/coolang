@@ -76,6 +76,8 @@ class AstToCodeMap {
              class_name == "Bool");
   }
 
+  llvm::Type* LlvmVoidType() const { return builder_->getVoidTy(); }
+
   llvm::Type* LlvmBasicType(std::string class_name) const {
     if (class_name == "SELF_TYPE") {
       class_name = current_class_->GetName();

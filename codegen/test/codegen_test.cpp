@@ -74,7 +74,8 @@ void TestCodegen(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
-// TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
+TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
+TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
 TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
 // TEST(CodegenTest, basicequality) { TestCodegen("basicequality.cl"); }
