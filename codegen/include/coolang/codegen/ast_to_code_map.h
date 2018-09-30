@@ -38,6 +38,9 @@ class AstToCodeMap {
            class_name == "Bool";
   }
 
+  // TODO using one global value for Basic types boxed as objects wont work
+  // you can cast an object back to an int/string/bool using "case" expr
+  // need to actually allocate the boxed type and store the value
   void InsertBoxedBasicTypeGlobal(const std::string& basic_type) {
     const std::string global_name = "boxed-" + basic_type + "-global";
 

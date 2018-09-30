@@ -26,6 +26,15 @@ class ObjectCodegen {
     GenStringCopy();
   }
 
+  void GenExitWithMessage(const std::string& format_string,
+                          std::vector<llvm::Value*> printf_args) const {
+    printf_args.insert(printf_args.begin(),
+                       builder_->CreateGlobalStringPtr(format_string));
+    builder_->CreateCall(c_std_->GetPrintfFunc(), printf_args);
+    builder_->CreateCall(c_std_->GetExitFunc(),
+                         {ast_to_code_map_->LlvmConstInt32(0)});
+  }
+
  private:
   void GenAbort() const {
     llvm::Function* func = ast_to_code_map_->LlvmFunc("Object", "abort");
@@ -38,13 +47,7 @@ class ObjectCodegen {
     llvm::Value* type_name = builder_->CreateCall(
         ast_to_code_map_->LlvmFunc("Object", "type_name"), {func->arg_begin()});
 
-    builder_->CreateCall(
-        c_std_->GetPrintfFunc(),
-        {builder_->CreateGlobalStringPtr("Abort called from class %s\n"),
-         type_name});
-
-    builder_->CreateCall(c_std_->GetExitFunc(),
-                         {ast_to_code_map_->LlvmConstInt32(0)});
+    GenExitWithMessage("Abort called from class %s\n", {type_name});
 
     // return value can never be used but needs to match COOL spec
     builder_->CreateRet(func->arg_begin());
