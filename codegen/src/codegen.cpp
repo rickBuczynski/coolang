@@ -42,7 +42,7 @@ class CodegenVisitor : public ConstAstVisitor {
                 &program_ast),
         c_std_(module_.get(), &ast_to_) {}
 
-  void Visit(const CaseExpr& case_expr) override {}
+  void Visit(const CaseExpr& case_expr) override;
   void Visit(const StrExpr& str) override;
   void Visit(const WhileExpr& while_expr) override {}
   void Visit(const LetExpr& let_expr) override;
@@ -91,6 +91,7 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
                                            std::string cur_type,
                                            std::string dest_type);
+  llvm::Value* StringsEqual(llvm::Value* lhs_value, llvm::Value* rhs_value);
 
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
@@ -121,6 +122,84 @@ int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
   // offset 1 for vtable and 1 for type_name
   const int vtable_typename_typesize_offset = 3;
   return super_attr_count + attribute_index + vtable_typename_typesize_offset;
+}
+
+void CodegenVisitor::Visit(const CaseExpr& case_expr) {
+  // TODO this is slow it's O(# classes in program)
+  // instead of O(# classes in case expr)
+
+  // TODO test case expr for Int String Bool
+  // and Boxed Int String Bool
+
+  std::vector<const ClassAst*> classes;
+  classes.push_back(GetProgramAst()->GetObjectClass());
+  classes.push_back(GetProgramAst()->GetIoClass());
+  classes.push_back(GetProgramAst()->GetIntClass());
+  classes.push_back(GetProgramAst()->GetStringClass());
+  classes.push_back(GetProgramAst()->GetBoolClass());
+  for (const ClassAst* cool_class :
+       GetProgramAst()->SortedClassesWithSupersBeforeSubs()) {
+    classes.push_back(cool_class);
+  }
+
+  // We want the most specific type to match first
+  std::reverse(classes.begin(), classes.end());
+
+  std::unordered_map<std::string, const CaseBranch*> branches_by_type =
+      case_expr.BranchesByType();
+
+  case_expr.GetCaseExpr()->Accept(*this);
+  llvm::Value* case_val = codegened_values_.at(case_expr.GetCaseExpr());
+
+  // TODO this wont work for Basic types either need to box them first
+  // or do different logic for them
+  // TODO might need to cast to Object if static type is not Object
+  llvm::Value* case_val_type =
+      builder_.CreateCall(ast_to_.LlvmFunc("Object", "type_name"), {case_val});
+
+  std::vector<llvm::BasicBlock*> phi_blocks;
+
+  llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-case");
+
+  for (auto cool_class : classes) {
+    const auto branch_find = branches_by_type.find(cool_class->GetName());
+    if (branch_find != branches_by_type.end()) {
+      const CaseBranch* branch = branch_find->second;
+
+      llvm::Value* branch_type =
+          builder_.CreateGlobalStringPtr(branch->GetType());
+
+      llvm::BasicBlock* branch_taken = llvm::BasicBlock::Create(
+          context_, branch->GetType(), ast_to_.CurLlvmFunc());
+
+      llvm::BasicBlock* not_taken = llvm::BasicBlock::Create(
+          context_, branch->GetType() + "-not-taken", ast_to_.CurLlvmFunc());
+
+      llvm::Value* should_take_branch =
+          StringsEqual(case_val_type, branch_type);
+
+      builder_.CreateCondBr(should_take_branch, branch_taken, not_taken);
+
+      builder_.SetInsertPoint(branch_taken);
+      branch->GetExpr()->Accept(*this);
+      phi_blocks.push_back(builder_.GetInsertBlock());
+      builder_.CreateBr(done_bb);
+
+      builder_.SetInsertPoint(not_taken);
+    }
+  }
+
+  // TODO emit instructions for what should happen if no branches match
+
+  // push last not_taken block for the case of no matches
+  phi_blocks.push_back(builder_.GetInsertBlock());
+  builder_.CreateBr(done_bb);
+
+  ast_to_.CurLlvmFunc()->getBasicBlockList().push_back(done_bb);
+  builder_.SetInsertPoint(done_bb);
+
+  // TODO return a PHI
+  codegened_values_[&case_expr] = ast_to_.CurLlvmFunc()->arg_begin();
 }
 
 void CodegenVisitor::Visit(const StrExpr& str) {
@@ -393,6 +472,13 @@ void CodegenVisitor::Visit(const AddExpr& add_expr) {
   codegened_values_[&add_expr] = builder_.CreateAdd(lhs_value, rhs_value);
 }
 
+llvm::Value* CodegenVisitor::StringsEqual(llvm::Value* lhs_value,
+                                          llvm::Value* rhs_value) {
+  llvm::Value* strcmp_result =
+      builder_.CreateCall(c_std_.GetStrCmpFunc(), {lhs_value, rhs_value});
+  return builder_.CreateICmpEQ(strcmp_result, ast_to_.LlvmConstInt32(0));
+}
+
 void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   eq_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = codegened_values_.at(eq_expr.GetLhsExpr().get());
@@ -407,10 +493,7 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   }
 
   if (eq_expr.GetLhsExpr()->GetExprType() == "String") {
-    llvm::Value* strcmp_result =
-        builder_.CreateCall(c_std_.GetStrCmpFunc(), {lhs_value, rhs_value});
-    codegened_values_[&eq_expr] =
-        builder_.CreateICmpEQ(strcmp_result, ast_to_.LlvmConstInt32(0));
+    codegened_values_[&eq_expr] = StringsEqual(lhs_value, rhs_value);
     return;
   }
 

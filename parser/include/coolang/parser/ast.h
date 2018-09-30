@@ -521,6 +521,14 @@ class CaseExpr : public Expr {
   Expr* MutableCaseExpr() { return case_expr_.get(); }
   std::vector<CaseBranch>& MutableBranches() { return branches_; }
 
+  std::unordered_map<std::string, const CaseBranch*> BranchesByType() const {
+    std::unordered_map<std::string, const CaseBranch*> branches_by_type;
+    for (const CaseBranch& branch : branches_) {
+      branches_by_type[branch.GetType()] = &branch;
+    }
+    return branches_by_type;
+  }
+
   std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
