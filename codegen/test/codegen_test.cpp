@@ -87,7 +87,7 @@ TEST(CodegenTest, boolliteral) { TestCodegen("bool-literal.cl"); }
 TEST(CodegenTest, booltypename) { TestCodegen("bool-typename.cl"); }
 // TEST(CodegenTest, c) { TestCodegen("c.cl"); }
 TEST(CodegenTest, calls) { TestCodegen("calls.cl"); }
-// TEST(CodegenTest, casenone) { TestCodegen("case-none.cl"); }
+TEST(CodegenTest, casenone) { TestCodegen("case-none.cl"); }
 TEST(CodegenTest, caseorder) { TestCodegen("case-order.cl"); }
 // TEST(CodegenTest, casevoid) { TestCodegen("casevoid.cl"); }
 // TEST(CodegenTest, cells) { TestCodegen("cells.cl"); }

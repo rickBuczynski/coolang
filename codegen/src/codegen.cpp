@@ -189,7 +189,11 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
     }
   }
 
-  // TODO emit instructions for what should happen if no branches match
+  builder_.CreateCall(c_std_.GetPrintfFunc(),
+                      {builder_.CreateGlobalStringPtr(
+                           "No match in case statement for Class %s\n"),
+                       builder_.CreateGlobalStringPtr(CurClass()->GetName())});
+  builder_.CreateCall(c_std_.GetExitFunc(), {ast_to_.LlvmConstInt32(0)});
 
   // push last not_taken block for the case of no matches
   phi_blocks.push_back(builder_.GetInsertBlock());
