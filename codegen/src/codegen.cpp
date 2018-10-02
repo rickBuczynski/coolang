@@ -45,7 +45,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   void Visit(const CaseExpr& case_expr) override;
   void Visit(const StrExpr& str) override;
-  void Visit(const WhileExpr& while_expr) override {}
+  void Visit(const WhileExpr& while_expr) override;
   void Visit(const LetExpr& let_expr) override;
   void Visit(const IntExpr& int_expr) override;
   void Visit(const IsVoidExpr& is_void) override;
@@ -62,7 +62,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const AddExpr& add_expr) override;
   void Visit(const EqCompareExpr& eq_expr) override;
   void Visit(const DivideExpr& div_expr) override {}
-  void Visit(const LessThanCompareExpr& lt_expr) override {}
+  void Visit(const LessThanCompareExpr& lt_expr) override;
   void Visit(const NewExpr& new_expr) override;
   void Visit(const AssignExpr& assign) override;
   void Visit(const BoolExpr& bool_expr) override;
@@ -225,6 +225,33 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
 
 void CodegenVisitor::Visit(const StrExpr& str) {
   codegened_values_[&str] = builder_.CreateGlobalStringPtr(str.GetVal());
+}
+
+void CodegenVisitor::Visit(const WhileExpr& while_expr) {
+  llvm::BasicBlock* loop_cond_bb =
+      llvm::BasicBlock::Create(context_, "loop-cond", ast_to_.CurLlvmFunc());
+
+  llvm::BasicBlock* loop_body_bb =
+      llvm::BasicBlock::Create(context_, "loop-body", ast_to_.CurLlvmFunc());
+
+  llvm::BasicBlock* loop_done_bb =
+      llvm::BasicBlock::Create(context_, "loop-done", ast_to_.CurLlvmFunc());
+
+  builder_.CreateBr(loop_cond_bb);
+
+  builder_.SetInsertPoint(loop_cond_bb);
+  while_expr.GetConditionExpr()->Accept(*this);
+  llvm::Value* cond_val = codegened_values_.at(while_expr.GetConditionExpr());
+  builder_.CreateCondBr(cond_val, loop_body_bb, loop_done_bb);
+
+  builder_.SetInsertPoint(loop_body_bb);
+  while_expr.GetLoopExpr()->Accept(*this);
+  builder_.CreateBr(loop_cond_bb);
+
+  builder_.SetInsertPoint(loop_done_bb);
+
+  // TODO return a PHI
+  codegened_values_[&while_expr] = ast_to_.CurLlvmFunc()->arg_begin();
 }
 
 llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
@@ -626,6 +653,16 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
       builder_.CreateRet(casted_value);
     }
   }
+}
+
+void CodegenVisitor::Visit(const LessThanCompareExpr& lt_expr) {
+  lt_expr.GetLhsExpr()->Accept(*this);
+  llvm::Value* lhs_val = codegened_values_.at(lt_expr.GetLhsExpr().get());
+
+  lt_expr.GetRhsExpr()->Accept(*this);
+  llvm::Value* rhs_val = codegened_values_.at(lt_expr.GetRhsExpr().get());
+
+  codegened_values_[&lt_expr] = builder_.CreateICmpSLT(lhs_val, rhs_val);
 }
 
 void CodegenVisitor::Visit(const NewExpr& new_expr) {
