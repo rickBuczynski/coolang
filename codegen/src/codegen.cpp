@@ -50,7 +50,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const IntExpr& int_expr) override;
   void Visit(const IsVoidExpr& is_void) override;
   void Visit(const MethodCallExpr& call_expr) override;
-  void Visit(const NotExpr& not_expr) override {}
+  void Visit(const NotExpr& not_expr) override;
   void Visit(const IfExpr& if_expr) override;
   void Visit(const NegExpr& neg_expr) override {}
   void Visit(const BlockExpr& block) override;
@@ -402,6 +402,12 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
     codegened_values_[&call_expr] =
         builder_.CreateBitCast(codegened_values_[&call_expr], return_type);
   }
+}
+
+void CodegenVisitor::Visit(const NotExpr& not_expr) {
+  not_expr.GetChildExpr()->Accept(*this);
+  codegened_values_[&not_expr] =
+      builder_.CreateNot(codegened_values_.at(not_expr.GetChildExpr()));
 }
 
 void CodegenVisitor::Visit(const IfExpr& if_expr) {
