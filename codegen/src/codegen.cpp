@@ -57,7 +57,7 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const ObjectExpr& obj) override;
   void Visit(const BinOpExpr& binop) override {}
   void Visit(const MultiplyExpr& mult) override;
-  void Visit(const LessThanEqualCompareExpr& le_expr) override {}
+  void Visit(const LessThanEqualCompareExpr& le_expr) override;
   void Visit(const SubtractExpr& minus) override;
   void Visit(const AddExpr& add_expr) override;
   void Visit(const EqCompareExpr& eq_expr) override;
@@ -513,6 +513,16 @@ void CodegenVisitor::Visit(const MultiplyExpr& mult) {
   codegened_values_[&mult] = builder_.CreateMul(lhs_value, rhs_value);
 }
 
+void CodegenVisitor::Visit(const LessThanEqualCompareExpr& le_expr) {
+  le_expr.GetLhsExpr()->Accept(*this);
+  llvm::Value* lhs_val = codegened_values_.at(le_expr.GetLhsExpr().get());
+
+  le_expr.GetRhsExpr()->Accept(*this);
+  llvm::Value* rhs_val = codegened_values_.at(le_expr.GetRhsExpr().get());
+
+  codegened_values_[&le_expr] = builder_.CreateICmpSLE(lhs_val, rhs_val);
+}
+
 void CodegenVisitor::Visit(const SubtractExpr& minus) {
   minus.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = codegened_values_.at(minus.GetLhsExpr().get());
@@ -674,17 +684,10 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
       RemoveFromScope(arg.GetId());
     }
 
-    llvm::Type* return_type =
-        ast_to_.LlvmBasicOrClassPtrTy(method->GetReturnType());
-
-    if (codegened_values_.at(method->GetRootExpr().get())->getType() ==
-        return_type) {
-      builder_.CreateRet(codegened_values_.at(method->GetRootExpr().get()));
-    } else {
-      auto* casted_value = builder_.CreateBitCast(
-          codegened_values_.at(method->GetRootExpr().get()), return_type);
-      builder_.CreateRet(casted_value);
-    }
+    llvm::Value* retval = ConvertType(
+        codegened_values_.at(method->GetRootExpr().get()),
+        method->GetRootExpr()->GetExprType(), method->GetReturnType());
+    builder_.CreateRet(retval);
   }
 }
 
