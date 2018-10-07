@@ -56,12 +56,12 @@ class CodegenVisitor : public ConstAstVisitor {
   void Visit(const BlockExpr& block) override;
   void Visit(const ObjectExpr& obj) override;
   void Visit(const BinOpExpr& binop) override {}
-  void Visit(const MultiplyExpr& mult) override {}
+  void Visit(const MultiplyExpr& mult) override;
   void Visit(const LessThanEqualCompareExpr& le_expr) override {}
   void Visit(const SubtractExpr& minus) override;
   void Visit(const AddExpr& add_expr) override;
   void Visit(const EqCompareExpr& eq_expr) override;
-  void Visit(const DivideExpr& div_expr) override {}
+  void Visit(const DivideExpr& div_expr) override;
   void Visit(const LessThanCompareExpr& lt_expr) override;
   void Visit(const NewExpr& new_expr) override;
   void Visit(const AssignExpr& assign) override;
@@ -503,6 +503,16 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
   }
 }
 
+void CodegenVisitor::Visit(const MultiplyExpr& mult) {
+  mult.GetLhsExpr()->Accept(*this);
+  llvm::Value* lhs_value = codegened_values_.at(mult.GetLhsExpr().get());
+
+  mult.GetRhsExpr()->Accept(*this);
+  llvm::Value* rhs_value = codegened_values_.at(mult.GetRhsExpr().get());
+
+  codegened_values_[&mult] = builder_.CreateMul(lhs_value, rhs_value);
+}
+
 void CodegenVisitor::Visit(const SubtractExpr& minus) {
   minus.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = codegened_values_.at(minus.GetLhsExpr().get());
@@ -555,6 +565,16 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   }
 
   // TODO check pointer equaltity for non basic types
+}
+
+void CodegenVisitor::Visit(const DivideExpr& div_expr) {
+  div_expr.GetLhsExpr()->Accept(*this);
+  llvm::Value* lhs_value = codegened_values_.at(div_expr.GetLhsExpr().get());
+
+  div_expr.GetRhsExpr()->Accept(*this);
+  llvm::Value* rhs_value = codegened_values_.at(div_expr.GetRhsExpr().get());
+
+  codegened_values_[&div_expr] = builder_.CreateSDiv(lhs_value, rhs_value);
 }
 
 void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
