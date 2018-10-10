@@ -170,6 +170,6 @@ TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl"); }
 TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
 TEST(CodegenTest, typenameobject) { TestCodegen("typename-object-io.cl"); }
 TEST(CodegenTest, whileloop) { TestCodegen("whileloop.cl"); }
-// TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
+TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
 
 }  // namespace
