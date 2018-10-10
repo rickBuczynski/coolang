@@ -74,6 +74,8 @@ void TestCodegen(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
+// TODO dispatch to void is an error
+
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
@@ -114,7 +116,7 @@ TEST(CodegenTest, evalorderargs) { TestCodegen("eval-order-args.cl"); }
 TEST(CodegenTest, evalorderarith) { TestCodegen("eval-order-arith.cl"); }
 // TEST(CodegenTest, evalorderself) { TestCodegen("eval-order-self.cl"); }
 TEST(CodegenTest, exp) { TestCodegen("exp.cl"); }
-// TEST(CodegenTest, fact) { TestCodegen("fact.cl"); }
+TEST(CodegenTest, fact) { TestCodegen("fact.cl"); }
 TEST(CodegenTest, fibo) { TestCodegen("fibo.cl"); }
 // TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
 TEST(CodegenTest, initdefault) { TestCodegen("init-default.cl"); }
@@ -126,13 +128,13 @@ TEST(CodegenTest, interactionattrinitmethod) {
 // TEST(CodegenTest, lamgc) { TestCodegen("lam-gc.cl"); }
 // TEST(CodegenTest, lam) { TestCodegen("lam.cl"); }
 TEST(CodegenTest, lesseqcmp) { TestCodegen("less-eq-cmp.cl"); }
-// TEST(CodegenTest, letnested) { TestCodegen("let-nested.cl"); }
+TEST(CodegenTest, letnested) { TestCodegen("let-nested.cl"); }
 TEST(CodegenTest, letuseprev) { TestCodegen("let-use-prev.cl"); }
 TEST(CodegenTest, letinit) { TestCodegen("letinit.cl"); }
-// TEST(CodegenTest, many_objects_on_heap) {
-//  TestCodegen("many_objects_on_heap.cl");
-//}
-// TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
+TEST(CodegenTest, many_objects_on_heap) {
+  TestCodegen("many_objects_on_heap.cl");
+}
+TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
 TEST(CodegenTest, modparamnointobjcast) {
   TestCodegen("mod-param-no-int-obj-cast.cl");
 }
@@ -143,7 +145,7 @@ TEST(CodegenTest, modparamnointobjcast) {
 // TEST(CodegenTest, nestedarith) { TestCodegen("nested-arith.cl"); }
 // TEST(CodegenTest, newselfdispatch) { TestCodegen("new-self-dispatch.cl"); }
 // TEST(CodegenTest, newselfinit) { TestCodegen("new-self-init.cl"); }
-// TEST(CodegenTest, newst) { TestCodegen("new-st.cl"); }
+TEST(CodegenTest, newst) { TestCodegen("new-st.cl"); }
 TEST(CodegenTest, newbasic) { TestCodegen("newbasic.cl"); }
 TEST(CodegenTest, nonpolycall) { TestCodegen("non-poly-call.cl"); }
 TEST(CodegenTest, not) { TestCodegen("not.cl"); }
@@ -159,7 +161,7 @@ TEST(CodegenTest, sequence) { TestCodegen("sequence.cl"); }
 // TEST(CodegenTest, shadowattrcase) { TestCodegen("shadow-attr-case.cl"); }
 TEST(CodegenTest, shadowattrformal) { TestCodegen("shadow-attr-formal.cl"); }
 TEST(CodegenTest, shadowattrlet) { TestCodegen("shadow-attr-let.cl"); }
-// TEST(CodegenTest, shadowcaselet) { TestCodegen("shadow-case-let.cl"); }
+TEST(CodegenTest, shadowcaselet) { TestCodegen("shadow-case-let.cl"); }
 // TEST(CodegenTest, shadowformalcase) { TestCodegen("shadow-formal-case.cl"); }
 TEST(CodegenTest, shadowformallet) { TestCodegen("shadow-formal-let.cl"); }
 // TEST(CodegenTest, shadowletcase) { TestCodegen("shadow-let-case.cl"); }
