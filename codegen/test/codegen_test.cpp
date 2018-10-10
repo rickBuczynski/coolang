@@ -144,7 +144,7 @@ TEST(CodegenTest, modparamnointobjcast) {
 // TEST(CodegenTest, newselfdispatch) { TestCodegen("new-self-dispatch.cl"); }
 // TEST(CodegenTest, newselfinit) { TestCodegen("new-self-init.cl"); }
 // TEST(CodegenTest, newst) { TestCodegen("new-st.cl"); }
-// TEST(CodegenTest, newbasic) { TestCodegen("newbasic.cl"); }
+TEST(CodegenTest, newbasic) { TestCodegen("newbasic.cl"); }
 TEST(CodegenTest, nonpolycall) { TestCodegen("non-poly-call.cl"); }
 TEST(CodegenTest, not) { TestCodegen("not.cl"); }
 TEST(CodegenTest, not2) { TestCodegen("not-2.cl"); }

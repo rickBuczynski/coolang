@@ -703,7 +703,8 @@ void CodegenVisitor::Visit(const LessThanCompareExpr& lt_expr) {
 
 void CodegenVisitor::Visit(const NewExpr& new_expr) {
   if (ast_to_.LlvmBasicType(new_expr.GetType()) != nullptr) {
-    // TODO don't ignore "new" for basic types
+    codegened_values_[&new_expr] =
+        ast_to_.LlvmBasicOrClassPtrDefaultVal(new_expr.GetType());
     return;
   }
 
