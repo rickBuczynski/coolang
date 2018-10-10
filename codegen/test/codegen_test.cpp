@@ -108,9 +108,9 @@ TEST(CodegenTest, dispatchoverridestatic) {
 // TEST(CodegenTest, dispatchvoiddynamic) {
 //  TestCodegen("dispatch-void-dynamic.cl");
 //}
-// TEST(CodegenTest, dispatchvoidstatic) {
-//  TestCodegen("dispatch-void-static.cl");
-//}
+TEST(CodegenTest, dispatchvoidstatic) {
+  TestCodegen("dispatch-void-static.cl");
+}
 // TEST(CodegenTest, dispatchvoidlet) { TestCodegen("dispatchvoidlet.cl"); }
 TEST(CodegenTest, evalorderargs) { TestCodegen("eval-order-args.cl"); }
 TEST(CodegenTest, evalorderarith) { TestCodegen("eval-order-arith.cl"); }

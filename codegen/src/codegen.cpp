@@ -94,6 +94,9 @@ class CodegenVisitor : public ConstAstVisitor {
   llvm::Value* GenStrEqCmp(llvm::Value* lhs_value, llvm::Value* rhs_value);
   llvm::Value* GenIsVoid(llvm::Value* val);
 
+  void GenExitIfVoid(llvm::Value* val, int line_num,
+                     const std::string& exit_message);
+
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
 
@@ -153,21 +156,11 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
   case_expr.GetCaseExpr()->Accept(*this);
   llvm::Value* case_val = codegened_values_.at(case_expr.GetCaseExpr());
 
-  llvm::Value* is_void_val = GenIsVoid(case_val);
-
-  llvm::BasicBlock* is_void_bb =
-      llvm::BasicBlock::Create(context_, "case-is-void", ast_to_.CurLlvmFunc());
-  llvm::BasicBlock* not_void_bb = llvm::BasicBlock::Create(
-      context_, "case-not-void", ast_to_.CurLlvmFunc());
-
-  builder_.CreateCondBr(is_void_val, is_void_bb, not_void_bb);
-
-  builder_.SetInsertPoint(is_void_bb);
-  object_codegen_.GenExitWithMessage("Match on void in case statement.\n", {});
-  // will exit before taking this branch, but LLVM requires it
-  builder_.CreateBr(not_void_bb);
-
-  builder_.SetInsertPoint(not_void_bb);
+  if (!AstToCodeMap::IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+    GenExitIfVoid(case_val,
+                  case_expr.GetCaseExpr()->GetLineRange().end_line_num,
+                  "Match on void in case statement.");
+  }
 
   // TODO this wont work for Basic types either need to box them first
   // or do different logic for them
@@ -347,6 +340,11 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
 
   call_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_val = codegened_values_.at(call_expr.GetLhsExpr());
+
+  if (!AstToCodeMap::IsBasicType(call_expr.GetLhsExpr()->GetExprType())) {
+    GenExitIfVoid(lhs_val, call_expr.GetLhsExpr()->GetLineRange().end_line_num,
+                  "Dispatch to void.");
+  }
 
   if (class_calling_method == class_that_defines_method) {
     arg_vals.push_back(lhs_val);
@@ -554,6 +552,28 @@ llvm::Value* CodegenVisitor::GenIsVoid(llvm::Value* val) {
   return builder_.CreateICmpEQ(
       builder_.CreatePtrToInt(val, builder_.getInt32Ty()),
       llvm::ConstantInt::get(context_, llvm::APInt(32, 0, true)));
+}
+
+void CodegenVisitor::GenExitIfVoid(llvm::Value* val, int line_num,
+                                   const std::string& exit_message) {
+  llvm::Value* is_void_lhs = GenIsVoid(val);
+
+  llvm::BasicBlock* is_void_bb =
+      llvm::BasicBlock::Create(context_, "is-void", ast_to_.CurLlvmFunc());
+  llvm::BasicBlock* not_void_bb =
+      llvm::BasicBlock::Create(context_, "not-void", ast_to_.CurLlvmFunc());
+
+  builder_.CreateCondBr(is_void_lhs, is_void_bb, not_void_bb);
+  builder_.SetInsertPoint(is_void_bb);
+
+  const std::string full_exit_message = GetProgramAst()->GetFileName() + ":" +
+                                        std::to_string(line_num) + ": " +
+                                        exit_message + "\n";
+  object_codegen_.GenExitWithMessage(full_exit_message, {});
+  // will exit before taking this branch, but LLVM requires it
+  builder_.CreateBr(not_void_bb);
+
+  builder_.SetInsertPoint(not_void_bb);
 }
 
 void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
