@@ -243,8 +243,8 @@ void CodegenVisitor::Visit(const WhileExpr& while_expr) {
 
   builder_.SetInsertPoint(loop_done_bb);
 
-  // TODO return a PHI
-  codegened_values_[&while_expr] = ast_to_.CurLlvmFunc()->arg_begin();
+  codegened_values_[&while_expr] =
+      ast_to_.LlvmBasicOrClassPtrDefaultVal("Object");
 }
 
 llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,

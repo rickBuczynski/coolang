@@ -74,8 +74,6 @@ void TestCodegen(const std::string& input_file) {
   EXPECT_EQ(expected_output, parser_output);
 }
 
-// TODO dispatch to void is an error
-
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
@@ -105,13 +103,13 @@ TEST(CodegenTest, dispatchoverridedynamiccomplex) {
 TEST(CodegenTest, dispatchoverridestatic) {
   TestCodegen("dispatch-override-static.cl");
 }
-// TEST(CodegenTest, dispatchvoiddynamic) {
-//  TestCodegen("dispatch-void-dynamic.cl");
-//}
+TEST(CodegenTest, dispatchvoiddynamic) {
+  TestCodegen("dispatch-void-dynamic.cl");
+}
 TEST(CodegenTest, dispatchvoidstatic) {
   TestCodegen("dispatch-void-static.cl");
 }
-// TEST(CodegenTest, dispatchvoidlet) { TestCodegen("dispatchvoidlet.cl"); }
+TEST(CodegenTest, dispatchvoidlet) { TestCodegen("dispatchvoidlet.cl"); }
 TEST(CodegenTest, evalorderargs) { TestCodegen("eval-order-args.cl"); }
 TEST(CodegenTest, evalorderarith) { TestCodegen("eval-order-arith.cl"); }
 // TEST(CodegenTest, evalorderself) { TestCodegen("eval-order-self.cl"); }
