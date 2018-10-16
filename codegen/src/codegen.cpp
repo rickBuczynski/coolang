@@ -326,7 +326,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
   }
   // codegen LHS after all args
   call_expr.GetLhsExpr()->Accept(*this);
-  
+
   const ClassAst* class_calling_method =
       ast_to_.GetClassByName(call_expr.GetLhsExpr()->GetExprType());
 
@@ -599,7 +599,9 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
     return;
   }
 
-  // TODO check pointer equaltity for non basic types
+  codegened_values_[&eq_expr] = builder_.CreateICmpEQ(
+      builder_.CreatePtrToInt(lhs_value, builder_.getInt32Ty()),
+      builder_.CreatePtrToInt(rhs_value, builder_.getInt32Ty()));
 }
 
 void CodegenVisitor::Visit(const DivideExpr& div_expr) {
