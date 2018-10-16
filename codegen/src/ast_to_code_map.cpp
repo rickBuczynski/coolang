@@ -15,6 +15,9 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   class_attributes.push_back(builder_->getInt8PtrTy());
   // object size (to allow copying without a different function per type)
   class_attributes.push_back(builder_->getInt32Ty());
+  // pointer to constructor to support "new SELF_TYPE"
+  class_attributes.push_back(
+      GetConstructorFunctionType(class_ast)->getPointerTo());
 
   for (const ClassAst* cur_class : class_ast->SupersThenThis()) {
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
@@ -80,17 +83,20 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
 void AstToCodeMap::AddConstructor(const ClassAst* class_ast) {
   using namespace std::string_literals;
 
-  std::vector<llvm::Type*> constructor_arg_types;
+  llvm::FunctionType* constructor_func_type =
+      GetConstructorFunctionType(class_ast);
 
-  constructor_arg_types.push_back(LlvmClass(class_ast)->getPointerTo());
-
-  llvm::FunctionType* constructor_func_type = llvm::FunctionType::get(
-      builder_->getVoidTy(), constructor_arg_types, false);
   llvm::Function* constructor = llvm::Function::Create(
       constructor_func_type, llvm::Function::ExternalLinkage,
       "construct"s + "-" + class_ast->GetName(), module_);
 
   constructors_.insert(std::make_pair(class_ast, constructor));
+}
+
+llvm::FunctionType* AstToCodeMap::GetConstructorFunctionType(
+    const ClassAst* class_ast) {
+  return llvm::FunctionType::get(builder_->getVoidTy(),
+                                 {LlvmClass(class_ast)->getPointerTo()}, false);
 }
 
 }  // namespace coolang

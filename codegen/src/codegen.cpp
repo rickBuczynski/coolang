@@ -123,10 +123,8 @@ int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
   for (const ClassAst* super : class_ast->GetAllSuperClasses()) {
     super_attr_count += super->GetAttributeFeatures().size();
   }
-
-  // offset 1 for vtable and 1 for type_name
-  const int vtable_typename_typesize_offset = 3;
-  return super_attr_count + attribute_index + vtable_typename_typesize_offset;
+  return super_attr_count + attribute_index +
+         AstToCodeMap::obj_attributes_offset;
 }
 
 void CodegenVisitor::Visit(const CaseExpr& case_expr) {
@@ -649,6 +647,12 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
       llvm::ConstantInt::get(context_, llvm::APInt(32, type_size, true)),
       typesize_ptr);
 
+  // store a pointer to this constructor 4th
+  llvm::Value* constructor_ptr_ptr = builder_.CreateStructGEP(
+      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+      AstToCodeMap::obj_constructor_index);
+  builder_.CreateStore(constructor, constructor_ptr_ptr);
+
   // first store default values
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
     for (size_t i = 0; i < cur_class->GetAttributeFeatures().size(); i++) {
@@ -745,8 +749,12 @@ void CodegenVisitor::Visit(const NewExpr& new_expr) {
         ConvertType(cur_class_val, CurClass()->GetName(), "Object");
     llvm::Value* copied = builder_.CreateCall(
         ast_to_.LlvmFunc("Object", "copy"), {cur_class_val_as_obj});
-    // TODO need to put every classes constructor in its vtable so we can call
-    // the constructor here
+
+    llvm::Value* constructor_func_ptr = builder_.CreateStructGEP(
+        nullptr, copied, AstToCodeMap::obj_constructor_index);
+    llvm::Value* constructor_func = builder_.CreateLoad(constructor_func_ptr);
+    builder_.CreateCall(constructor_func, {copied});
+    
     codegened_values_[&new_expr] = copied;
     return;
   }

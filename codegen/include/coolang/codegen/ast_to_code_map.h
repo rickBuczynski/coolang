@@ -22,6 +22,11 @@ class AstToCodeMap {
   static constexpr int obj_vtable_index = 0;
   static constexpr int obj_typename_index = 1;
   static constexpr int obj_typesize_index = 2;
+  // need a pointer to constructor to handle "new SELF_TYPE"
+  static constexpr int obj_constructor_index = 3;
+
+  // attrbiutes start at index 4, after the 4 things above
+  static constexpr int obj_attributes_offset = 4;
 
   void Insert(const ClassAst* class_ast) {
     types_.insert(std::make_pair(
@@ -52,11 +57,16 @@ class AstToCodeMap {
     const auto obj_class_size =
         data_layout_->getTypeAllocSize(LlvmClass("Object"));
 
+    auto* obj_constructor_type =
+        GetConstructorFunctionType(program_ast_->GetObjectClass())
+            ->getPointerTo();
+
     boxed->setInitializer(llvm::ConstantStruct::get(
         LlvmClass("Object"),
         {GetVtable("Object").GetGlobalInstance(),
          llvm::ConstantPointerNull::get(builder_->getInt8PtrTy()),
-         LlvmConstInt32(obj_class_size)}));
+         LlvmConstInt32(obj_class_size),
+         llvm::ConstantPointerNull::get(obj_constructor_type)}));
 
     llvm::Value* typename_ptr_ptr = builder_->CreateStructGEP(
         LlvmClass("Object"), boxed, obj_typename_index);
@@ -190,6 +200,8 @@ class AstToCodeMap {
   }
 
   llvm::Function* CurLlvmFunc() { return functions_.at(current_method_); }
+
+  llvm::FunctionType* GetConstructorFunctionType(const ClassAst* class_ast);
 
  private:
   std::unordered_map<const ClassAst*, llvm::StructType*> types_;
