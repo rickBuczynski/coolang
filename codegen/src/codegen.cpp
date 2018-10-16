@@ -491,17 +491,21 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
     return;
   }
 
-  // TODO maybe need super class attributes?
-  // are attributes private or protected?
-  for (size_t i = 0; i < CurClass()->GetAttributeFeatures().size(); i++) {
-    const auto* attr = CurClass()->GetAttributeFeatures()[i];
+  for (const ClassAst* class_ast : CurClass()->SupersThenThis()) {
+    for (size_t i = 0; i < class_ast->GetAttributeFeatures().size(); i++) {
+      const auto* attr = class_ast->GetAttributeFeatures()[i];
 
-    if (attr->GetId() == obj.GetId()) {
-      llvm::Value* element_ptr = builder_.CreateStructGEP(
-          ast_to_.LlvmClass(CurClass()), ast_to_.CurLlvmFunc()->args().begin(),
-          StructAttrIndex(CurClass(), i));
-      codegened_values_[&obj] = builder_.CreateLoad(element_ptr);
-      return;
+      llvm::Value* cur_class_val = ast_to_.CurLlvmFunc()->args().begin();
+      cur_class_val = ConvertType(cur_class_val, CurClass()->GetName(),
+                                  class_ast->GetName());
+
+      if (attr->GetId() == obj.GetId()) {
+        llvm::Value* element_ptr = builder_.CreateStructGEP(
+            ast_to_.LlvmClass(class_ast), cur_class_val,
+            StructAttrIndex(class_ast, i));
+        codegened_values_[&obj] = builder_.CreateLoad(element_ptr);
+        return;
+      }
     }
   }
 }
@@ -786,14 +790,19 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& assign) {
     return in_scope_var->second.top();
   }
 
-  // TODO maybe need super class attributes?
-  // are attributes private or protected?
-  for (size_t i = 0; i < CurClass()->GetAttributeFeatures().size(); i++) {
-    const auto* attr = CurClass()->GetAttributeFeatures()[i];
-    if (attr->GetId() == assign.GetId()) {
-      return builder_.CreateStructGEP(ast_to_.LlvmClass(CurClass()),
-                                      ast_to_.CurLlvmFunc()->args().begin(),
-                                      StructAttrIndex(CurClass(), i));
+  for (const ClassAst* class_ast : CurClass()->SupersThenThis()) {
+    for (size_t i = 0; i < class_ast->GetAttributeFeatures().size(); i++) {
+      const auto* attr = class_ast->GetAttributeFeatures()[i];
+
+      llvm::Value* cur_class_val = ast_to_.CurLlvmFunc()->args().begin();
+      cur_class_val = ConvertType(cur_class_val, CurClass()->GetName(),
+                                  class_ast->GetName());
+
+      if (attr->GetId() == assign.GetId()) {
+        return builder_.CreateStructGEP(ast_to_.LlvmClass(class_ast),
+                                        cur_class_val,
+                                        StructAttrIndex(class_ast, i));
+      }
     }
   }
 

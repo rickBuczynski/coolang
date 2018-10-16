@@ -136,10 +136,10 @@ TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
 TEST(CodegenTest, modparamnointobjcast) {
   TestCodegen("mod-param-no-int-obj-cast.cl");
 }
-// TEST(CodegenTest, multipledispatch) { TestCodegen("multiple-dispatch.cl"); }
-// TEST(CodegenTest, multiplestaticdispatch) {
-//  TestCodegen("multiple-static-dispatch.cl");
-//}
+TEST(CodegenTest, multipledispatch) { TestCodegen("multiple-dispatch.cl"); }
+TEST(CodegenTest, multiplestaticdispatch) {
+  TestCodegen("multiple-static-dispatch.cl");
+}
 // TEST(CodegenTest, nestedarith) { TestCodegen("nested-arith.cl"); }
 // TEST(CodegenTest, newselfdispatch) { TestCodegen("new-self-dispatch.cl"); }
 // TEST(CodegenTest, newselfinit) { TestCodegen("new-self-init.cl"); }
