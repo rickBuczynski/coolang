@@ -739,6 +739,18 @@ void CodegenVisitor::Visit(const NewExpr& new_expr) {
     return;
   }
 
+  if (new_expr.GetType() == "SELF_TYPE") {
+    llvm::Value* cur_class_val = ast_to_.CurLlvmFunc()->args().begin();
+    llvm::Value* cur_class_val_as_obj =
+        ConvertType(cur_class_val, CurClass()->GetName(), "Object");
+    llvm::Value* copied = builder_.CreateCall(
+        ast_to_.LlvmFunc("Object", "copy"), {cur_class_val_as_obj});
+    // TODO need to put every classes constructor in its vtable so we can call
+    // the constructor here
+    codegened_values_[&new_expr] = copied;
+    return;
+  }
+
   llvm::Type* type = ast_to_.LlvmClass(new_expr.GetType());
 
   const auto new_size = data_layout_.getTypeAllocSize(type);

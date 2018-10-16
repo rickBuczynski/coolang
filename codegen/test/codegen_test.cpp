@@ -141,7 +141,7 @@ TEST(CodegenTest, multiplestaticdispatch) {
   TestCodegen("multiple-static-dispatch.cl");
 }
 // TEST(CodegenTest, nestedarith) { TestCodegen("nested-arith.cl"); }
-// TEST(CodegenTest, newselfdispatch) { TestCodegen("new-self-dispatch.cl"); }
+TEST(CodegenTest, newselfdispatch) { TestCodegen("new-self-dispatch.cl"); }
 // TEST(CodegenTest, newselfinit) { TestCodegen("new-self-init.cl"); }
 TEST(CodegenTest, newst) { TestCodegen("new-st.cl"); }
 TEST(CodegenTest, newbasic) { TestCodegen("newbasic.cl"); }
