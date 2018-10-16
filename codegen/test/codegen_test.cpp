@@ -81,7 +81,7 @@ TEST(CodegenTest, basicinit) { TestCodegen("basic-init.cl"); }
 TEST(CodegenTest, basicequality) { TestCodegen("basicequality.cl"); }
 // TEST(CodegenTest, bigexample) { TestCodegen("bigexample.cl"); }
 TEST(CodegenTest, bigexpr) { TestCodegen("bigexpr.cl"); }
-// TEST(CodegenTest, book_list) { TestCodegen("book_list.cl"); }
+TEST(CodegenTest, book_list) { TestCodegen("book_list.cl"); }
 TEST(CodegenTest, boolcl) { TestCodegen("bool.cl"); }
 TEST(CodegenTest, boolliteral) { TestCodegen("bool-literal.cl"); }
 TEST(CodegenTest, booltypename) { TestCodegen("bool-typename.cl"); }

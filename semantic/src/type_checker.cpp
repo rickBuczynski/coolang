@@ -415,7 +415,7 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
     rhs_type = current_class_->GetName();
   }
 
-  if (rhs_type != lhs_type) {
+  if (!IsSubtype(rhs_type, lhs_type)) {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Type " + rhs_type +
                              " of assigned expression does not conform to "
