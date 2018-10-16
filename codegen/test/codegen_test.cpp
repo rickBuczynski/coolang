@@ -112,7 +112,7 @@ TEST(CodegenTest, dispatchvoidstatic) {
 TEST(CodegenTest, dispatchvoidlet) { TestCodegen("dispatchvoidlet.cl"); }
 TEST(CodegenTest, evalorderargs) { TestCodegen("eval-order-args.cl"); }
 TEST(CodegenTest, evalorderarith) { TestCodegen("eval-order-arith.cl"); }
-// TEST(CodegenTest, evalorderself) { TestCodegen("eval-order-self.cl"); }
+TEST(CodegenTest, evalorderself) { TestCodegen("eval-order-self.cl"); }
 TEST(CodegenTest, exp) { TestCodegen("exp.cl"); }
 TEST(CodegenTest, fact) { TestCodegen("fact.cl"); }
 TEST(CodegenTest, fibo) { TestCodegen("fibo.cl"); }

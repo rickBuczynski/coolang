@@ -320,8 +320,13 @@ void CodegenVisitor::Visit(const IsVoidExpr& is_void) {
 }
 
 void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
-  std::vector<llvm::Value*> arg_vals;
-
+  // codegen args first
+  for (const auto& arg : call_expr.GetArgs()) {
+    arg->Accept(*this);
+  }
+  // codegen LHS after all args
+  call_expr.GetLhsExpr()->Accept(*this);
+  
   const ClassAst* class_calling_method =
       ast_to_.GetClassByName(call_expr.GetLhsExpr()->GetExprType());
 
@@ -338,13 +343,14 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
         ast_to_.GetClassByName(call_expr.GetStaticDispatchType().value());
   }
 
-  call_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_val = codegened_values_.at(call_expr.GetLhsExpr());
 
   if (!AstToCodeMap::IsBasicType(call_expr.GetLhsExpr()->GetExprType())) {
     GenExitIfVoid(lhs_val, call_expr.GetLhsExpr()->GetLineRange().end_line_num,
                   "Dispatch to void.");
   }
+
+  std::vector<llvm::Value*> arg_vals;
 
   if (class_calling_method == class_that_defines_method) {
     arg_vals.push_back(lhs_val);
@@ -356,7 +362,6 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
   }
 
   for (size_t i = 0; i < method_feature->GetArgs().size(); i++) {
-    call_expr.GetArgs()[i]->Accept(*this);
     if (method_feature->GetArgs()[i].GetType() ==
         call_expr.GetArgs()[i]->GetExprType()) {
       arg_vals.push_back(codegened_values_.at(call_expr.GetArgs()[i].get()));
