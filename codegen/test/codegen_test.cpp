@@ -149,7 +149,7 @@ TEST(CodegenTest, nonpolycall) { TestCodegen("non-poly-call.cl"); }
 TEST(CodegenTest, not) { TestCodegen("not.cl"); }
 TEST(CodegenTest, not2) { TestCodegen("not-2.cl"); }
 TEST(CodegenTest, objectequality) { TestCodegen("objectequality.cl"); }
-// TEST(CodegenTest, overridebasic) { TestCodegen("override-basic.cl"); }
+TEST(CodegenTest, overridebasic) { TestCodegen("override-basic.cl"); }
 // TEST(CodegenTest, overridecl) { TestCodegen("override.cl"); }
 // TEST(CodegenTest, primes) { TestCodegen("primes.cl"); }
 // TEST(CodegenTest, recclass) { TestCodegen("recclass.cl"); }

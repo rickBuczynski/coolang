@@ -328,18 +328,18 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
   const ClassAst* class_calling_method =
       ast_to_.GetClassByName(call_expr.GetLhsExpr()->GetExprType());
 
+  const bool is_static_dispatch = call_expr.GetStaticDispatchType().has_value();
+  if (is_static_dispatch) {
+    class_calling_method =
+        ast_to_.GetClassByName(call_expr.GetStaticDispatchType().value());
+  }
+
   const auto method_feature =
       class_calling_method->GetMethodFeatureByName(call_expr.GetMethodName());
-
-  const bool is_static_dispatch = call_expr.GetStaticDispatchType().has_value();
 
   const ClassAst* class_that_defines_method =
       class_calling_method->GetClassOrSuperClassThatDefinesMethod(
           method_feature);
-  if (is_static_dispatch) {
-    class_that_defines_method =
-        ast_to_.GetClassByName(call_expr.GetStaticDispatchType().value());
-  }
 
   llvm::Value* lhs_val = codegened_values_.at(call_expr.GetLhsExpr());
 
@@ -350,7 +350,8 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
 
   std::vector<llvm::Value*> arg_vals;
 
-  if (class_calling_method == class_that_defines_method) {
+  if (ast_to_.GetClassByName(call_expr.GetLhsExpr()->GetExprType()) ==
+      class_that_defines_method) {
     arg_vals.push_back(lhs_val);
   } else {
     auto* dest_type =
@@ -754,7 +755,7 @@ void CodegenVisitor::Visit(const NewExpr& new_expr) {
         nullptr, copied, AstToCodeMap::obj_constructor_index);
     llvm::Value* constructor_func = builder_.CreateLoad(constructor_func_ptr);
     builder_.CreateCall(constructor_func, {copied});
-    
+
     codegened_values_[&new_expr] = copied;
     return;
   }
