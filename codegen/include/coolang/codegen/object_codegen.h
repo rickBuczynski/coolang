@@ -16,11 +16,14 @@ class ObjectCodegen {
         c_std_(std) {}
 
   void GenAllFuncBodies() const {
-    GenAbort();
+    GenAbort("Object");
+    GenAbort("String");
+    GenAbort("Bool");
+
     GenCopy();
     GenTypeName();
 
-    // TODO int type name and copy
+    // TODO int abort, type name, and copy
 
     GenBoolTypeName();
     GenStringTypeName();
@@ -39,16 +42,15 @@ class ObjectCodegen {
   }
 
  private:
-  void GenAbort() const {
-    llvm::Function* func = ast_to_code_map_->LlvmFunc("Object", "abort");
+  void GenAbort(std::string class_name) const {
+    llvm::Function* func = ast_to_code_map_->LlvmFunc(class_name, "abort");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    // TODO what happens if you call abort with an int string or bool as LHS?
     llvm::Value* type_name = builder_->CreateCall(
-        ast_to_code_map_->LlvmFunc("Object", "type_name"), {func->arg_begin()});
+        ast_to_code_map_->LlvmFunc(class_name, "type_name"), {func->arg_begin()});
 
     GenExitWithMessage("Abort called from class %s\n", {type_name});
 
