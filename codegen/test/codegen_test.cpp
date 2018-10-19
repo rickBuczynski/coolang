@@ -160,7 +160,7 @@ TEST(CodegenTest, shadowattrcase) { TestCodegen("shadow-attr-case.cl"); }
 TEST(CodegenTest, shadowattrformal) { TestCodegen("shadow-attr-formal.cl"); }
 TEST(CodegenTest, shadowattrlet) { TestCodegen("shadow-attr-let.cl"); }
 TEST(CodegenTest, shadowcaselet) { TestCodegen("shadow-case-let.cl"); }
-// TEST(CodegenTest, shadowformalcase) { TestCodegen("shadow-formal-case.cl"); }
+TEST(CodegenTest, shadowformalcase) { TestCodegen("shadow-formal-case.cl"); }
 TEST(CodegenTest, shadowformallet) { TestCodegen("shadow-formal-let.cl"); }
 TEST(CodegenTest, shadowletcase) { TestCodegen("shadow-let-case.cl"); }
 TEST(CodegenTest, shadowletlet) { TestCodegen("shadow-let-let.cl"); }
