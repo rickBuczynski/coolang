@@ -156,7 +156,7 @@ TEST(CodegenTest, recclass) { TestCodegen("recclass.cl"); }
 TEST(CodegenTest, scoping) { TestCodegen("scoping.cl"); }
 TEST(CodegenTest, selftypeattribute) { TestCodegen("selftypeattribute.cl"); }
 TEST(CodegenTest, sequence) { TestCodegen("sequence.cl"); }
-// TEST(CodegenTest, shadowattrcase) { TestCodegen("shadow-attr-case.cl"); }
+TEST(CodegenTest, shadowattrcase) { TestCodegen("shadow-attr-case.cl"); }
 TEST(CodegenTest, shadowattrformal) { TestCodegen("shadow-attr-formal.cl"); }
 TEST(CodegenTest, shadowattrlet) { TestCodegen("shadow-attr-let.cl"); }
 TEST(CodegenTest, shadowcaselet) { TestCodegen("shadow-case-let.cl"); }

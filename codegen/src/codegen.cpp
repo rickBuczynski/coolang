@@ -160,12 +160,15 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
                   "Match on void in case statement.");
   }
 
-  // TODO this wont work for Basic types either need to box them first
-  // or do different logic for them
   llvm::Value* case_val_as_obj =
       ConvertType(case_val, case_expr.GetCaseExpr()->GetExprType(), "Object");
   llvm::Value* case_val_type = builder_.CreateCall(
       ast_to_.LlvmFunc("Object", "type_name"), {case_val_as_obj});
+
+  // TODO test loading a branch value from a supertype branch
+  llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+      ast_to_.LlvmBasicOrClassPtrTy(case_expr.GetCaseExpr()->GetExprType()));
+  builder_.CreateStore(case_val, alloca_inst);
 
   std::vector<llvm::BasicBlock*> phi_blocks;
 
@@ -190,7 +193,11 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
       builder_.CreateCondBr(should_take_branch, branch_taken, not_taken);
 
       builder_.SetInsertPoint(branch_taken);
+
+      AddToScope(branch->GetId(), alloca_inst);
       branch->GetExpr()->Accept(*this);
+      RemoveFromScope(branch->GetId());
+
       phi_blocks.push_back(builder_.GetInsertBlock());
       builder_.CreateBr(done_bb);
 
