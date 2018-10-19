@@ -7,6 +7,8 @@
 namespace coolang {
 
 void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
+  current_class_ = class_ast;
+
   std::vector<llvm::Type*> class_attributes;
   // vtable ptr
   class_attributes.push_back(
@@ -27,6 +29,8 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   }
 
   types_.at(class_ast)->setBody(class_attributes);
+
+  current_class_ = nullptr;
 }
 
 void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
