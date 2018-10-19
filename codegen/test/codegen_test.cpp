@@ -153,7 +153,7 @@ TEST(CodegenTest, overridebasic) { TestCodegen("override-basic.cl"); }
 TEST(CodegenTest, overridecl) { TestCodegen("override.cl"); }
 TEST(CodegenTest, primes) { TestCodegen("primes.cl"); }
 TEST(CodegenTest, recclass) { TestCodegen("recclass.cl"); }
-// TEST(CodegenTest, scoping) { TestCodegen("scoping.cl"); }
+TEST(CodegenTest, scoping) { TestCodegen("scoping.cl"); }
 // TEST(CodegenTest, selftypeattribute) { TestCodegen("selftypeattribute.cl"); }
 TEST(CodegenTest, sequence) { TestCodegen("sequence.cl"); }
 // TEST(CodegenTest, shadowattrcase) { TestCodegen("shadow-attr-case.cl"); }
