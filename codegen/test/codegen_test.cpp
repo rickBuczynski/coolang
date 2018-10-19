@@ -162,7 +162,7 @@ TEST(CodegenTest, shadowattrlet) { TestCodegen("shadow-attr-let.cl"); }
 TEST(CodegenTest, shadowcaselet) { TestCodegen("shadow-case-let.cl"); }
 // TEST(CodegenTest, shadowformalcase) { TestCodegen("shadow-formal-case.cl"); }
 TEST(CodegenTest, shadowformallet) { TestCodegen("shadow-formal-let.cl"); }
-// TEST(CodegenTest, shadowletcase) { TestCodegen("shadow-let-case.cl"); }
+TEST(CodegenTest, shadowletcase) { TestCodegen("shadow-let-case.cl"); }
 TEST(CodegenTest, shadowletlet) { TestCodegen("shadow-let-let.cl"); }
 TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
 TEST(CodegenTest, sort_list) { TestCodegen("sort_list.cl"); }
