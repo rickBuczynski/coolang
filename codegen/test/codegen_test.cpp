@@ -165,7 +165,7 @@ TEST(CodegenTest, shadowformallet) { TestCodegen("shadow-formal-let.cl"); }
 // TEST(CodegenTest, shadowletcase) { TestCodegen("shadow-let-case.cl"); }
 TEST(CodegenTest, shadowletlet) { TestCodegen("shadow-let-let.cl"); }
 TEST(CodegenTest, simplegc) { TestCodegen("simple-gc.cl"); }
-// TEST(CodegenTest, sort_list) { TestCodegen("sort_list.cl"); }
+TEST(CodegenTest, sort_list) { TestCodegen("sort_list.cl"); }
 TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl"); }
 TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
 TEST(CodegenTest, typenameobject) { TestCodegen("typename-object-io.cl"); }
