@@ -116,7 +116,7 @@ TEST(CodegenTest, evalorderself) { TestCodegen("eval-order-self.cl"); }
 TEST(CodegenTest, exp) { TestCodegen("exp.cl"); }
 TEST(CodegenTest, fact) { TestCodegen("fact.cl"); }
 TEST(CodegenTest, fibo) { TestCodegen("fibo.cl"); }
-// TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
+TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
 TEST(CodegenTest, initdefault) { TestCodegen("init-default.cl"); }
 TEST(CodegenTest, initorderself) { TestCodegen("init-order-self.cl"); }
 TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }

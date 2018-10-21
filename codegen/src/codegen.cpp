@@ -165,14 +165,9 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
   llvm::Value* case_val_type = builder_.CreateCall(
       ast_to_.LlvmFunc("Object", "type_name"), {case_val_as_obj});
 
-  // TODO test loading a branch value from a supertype branch
-  llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
-      ast_to_.LlvmBasicOrClassPtrTy(case_expr.GetCaseExpr()->GetExprType()));
-  builder_.CreateStore(case_val, alloca_inst);
-
-  std::vector<llvm::BasicBlock*> phi_blocks;
-
   llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-case");
+
+  std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> branch_vals_and_bbs;
 
   for (auto cool_class : classes) {
     const auto branch_find = branches_by_type.find(cool_class->GetName());
@@ -194,11 +189,21 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
 
       builder_.SetInsertPoint(branch_taken);
 
+      llvm::Value* case_val_as_branch_type = ConvertType(
+          case_val, case_expr.GetCaseExpr()->GetExprType(), branch->GetType());
+      llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+          ast_to_.LlvmBasicOrClassPtrTy(branch->GetType()));
+      builder_.CreateStore(case_val_as_branch_type, alloca_inst);
+
       AddToScope(branch->GetId(), alloca_inst);
       branch->GetExpr()->Accept(*this);
       RemoveFromScope(branch->GetId());
 
-      phi_blocks.push_back(builder_.GetInsertBlock());
+      llvm::Value* branch_val = codegened_values_.at(branch->GetExpr());
+      branch_val = ConvertType(branch_val, branch->GetExpr()->GetExprType(),
+                               case_expr.GetExprType());
+      branch_vals_and_bbs.emplace_back(branch_val, builder_.GetInsertBlock());
+
       builder_.CreateBr(done_bb);
 
       builder_.SetInsertPoint(not_taken);
@@ -210,15 +215,23 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
   object_codegen_.GenExitWithMessage(
       "No match in case statement for Class %s\n", {class_name});
 
-  // push last not_taken block for the case of no matches
-  phi_blocks.push_back(builder_.GetInsertBlock());
+  branch_vals_and_bbs.emplace_back(
+      ast_to_.LlvmBasicOrClassPtrDefaultVal(case_expr.GetExprType()),
+      builder_.GetInsertBlock());
+
   builder_.CreateBr(done_bb);
 
   ast_to_.CurLlvmFunc()->getBasicBlockList().push_back(done_bb);
   builder_.SetInsertPoint(done_bb);
 
-  // TODO return a PHI
-  codegened_values_[&case_expr] = ast_to_.CurLlvmFunc()->arg_begin();
+  llvm::PHINode* pn =
+      builder_.CreatePHI(ast_to_.LlvmBasicOrClassPtrTy(case_expr.GetExprType()),
+                         case_expr.GetBranches().size());
+  for (const auto& phi_val_and_bb : branch_vals_and_bbs) {
+    pn->addIncoming(phi_val_and_bb.first, phi_val_and_bb.second);
+  }
+
+  codegened_values_[&case_expr] = pn;
 }
 
 void CodegenVisitor::Visit(const StrExpr& str) {
@@ -257,6 +270,11 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
                                          std::string dest_type) {
   if (AstToCodeMap::IsBasicType(cur_type) && dest_type == "Object") {
     return ast_to_.GetBoxedBasicTypeGlobal(cur_type);
+  }
+  if (AstToCodeMap::IsBasicType(dest_type) && cur_type == "Object") {
+    // TODO this just returns the default value for the basic type
+    // Need to actually extract out boxed value if object is a boxed basic type
+    return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
   }
   if (cur_type != dest_type) {
     return builder_.CreateBitCast(convert_me,
@@ -686,11 +704,15 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
       if (attr->GetRootExpr()) {
         attr->GetRootExpr()->Accept(*this);
+        llvm::Value* init_val = codegened_values_.at(attr->GetRootExpr().get());
+        init_val = ConvertType(init_val, attr->GetRootExpr()->GetExprType(),
+                               attr->GetType());
+
         llvm::Value* element_ptr = builder_.CreateStructGEP(
             ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
             StructAttrIndex(cur_class, i));
-        builder_.CreateStore(codegened_values_.at(attr->GetRootExpr().get()),
-                             element_ptr);
+
+        builder_.CreateStore(init_val, element_ptr);
       }
     }
   }
@@ -793,6 +815,8 @@ void CodegenVisitor::Visit(const AssignExpr& assign) {
   llvm::Value* assign_lhs_ptr = GetAssignmentLhsPtr(assign);
   llvm::Value* assign_rhs_val = codegened_values_.at(assign.GetRhsExpr());
 
+  // TODO this conversion won't work for boxing Int, Bool or Str
+  // Need to know type of LHS identifier
   if (assign_lhs_ptr->getType()->getPointerElementType() !=
       assign_rhs_val->getType()) {
     assign_rhs_val = builder_.CreateBitCast(
