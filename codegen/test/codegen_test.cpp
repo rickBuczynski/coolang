@@ -123,8 +123,8 @@ TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
 TEST(CodegenTest, interactionattrinitmethod) {
   TestCodegen("interaction-attrinit-method.cl");
 }
-// TEST(CodegenTest, lamgc) { TestCodegen("lam-gc.cl"); }
-// TEST(CodegenTest, lam) { TestCodegen("lam.cl"); }
+TEST(CodegenTest, lamgc) { TestCodegen("lam-gc.cl"); }
+TEST(CodegenTest, lam) { TestCodegen("lam.cl"); }
 TEST(CodegenTest, lesseqcmp) { TestCodegen("less-eq-cmp.cl"); }
 TEST(CodegenTest, letnested) { TestCodegen("let-nested.cl"); }
 TEST(CodegenTest, letuseprev) { TestCodegen("let-use-prev.cl"); }
