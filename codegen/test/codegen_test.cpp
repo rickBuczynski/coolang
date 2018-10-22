@@ -140,6 +140,7 @@ TEST(CodegenTest, multipledispatch) { TestCodegen("multiple-dispatch.cl"); }
 TEST(CodegenTest, multiplestaticdispatch) {
   TestCodegen("multiple-static-dispatch.cl");
 }
+// TODO nestedarith test crashes the parser with a stack overflow
 // TEST(CodegenTest, nestedarith) { TestCodegen("nested-arith.cl"); }
 TEST(CodegenTest, newselfdispatch) { TestCodegen("new-self-dispatch.cl"); }
 TEST(CodegenTest, newselfinit) { TestCodegen("new-self-init.cl"); }
