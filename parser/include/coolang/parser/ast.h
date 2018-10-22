@@ -844,6 +844,11 @@ class ProgramAst : public AstNode {
     classes_by_name_[int_class_->GetName()] = int_class_.get();
     classes_by_name_[string_class_->GetName()] = string_class_.get();
     classes_by_name_[bool_class_->GetName()] = bool_class_.get();
+
+    object_class_->AddSubClass(int_class_.get());
+    object_class_->AddSubClass(string_class_.get());
+    object_class_->AddSubClass(bool_class_.get());
+    object_class_->AddSubClass(io_class_.get());
   }
 
   const std::vector<ClassAst>& GetClasses() const { return classes_; }
@@ -865,11 +870,15 @@ class ProgramAst : public AstNode {
     }
   }
 
+  // Only includes user defined classes
   std::vector<const ClassAst*> SortedClassesWithSupersBeforeSubs() const {
     std::vector<const ClassAst*> sorted;
 
     for (auto* obj_sub_class : object_class_->GetSubClasses()) {
-      if (obj_sub_class != io_class_.get()) {
+      if (obj_sub_class != io_class_.get() &&
+          obj_sub_class != int_class_.get() &&
+          obj_sub_class != string_class_.get() &&
+          obj_sub_class != bool_class_.get()) {
         sorted.push_back(obj_sub_class);
       }
     }

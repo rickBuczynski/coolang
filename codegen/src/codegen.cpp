@@ -129,12 +129,6 @@ int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
 }
 
 void CodegenVisitor::Visit(const CaseExpr& case_expr) {
-  // TODO this is slow it's O(# classes in program)
-  // instead of O(# classes in case expr)
-
-  // TODO test case expr for Int String Bool
-  // and Boxed Int String Bool
-
   std::vector<const ClassAst*> classes;
   classes.push_back(GetProgramAst()->GetObjectClass());
   classes.push_back(GetProgramAst()->GetIoClass());
@@ -283,11 +277,18 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
   if (AstToCodeMap::IsBasicType(cur_type) && dest_type == "Object") {
     return ast_to_.GetBoxedBasicTypeGlobal(cur_type);
   }
+  if (AstToCodeMap::IsBasicType(cur_type) && dest_type != "Object" &&
+      dest_type != cur_type) {
+    // invalid conversion, this should only occur in a case branch that's not
+    // taken so we can return anything, choose to just return default val
+    return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
+  }
   if (AstToCodeMap::IsBasicType(dest_type) && cur_type == "Object") {
     // TODO this just returns the default value for the basic type
     // Need to actually extract out boxed value if object is a boxed basic type
     return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
   }
+  // TODO test case that converts non-object non-basic type to basic
   if (cur_type != dest_type) {
     return builder_.CreateBitCast(convert_me,
                                   ast_to_.LlvmBasicOrClassPtrTy(dest_type));
@@ -832,10 +833,20 @@ void CodegenVisitor::Visit(const AssignExpr& assign) {
   llvm::Value* assign_lhs_ptr = GetAssignmentLhsPtr(assign);
   llvm::Value* assign_rhs_val = codegened_values_.at(assign.GetRhsExpr());
 
-  // TODO this conversion won't work for boxing Int, Bool or Str
-  // Need to know type of LHS identifier
-  if (assign_lhs_ptr->getType()->getPointerElementType() !=
-      assign_rhs_val->getType()) {
+  if (AstToCodeMap::IsBasicType(assign.GetRhsExpr()->GetExprType())) {
+    auto* lhs_ty = assign_lhs_ptr->getType()->getPointerElementType();
+
+    const bool lhs_is_basic_ty = lhs_ty == builder_.getInt1Ty() ||
+                                 lhs_ty == builder_.getInt32Ty() ||
+                                 lhs_ty == builder_.getInt8PtrTy();
+
+    if (!lhs_is_basic_ty) {
+      // The only non-basic thing you can assign a basic to is Object
+      assign_rhs_val = ConvertType(
+          assign_rhs_val, assign.GetRhsExpr()->GetExprType(), "Object");
+    }
+  } else if (assign_lhs_ptr->getType()->getPointerElementType() !=
+             assign_rhs_val->getType()) {
     assign_rhs_val = builder_.CreateBitCast(
         assign_rhs_val, assign_lhs_ptr->getType()->getPointerElementType());
   }
