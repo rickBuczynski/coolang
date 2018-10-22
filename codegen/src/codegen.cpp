@@ -910,7 +910,6 @@ void CodegenVisitor::GenMainFunc() {
 
   // need to do this in main since we have to store the typename in the global
   // at runtime. There's no way to put a i8* into a global constant.
-  // TODO test type_name for boxed String and Int
   ast_to_.InsertBoxedBasicTypeGlobal("Bool");
   ast_to_.InsertBoxedBasicTypeGlobal("String");
   ast_to_.InsertBoxedBasicTypeGlobal("Int");
