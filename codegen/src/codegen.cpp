@@ -89,14 +89,14 @@ class CodegenVisitor : public ConstAstVisitor {
 
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
-  llvm::Value* ConvertType(llvm::Value* convert_me, std::string cur_type,
-                           std::string dest_type);
+  llvm::Value* ConvertType(llvm::Value* convert_me, const std::string& cur_type,
+                           const std::string& dest_type);
   llvm::Value* GenStrEqCmp(llvm::Value* lhs_value, llvm::Value* rhs_value);
   llvm::Value* GenIsVoid(llvm::Value* val);
 
   void GenExitIfVoid(llvm::Value* val, int line_num,
                      const std::string& exit_message);
-  void GenExit(int line_num, const std::string& exit_message);
+  void GenExit(int line_num, const std::string& exit_message) const;
 
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
@@ -272,8 +272,8 @@ void CodegenVisitor::Visit(const WhileExpr& while_expr) {
 }
 
 llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
-                                         std::string cur_type,
-                                         std::string dest_type) {
+                                         const std::string& cur_type,
+                                         const std::string& dest_type) {
   if (AstToCodeMap::IsBasicType(cur_type) && dest_type == "Object") {
     return ast_to_.GetBoxedBasicTypeGlobal(cur_type);
   }
@@ -620,7 +620,8 @@ void CodegenVisitor::GenExitIfVoid(llvm::Value* val, int line_num,
   builder_.SetInsertPoint(not_void_bb);
 }
 
-void CodegenVisitor::GenExit(int line_num, const std::string& exit_message) {
+void CodegenVisitor::GenExit(int line_num,
+                             const std::string& exit_message) const {
   const std::string full_exit_message = GetProgramAst()->GetFileName() + ":" +
                                         std::to_string(line_num) + ": " +
                                         exit_message + "\n";
