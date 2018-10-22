@@ -68,10 +68,10 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name) {
 }
 
 void TestCodegen(const std::string& input_file) {
-  const std::string parser_output = GetCodgenedProgramOutput(input_file);
+  const std::string program_output = GetCodgenedProgramOutput(input_file);
   std::string expected_output =
       GetExpectedOutput(CODEGEN_TEST_DATA_PATH + input_file + ".out");
-  EXPECT_EQ(expected_output, parser_output);
+  EXPECT_EQ(expected_output, program_output);
 }
 
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
