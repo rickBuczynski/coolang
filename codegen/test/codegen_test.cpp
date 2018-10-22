@@ -120,6 +120,9 @@ TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
 TEST(CodegenTest, initdefault) { TestCodegen("init-default.cl"); }
 TEST(CodegenTest, initorderself) { TestCodegen("init-order-self.cl"); }
 TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
+TEST(CodegenTest, intcopytypenameabort) {
+  TestCodegen("int-copy-typename-abort.cl");
+}
 TEST(CodegenTest, interactionattrinitmethod) {
   TestCodegen("interaction-attrinit-method.cl");
 }

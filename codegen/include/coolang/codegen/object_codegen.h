@@ -19,17 +19,17 @@ class ObjectCodegen {
     GenAbort("Object");
     GenAbort("String");
     GenAbort("Bool");
+    GenAbort("Int");
 
-    GenCopy();
     GenTypeName();
-
-    // TODO int abort, type name, and copy
-
     GenBoolTypeName();
     GenStringTypeName();
+    GenIntTypeName();
 
+    GenCopy();
     GenBoolCopy();
     GenStringCopy();
+    GenIntCopy();
   }
 
   void GenExitWithMessage(const std::string& format_string,
@@ -42,7 +42,7 @@ class ObjectCodegen {
   }
 
  private:
-  void GenAbort(std::string class_name) const {
+  void GenAbort(const std::string& class_name) const {
     llvm::Function* func = ast_to_code_map_->LlvmFunc(class_name, "abort");
 
     llvm::BasicBlock* entry =
@@ -50,7 +50,8 @@ class ObjectCodegen {
     builder_->SetInsertPoint(entry);
 
     llvm::Value* type_name = builder_->CreateCall(
-        ast_to_code_map_->LlvmFunc(class_name, "type_name"), {func->arg_begin()});
+        ast_to_code_map_->LlvmFunc(class_name, "type_name"),
+        {func->arg_begin()});
 
     GenExitWithMessage("Abort called from class %s\n", {type_name});
 
@@ -110,6 +111,16 @@ class ObjectCodegen {
     builder_->CreateRet(builder_->CreateGlobalStringPtr("String"));
   }
 
+  void GenIntTypeName() const {
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("Int", "type_name");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(*context_, "entrypoint", func);
+    builder_->SetInsertPoint(entry);
+
+    builder_->CreateRet(builder_->CreateGlobalStringPtr("Int"));
+  }
+
   void GenBoolCopy() const {
     llvm::Function* func = ast_to_code_map_->LlvmFunc("Bool", "copy");
 
@@ -129,6 +140,16 @@ class ObjectCodegen {
 
     // TODO either need to make an actual copy of somehow mark that this points
     // to same string for when I do GC
+    builder_->CreateRet(func->arg_begin());
+  }
+
+  void GenIntCopy() const {
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("Int", "copy");
+
+    llvm::BasicBlock* entry =
+        llvm::BasicBlock::Create(*context_, "entrypoint", func);
+    builder_->SetInsertPoint(entry);
+
     builder_->CreateRet(func->arg_begin());
   }
 
