@@ -734,6 +734,22 @@ class ClassAst : public AstNode {
     return sub_classes_;
   }
 
+  std::vector<const ClassAst*> AllDescendantClasses() const {
+    if (sub_classes_.empty()) {
+      return {};
+    }
+
+    std::vector<const ClassAst*> descendants;
+    for (const ClassAst* sub_class : sub_classes_) {
+      descendants.push_back(sub_class);
+      for (const ClassAst* sub_class_descendant :
+           sub_class->AllDescendantClasses()) {
+        descendants.push_back(sub_class_descendant);
+      }
+    }
+    return descendants;
+  }
+
   void SetSuperClass(const ClassAst* super_class) {
     super_class_ = super_class;
   }

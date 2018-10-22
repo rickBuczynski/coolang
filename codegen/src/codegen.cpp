@@ -96,6 +96,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   void GenExitIfVoid(llvm::Value* val, int line_num,
                      const std::string& exit_message);
+  void GenExit(int line_num, const std::string& exit_message);
 
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
@@ -183,7 +184,20 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
       llvm::BasicBlock* not_taken = llvm::BasicBlock::Create(
           context_, branch->GetType() + "-not-taken", ast_to_.CurLlvmFunc());
 
-      llvm::Value* should_take_branch = GenStrEqCmp(case_val_type, branch_type);
+      llvm::Value* matches_branch = GenStrEqCmp(case_val_type, branch_type);
+      std::vector<const ClassAst*> branch_descendants =
+          ast_to_.GetClassByName(branch->GetType())->AllDescendantClasses();
+
+      llvm::Value* should_take_branch = matches_branch;
+
+      for (const ClassAst* branch_descendant : branch_descendants) {
+        llvm::Value* descendant_type =
+            builder_.CreateGlobalStringPtr(branch_descendant->GetName());
+        llvm::Value* matches_descendant =
+            GenStrEqCmp(case_val_type, descendant_type);
+        should_take_branch =
+            builder_.CreateOr(should_take_branch, matches_descendant);
+      }
 
       builder_.CreateCondBr(should_take_branch, branch_taken, not_taken);
 
@@ -210,10 +224,8 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
     }
   }
 
-  llvm::Value* class_name =
-      builder_.CreateGlobalStringPtr(CurClass()->GetName());
   object_codegen_.GenExitWithMessage(
-      "No match in case statement for Class %s\n", {class_name});
+      "No match in case statement for Class %s\n", {case_val_type});
 
   branch_vals_and_bbs.emplace_back(
       ast_to_.LlvmBasicOrClassPtrDefaultVal(case_expr.GetExprType()),
@@ -599,14 +611,19 @@ void CodegenVisitor::GenExitIfVoid(llvm::Value* val, int line_num,
   builder_.CreateCondBr(is_void_lhs, is_void_bb, not_void_bb);
   builder_.SetInsertPoint(is_void_bb);
 
-  const std::string full_exit_message = GetProgramAst()->GetFileName() + ":" +
-                                        std::to_string(line_num) + ": " +
-                                        exit_message + "\n";
-  object_codegen_.GenExitWithMessage(full_exit_message, {});
+  GenExit(line_num, exit_message);
+
   // will exit before taking this branch, but LLVM requires it
   builder_.CreateBr(not_void_bb);
 
   builder_.SetInsertPoint(not_void_bb);
+}
+
+void CodegenVisitor::GenExit(int line_num, const std::string& exit_message) {
+  const std::string full_exit_message = GetProgramAst()->GetFileName() + ":" +
+                                        std::to_string(line_num) + ": " +
+                                        exit_message + "\n";
+  object_codegen_.GenExitWithMessage(full_exit_message, {});
 }
 
 void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
