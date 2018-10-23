@@ -98,6 +98,11 @@ class CodegenVisitor : public ConstAstVisitor {
                      const std::string& exit_message);
   void GenExit(int line_num, const std::string& exit_message) const;
 
+  llvm::Value* GenAllocAndConstruct(const std::string& type_name);
+
+  llvm::Value* CreateBoxedBasic(const std::string& type_name,
+                                llvm::Value* basic_val);
+
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
 
@@ -275,7 +280,7 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
                                          const std::string& cur_type,
                                          const std::string& dest_type) {
   if (AstToCodeMap::IsBasicType(cur_type) && dest_type == "Object") {
-    return ast_to_.GetBoxedBasicTypeGlobal(cur_type);
+    return CreateBoxedBasic(cur_type, convert_me);
   }
   if (AstToCodeMap::IsBasicType(cur_type) && dest_type != "Object" &&
       dest_type != cur_type) {
@@ -315,8 +320,8 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
       if (AstToCodeMap::IsBasicType(
               cur_let->GetInitializationExpr()->GetExprType()) &&
           cur_let->GetType() == "Object") {
-        init_val = ast_to_.GetBoxedBasicTypeGlobal(
-            cur_let->GetInitializationExpr()->GetExprType());
+        init_val = CreateBoxedBasic(
+            cur_let->GetInitializationExpr()->GetExprType(), init_val);
       } else if (let_type != init_val->getType()) {
         init_val = builder_.CreateBitCast(init_val, let_type);
       }
@@ -808,7 +813,12 @@ void CodegenVisitor::Visit(const NewExpr& new_expr) {
     return;
   }
 
-  llvm::Type* type = ast_to_.LlvmClass(new_expr.GetType());
+  codegened_values_[&new_expr] = GenAllocAndConstruct(new_expr.GetType());
+}
+
+llvm::Value* CodegenVisitor::GenAllocAndConstruct(
+    const std::string& type_name) {
+  llvm::Type* type = ast_to_.LlvmClass(type_name);
 
   const auto new_size = data_layout_.getTypeAllocSize(type);
   llvm::Value* malloc_len_val =
@@ -818,13 +828,26 @@ void CodegenVisitor::Visit(const NewExpr& new_expr) {
       builder_.CreateCall(c_std_.GetMallocFunc(), {malloc_len_val});
 
   llvm::Value* new_val = builder_.CreateBitCast(
-      malloc_val, ast_to_.LlvmClass(new_expr.GetType())->getPointerTo());
+      malloc_val, ast_to_.LlvmClass(type_name)->getPointerTo());
 
   std::vector<llvm::Value*> args;
   args.push_back(new_val);
-  builder_.CreateCall(ast_to_.GetConstructor(new_expr.GetType()), args);
+  builder_.CreateCall(ast_to_.GetConstructor(type_name), args);
 
-  codegened_values_[&new_expr] = new_val;
+  return new_val;
+}
+
+llvm::Value* CodegenVisitor::CreateBoxedBasic(const std::string& type_name,
+                                              llvm::Value* basic_val) {
+  llvm::Value* boxed_val = GenAllocAndConstruct("Object");
+
+  llvm::Value* typename_ptr_ptr = builder_.CreateStructGEP(
+      ast_to_.LlvmClass("Object"), boxed_val, AstToCodeMap::obj_typename_index);
+
+  builder_.CreateStore(builder_.CreateGlobalStringPtr(type_name),
+                       typename_ptr_ptr);
+
+  return boxed_val;
 }
 
 void CodegenVisitor::Visit(const AssignExpr& assign) {
@@ -908,12 +931,6 @@ void CodegenVisitor::GenMainFunc() {
   llvm::BasicBlock* entry =
       llvm::BasicBlock::Create(context_, "entrypoint", func);
   builder_.SetInsertPoint(entry);
-
-  // need to do this in main since we have to store the typename in the global
-  // at runtime. There's no way to put a i8* into a global constant.
-  ast_to_.InsertBoxedBasicTypeGlobal("Bool");
-  ast_to_.InsertBoxedBasicTypeGlobal("String");
-  ast_to_.InsertBoxedBasicTypeGlobal("Int");
 
   llvm::AllocaInst* main_class =
       builder_.CreateAlloca(ast_to_.LlvmClass("Main"));

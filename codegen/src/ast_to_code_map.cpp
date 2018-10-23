@@ -20,6 +20,8 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   // pointer to constructor to support "new SELF_TYPE"
   class_attributes.push_back(
       GetConstructorFunctionType(class_ast)->getPointerTo());
+  // obj_boxed_data
+  class_attributes.push_back(builder_->getInt8PtrTy());
 
   for (const ClassAst* cur_class : class_ast->SupersThenThis()) {
     for (const auto* attr : cur_class->GetAttributeFeatures()) {

@@ -24,9 +24,10 @@ class AstToCodeMap {
   static constexpr int obj_typesize_index = 2;
   // need a pointer to constructor to handle "new SELF_TYPE"
   static constexpr int obj_constructor_index = 3;
+  static constexpr int obj_boxed_data_index = 4;
 
-  // attrbiutes start at index 4, after the 4 things above
-  static constexpr int obj_attributes_offset = 4;
+  // attrbiutes start at index 5, after the 5 things above
+  static constexpr int obj_attributes_offset = 5;
 
   void Insert(const ClassAst* class_ast) {
     types_.insert(std::make_pair(
@@ -41,44 +42,6 @@ class AstToCodeMap {
   static bool IsBasicType(const std::string& class_name) {
     return class_name == "Int" || class_name == "String" ||
            class_name == "Bool";
-  }
-
-  // TODO using one global value for Basic types boxed as objects wont work
-  // you can cast an object back to an int/string/bool using "case" expr
-  // need to actually allocate the boxed type and store the value
-  void InsertBoxedBasicTypeGlobal(const std::string& basic_type) {
-    const std::string global_name = "boxed-" + basic_type + "-global";
-
-    module_->getOrInsertGlobal(global_name, LlvmClass("Object"));
-    llvm::GlobalVariable* boxed = module_->getNamedGlobal(global_name);
-    boxed->setConstant(false);
-    boxed->setLinkage(llvm::GlobalValue::LinkageTypes::ExternalLinkage);
-
-    const auto obj_class_size =
-        data_layout_->getTypeAllocSize(LlvmClass("Object"));
-
-    auto* obj_constructor_type =
-        GetConstructorFunctionType(program_ast_->GetObjectClass())
-            ->getPointerTo();
-
-    boxed->setInitializer(llvm::ConstantStruct::get(
-        LlvmClass("Object"),
-        {GetVtable("Object").GetGlobalInstance(),
-         llvm::ConstantPointerNull::get(builder_->getInt8PtrTy()),
-         LlvmConstInt32(obj_class_size),
-         llvm::ConstantPointerNull::get(obj_constructor_type)}));
-
-    llvm::Value* typename_ptr_ptr = builder_->CreateStructGEP(
-        LlvmClass("Object"), boxed, obj_typename_index);
-
-    builder_->CreateStore(builder_->CreateGlobalStringPtr(basic_type),
-                          typename_ptr_ptr);
-
-    boxed_basic_type_globals_[basic_type] = boxed;
-  }
-
-  llvm::GlobalValue* GetBoxedBasicTypeGlobal(const std::string& basic_type) {
-    return boxed_basic_type_globals_.at(basic_type);
   }
 
   static bool TypeUsesVtable(const std::string& class_name) {
@@ -209,8 +172,6 @@ class AstToCodeMap {
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
-
-  std::unordered_map<std::string, llvm::GlobalValue*> boxed_basic_type_globals_;
 
   llvm::LLVMContext* context_;
   llvm::Module* module_;
