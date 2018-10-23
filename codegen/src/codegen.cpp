@@ -102,6 +102,7 @@ class CodegenVisitor : public ConstAstVisitor {
 
   llvm::Value* CreateBoxedBasic(const std::string& type_name,
                                 llvm::Value* basic_val);
+  llvm::Value* UnboxValue(const std::string& type_name, llvm::Value* boxed_val);
 
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
@@ -289,9 +290,7 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
     return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
   }
   if (AstToCodeMap::IsBasicType(dest_type) && cur_type == "Object") {
-    // TODO this just returns the default value for the basic type
-    // Need to actually extract out boxed value if object is a boxed basic type
-    return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
+    return UnboxValue(dest_type, convert_me);
   }
   // TODO test case that converts non-object non-basic type to basic
   if (cur_type != dest_type) {
@@ -847,7 +846,41 @@ llvm::Value* CodegenVisitor::CreateBoxedBasic(const std::string& type_name,
   builder_.CreateStore(builder_.CreateGlobalStringPtr(type_name),
                        typename_ptr_ptr);
 
+  llvm::Value* boxed_data_ptr =
+      builder_.CreateStructGEP(ast_to_.LlvmClass("Object"), boxed_val,
+                               AstToCodeMap::obj_boxed_data_index);
+
+  // TODO this could be tricky for GCing strings since both the orignal and the
+  // boxed point to the string
+  llvm::Value* boxed_data_as_i8ptr = basic_val;
+
+  // if type_name is String we already have an i8ptr, but need to convert for
+  // Bool or Int
+  if (type_name == "Int" || type_name == "Bool") {
+    boxed_data_as_i8ptr =
+        builder_.CreateIntToPtr(basic_val, builder_.getInt8PtrTy());
+  }
+
+  builder_.CreateStore(boxed_data_as_i8ptr, boxed_data_ptr);
+
   return boxed_val;
+}
+
+llvm::Value* CodegenVisitor::UnboxValue(const std::string& type_name,
+                                        llvm::Value* boxed_val) {
+  llvm::Value* boxed_data_ptr =
+      builder_.CreateStructGEP(ast_to_.LlvmClass("Object"), boxed_val,
+                               AstToCodeMap::obj_boxed_data_index);
+  llvm::Value* boxed_data_as_i8ptr = builder_.CreateLoad(boxed_data_ptr);
+
+  if (type_name == "Int") {
+    return builder_.CreatePtrToInt(boxed_data_as_i8ptr, builder_.getInt32Ty());
+  }
+  if (type_name == "Bool") {
+    return builder_.CreatePtrToInt(boxed_data_as_i8ptr, builder_.getInt1Ty());
+  }
+  // no conversion needed for String
+  return boxed_data_as_i8ptr;
 }
 
 void CodegenVisitor::Visit(const AssignExpr& assign) {

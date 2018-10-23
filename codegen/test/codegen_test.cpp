@@ -85,6 +85,7 @@ TEST(CodegenTest, book_list) { TestCodegen("book_list.cl"); }
 TEST(CodegenTest, boolcl) { TestCodegen("bool.cl"); }
 TEST(CodegenTest, boolliteral) { TestCodegen("bool-literal.cl"); }
 TEST(CodegenTest, booltypename) { TestCodegen("bool-typename.cl"); }
+TEST(CodegenTest, boxedcasting) { TestCodegen("boxed-casting.cl"); }
 TEST(CodegenTest, boxedtypename) { TestCodegen("boxed-typename.cl"); }
 TEST(CodegenTest, c) { TestCodegen("c.cl"); }
 TEST(CodegenTest, calls) { TestCodegen("calls.cl"); }
