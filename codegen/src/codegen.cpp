@@ -292,7 +292,6 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
   if (AstToCodeMap::IsBasicType(dest_type) && cur_type == "Object") {
     return UnboxValue(dest_type, convert_me);
   }
-  // TODO test case that converts non-object non-basic type to basic
   if (cur_type != dest_type) {
     return builder_.CreateBitCast(convert_me,
                                   ast_to_.LlvmBasicOrClassPtrTy(dest_type));
