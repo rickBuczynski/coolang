@@ -106,6 +106,10 @@ class AstToCodeMap {
     return llvm::ConstantInt::get(*context_, llvm::APInt(32, i, true));
   }
 
+  llvm::ConstantInt* LlvmConstInt8(uint64_t i) const {
+    return llvm::ConstantInt::get(*context_, llvm::APInt(8, i, true));
+  }
+
   llvm::Value* LlvmBasicOrClassPtrDefaultVal(const std::string& type_name) {
     if (type_name == "Int") {
       return LlvmConstInt32(0);

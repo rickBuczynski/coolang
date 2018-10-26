@@ -25,8 +25,7 @@ class IoCodegen {
 
  private:
   void GenIoOutString() const {
-    llvm::Function* func =
-        ast_to_code_map_->LlvmFunc("IO", "out_string");
+    llvm::Function* func = ast_to_code_map_->LlvmFunc("IO", "out_string");
 
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
@@ -62,8 +61,23 @@ class IoCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    // TODO actually implement in_string instead of just returning void
-    builder_->CreateRetVoid();
+    // TODO this malloc leaks memory
+    llvm::Value* in_str = builder_->CreateCall(
+        c_std_->GetMallocFunc(), {ast_to_code_map_->LlvmConstInt32(1024)});
+
+    llvm::Value* in_char = builder_->CreateIntCast(
+        builder_->CreateCall(c_std_->GetGetcharFunc(), {}),
+        builder_->getInt8Ty(), true);
+
+    builder_->CreateStore(
+        in_char,
+        builder_->CreateGEP(in_str, ast_to_code_map_->LlvmConstInt32(0)));
+
+    builder_->CreateStore(
+        ast_to_code_map_->LlvmConstInt8(0), // null terminator
+        builder_->CreateGEP(in_str, ast_to_code_map_->LlvmConstInt32(1)));
+
+    builder_->CreateRet(in_str);
   }
 
   void GenIoInInt() const {
