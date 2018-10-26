@@ -24,14 +24,24 @@ std::string GetExpectedOutput(const std::string& expected_output_file) {
   return buffer.str();
 }
 
-void RunProgram(std::filesystem::path input_file_path) {
-  std::filesystem::path output_file_path =
-      input_file_path.replace_extension(".runout");
-  std::filesystem::path exe_path = input_file_path.replace_extension(".exe");
+void RunProgram(const std::filesystem::path input_file_path,
+                bool use_stdin_redirection) {
+  std::filesystem::path output_file_path = input_file_path;
+  output_file_path.replace_extension(".runout");
+
+  std::filesystem::path exe_path = input_file_path;
+  exe_path.replace_extension(".exe");
   exe_path.replace_filename(
       ReplacedPatchWithPaatch(exe_path.filename().string()));
 
   std::string command = exe_path.string() + " > " + output_file_path.string();
+  if (use_stdin_redirection) {
+    command += " < ";
+    command += input_file_path.string();
+    command += ".in";
+  }
+  std::cout << command << std::endl;
+
   std::system(command.c_str());
 }
 
@@ -45,7 +55,8 @@ std::string GetProgramOutput(std::filesystem::path input_file_path) {
   return buffer.str();
 }
 
-std::string GetCodgenedProgramOutput(const std::string& input_file_name) {
+std::string GetCodgenedProgramOutput(const std::string& input_file_name,
+                                     bool use_stdin_redirection) {
   auto lexer = std::make_unique<coolang::Lexer>(CODEGEN_TEST_DATA_PATH +
                                                 input_file_name);
   auto parser = std::make_unique<coolang::Parser>(std::move(lexer));
@@ -63,12 +74,14 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name) {
     codegen->Link(ReplacedPatchWithPaatch(input_file_name));
   }
 
-  RunProgram(codegen->GetFilePath());
+  RunProgram(codegen->GetFilePath(), use_stdin_redirection);
   return GetProgramOutput(codegen->GetFilePath());
 }
 
-void TestCodegen(const std::string& input_file) {
-  const std::string program_output = GetCodgenedProgramOutput(input_file);
+void TestCodegen(const std::string& input_file,
+                 bool use_stdin_redirection = false) {
+  const std::string program_output =
+      GetCodgenedProgramOutput(input_file, use_stdin_redirection);
   std::string expected_output =
       GetExpectedOutput(CODEGEN_TEST_DATA_PATH + input_file + ".out");
   EXPECT_EQ(expected_output, program_output);
@@ -122,6 +135,7 @@ TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
 TEST(CodegenTest, initdefault) { TestCodegen("init-default.cl"); }
 TEST(CodegenTest, initorderself) { TestCodegen("init-order-self.cl"); }
 TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
+TEST(CodegenTest, instring) { TestCodegen("in-string.cl", true); }
 TEST(CodegenTest, intcopytypenameabort) {
   TestCodegen("int-copy-typename-abort.cl");
 }
