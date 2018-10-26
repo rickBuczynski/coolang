@@ -62,20 +62,63 @@ class IoCodegen {
     builder_->SetInsertPoint(entry);
 
     // TODO this malloc leaks memory
+    // TODO this won't work for lines longer than 1024 chars
+    // TODO this is wastefull for lines less than 1024 chars
     llvm::Value* in_str = builder_->CreateCall(
         c_std_->GetMallocFunc(), {ast_to_code_map_->LlvmConstInt32(1024)});
 
-    llvm::Value* in_char = builder_->CreateIntCast(
-        builder_->CreateCall(c_std_->GetGetcharFunc(), {}),
-        builder_->getInt8Ty(), true);
+    llvm::AllocaInst* in_char = builder_->CreateAlloca(builder_->getInt8Ty());
+    builder_->CreateStore(
+        builder_->CreateIntCast(
+            builder_->CreateCall(c_std_->GetGetcharFunc(), {}),
+            builder_->getInt8Ty(), true),
+        in_char);
+
+    llvm::AllocaInst* index = builder_->CreateAlloca(builder_->getInt32Ty());
+    builder_->CreateStore(ast_to_code_map_->LlvmConstInt32(0), index);
+
+    llvm::BasicBlock* loop_cond_bb =
+        llvm::BasicBlock::Create(*context_, "loop-cond", func);
+
+    llvm::BasicBlock* loop_body_bb =
+        llvm::BasicBlock::Create(*context_, "loop-body", func);
+
+    llvm::BasicBlock* loop_done_bb =
+        llvm::BasicBlock::Create(*context_, "loop-done", func);
+
+    builder_->CreateBr(loop_cond_bb);
+
+    builder_->SetInsertPoint(loop_cond_bb);
+
+    // TODO also check for EOF
+    llvm::Value* is_line_end = builder_->CreateICmpEQ(
+        builder_->CreateLoad(in_char), ast_to_code_map_->LlvmConstInt8('\n'));
+    builder_->CreateCondBr(is_line_end, loop_done_bb, loop_body_bb);
+
+    builder_->SetInsertPoint(loop_body_bb);
+
+    llvm::Value* cur_index = builder_->CreateLoad(index);
+
+    builder_->CreateStore(builder_->CreateLoad(in_char),
+                          builder_->CreateGEP(in_str, cur_index));
+
+    llvm::Value* next_index =
+        builder_->CreateAdd(cur_index, ast_to_code_map_->LlvmConstInt32(1));
+    builder_->CreateStore(next_index, index);
 
     builder_->CreateStore(
-        in_char,
-        builder_->CreateGEP(in_str, ast_to_code_map_->LlvmConstInt32(0)));
+        builder_->CreateIntCast(
+            builder_->CreateCall(c_std_->GetGetcharFunc(), {}),
+            builder_->getInt8Ty(), true),
+        in_char);
+
+    builder_->CreateBr(loop_cond_bb);
+
+    builder_->SetInsertPoint(loop_done_bb);
 
     builder_->CreateStore(
-        ast_to_code_map_->LlvmConstInt8(0), // null terminator
-        builder_->CreateGEP(in_str, ast_to_code_map_->LlvmConstInt32(1)));
+        ast_to_code_map_->LlvmConstInt8(0),  // null terminator
+        builder_->CreateGEP(in_str, builder_->CreateLoad(index)));
 
     builder_->CreateRet(in_str);
   }
