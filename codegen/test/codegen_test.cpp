@@ -137,6 +137,7 @@ TEST(CodegenTest, inint) { TestCodegen("in-int.cl", true); }
 TEST(CodegenTest, initorderself) { TestCodegen("init-order-self.cl"); }
 TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
 TEST(CodegenTest, instring) { TestCodegen("in-string.cl", true); }
+TEST(CodegenTest, instringeof) { TestCodegen("in-string-eof.cl", true); }
 TEST(CodegenTest, intcopytypenameabort) {
   TestCodegen("int-copy-typename-abort.cl");
 }

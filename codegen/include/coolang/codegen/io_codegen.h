@@ -90,10 +90,13 @@ class IoCodegen {
 
     builder_->SetInsertPoint(loop_cond_bb);
 
-    // TODO also check for EOF
     llvm::Value* is_line_end = builder_->CreateICmpEQ(
         builder_->CreateLoad(in_char), ast_to_code_map_->LlvmConstInt8('\n'));
-    builder_->CreateCondBr(is_line_end, loop_done_bb, loop_body_bb);
+    llvm::Value* is_eof = builder_->CreateICmpEQ(
+        builder_->CreateLoad(in_char), ast_to_code_map_->LlvmConstInt8(EOF));
+
+    builder_->CreateCondBr(builder_->CreateOr(is_line_end, is_eof),
+                           loop_done_bb, loop_body_bb);
 
     builder_->SetInsertPoint(loop_body_bb);
 
