@@ -2,6 +2,7 @@
 #define COOLANG_PARSER_PARSER_H_
 
 #include <filesystem>
+#include <unordered_map>
 #include "coolang/lexer/lexer.h"
 #include "coolang/lexer/token.h"
 #include "coolang/parser/ast.h"
@@ -65,7 +66,7 @@ class Parser {
       std::unique_ptr<Expr> lhs,
       std::optional<std::string> static_dispatch_type);
 
-  std::vector<std::unique_ptr<ClassAst>> dummy_classes_;
+  std::unordered_map<std::string, std::unique_ptr<ClassAst>> dummy_classes_;
 
   std::vector<ParseError> parse_errors_;
   std::unique_ptr<Lexer> lexer_;

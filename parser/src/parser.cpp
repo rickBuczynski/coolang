@@ -223,14 +223,20 @@ ClassAst Parser::ParseClass() {
   // class production but we need to peek it to get the correct end line num
   // expected by test output
 
-  // TODO this is inefficient, it will push object many times
-  dummy_classes_.push_back(
-      std::make_unique<ClassAst>(inherits_type.value_or("Object"), nullptr,
-                                 std::vector<std::unique_ptr<Feature>>{},
-                                 LineRange(0, 0), lexer_->GetInputFile()));
+  const auto find_dummy = dummy_classes_.find(inherits_type.value_or("Object"));
+  ClassAst* dummy;
+  if (find_dummy == dummy_classes_.end()) {
+    auto insert_dummy =
+        std::make_unique<ClassAst>(inherits_type.value_or("Object"), nullptr,
+                                   std::vector<std::unique_ptr<Feature>>{},
+                                   LineRange(0, 0), lexer_->GetInputFile());
+    dummy = insert_dummy.get();
+    dummy_classes_[inherits_type.value_or("Object")] = std::move(insert_dummy);
+  } else {
+    dummy = find_dummy->second.get();
+  }
 
-  return ClassAst(type_id_token.get_data(), dummy_classes_.back().get(),
-                  std::move(features),
+  return ClassAst(type_id_token.get_data(), dummy, std::move(features),
                   LineRange(class_token.get_line_num(), GetLineNum(semi_token)),
                   lexer_->GetInputFile());
 }
