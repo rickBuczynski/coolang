@@ -13,7 +13,9 @@ set(HEADERS
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
-
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  target_link_libraries(${PROJECT_NAME} stdc++fs)
+endif()
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(lexer_test test/lexer_test.cpp)
