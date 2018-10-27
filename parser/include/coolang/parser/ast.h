@@ -194,8 +194,8 @@ class IntExpr : public Expr {
   IntExpr(std::string val, LineRange line_range)
       : Expr(line_range), val_(std::move(val)) {}
 
-  // TODO semantic check for int overflow
-  int GetVal() const { return std::stoi(val_); }
+  int GetValAsInt() const { return std::stoi(val_); }
+  std::string GetValAsStr() const { return val_; }
 
   std::string ToString(int indent_depth) const override;
   void Accept(AstVisitor& vis) override { vis.Visit(*this); }

@@ -349,7 +349,7 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
 
 void CodegenVisitor::Visit(const IntExpr& int_expr) {
   codegened_values_[&int_expr] = llvm::ConstantInt::get(
-      context_, llvm::APInt(32, int_expr.GetVal(), true));
+      context_, llvm::APInt(32, int_expr.GetValAsInt(), true));
 }
 
 void CodegenVisitor::Visit(const IsVoidExpr& is_void) {

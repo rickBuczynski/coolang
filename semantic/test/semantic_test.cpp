@@ -98,12 +98,13 @@ TEST(SemanticTest, expressionblock) { TestSemantic("expressionblock.test"); }
 TEST(SemanticTest, forwardinherits) { TestSemantic("forwardinherits.test"); }
 TEST(SemanticTest, hairyscarycl) { TestSemantic("hairyscary.cl.test"); }
 TEST(SemanticTest, ifselftype) { TestSemantic("if-self-type.test"); }
-TEST(SemanticTest, if) { TestSemantic("if.test"); }
+TEST(SemanticTest, iftest) { TestSemantic("if.test"); }
 TEST(SemanticTest, inheritsbool) { TestSemantic("inheritsbool.test"); }
 TEST(SemanticTest, inheritsObject) { TestSemantic("inheritsObject.test"); }
 TEST(SemanticTest, inheritsselftype) { TestSemantic("inheritsselftype.test"); }
 TEST(SemanticTest, inheritsstring) { TestSemantic("inheritsstring.test"); }
 TEST(SemanticTest, initwithself) { TestSemantic("initwithself.test"); }
+TEST(SemanticTest, inttoobig) { TestSemantic("inttoobig.test"); }
 TEST(SemanticTest, io) { TestSemantic("io.test"); }
 TEST(SemanticTest, isvoid) { TestSemantic("isvoid.test"); }
 TEST(SemanticTest, letbadinit) { TestSemantic("letbadinit.test"); }

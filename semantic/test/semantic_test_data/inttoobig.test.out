@@ -1,0 +1,2 @@
+inttoobig.test:5: Value: 9999999999999999999999999999999999999999999999 is not in the range of representable values by an int.
+Compilation halted due to static semantic errors.

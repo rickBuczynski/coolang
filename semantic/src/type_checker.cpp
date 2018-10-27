@@ -16,7 +16,18 @@ class TypeCheckVisitor : public AstVisitor {
   void Visit(StrExpr& node) override { node.SetExprType("String"); }
   void Visit(WhileExpr& node) override;
   void Visit(LetExpr& node) override;
-  void Visit(IntExpr& node) override { node.SetExprType("Int"); }
+  void Visit(IntExpr& node) override {
+    node.SetExprType("Int");
+    try {
+      std::stoi(node.GetValAsStr());
+    } catch (const std::out_of_range& oor) {
+      errors_.emplace_back(
+          node.GetLineRange().end_line_num,
+          "Value: " + node.GetValAsStr() +
+              " is not in the range of representable values by an int.",
+          program_ast_->GetFileName());
+    }
+  }
   void Visit(IsVoidExpr& node) override {
     node.MutableChildExpr()->Accept(*this);
     node.SetExprType("Bool");
