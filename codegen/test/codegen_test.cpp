@@ -1,5 +1,6 @@
 #include <filesystem>
 #include "coolang/codegen/codegen.h"
+#include "coolang/codegen/platform.h"
 #include "coolang/lexer/lexer.h"
 #include "coolang/parser/parser.h"
 #include "coolang/semantic/semantic.h"
@@ -30,7 +31,7 @@ void RunProgram(const std::filesystem::path input_file_path,
   output_file_path.replace_extension(".runout");
 
   std::filesystem::path exe_path = input_file_path;
-  exe_path.replace_extension(".exe");
+  exe_path.replace_extension(coolang::platform::GetExeFileExtension());
   exe_path.replace_filename(
       ReplacedPatchWithPaatch(exe_path.filename().string()));
 

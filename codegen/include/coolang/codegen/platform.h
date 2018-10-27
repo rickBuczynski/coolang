@@ -11,7 +11,7 @@ inline std::string GetObjectFileExtension() {
   return ".obj";
 #endif
 
-#ifdef linux
+#ifdef __unix__
   return ".o";
 #endif
 }
@@ -21,7 +21,7 @@ inline std::string GetExeFileExtension() {
   return ".exe";
 #endif
 
-#ifdef linux
+#ifdef __unix__
   return "";
 #endif
 }
@@ -57,7 +57,20 @@ inline std::string GetLinkerCommandWindows(
 
 inline std::string GetLinkerCommandLinux(
     const std::filesystem::path& object_file_path,
-    const std::filesystem::path& exe_file_path) { return "TODO"; }
+    const std::filesystem::path& exe_file_path) { 
+  std::string obj_input_linker_arg = object_file_path.string();
+  obj_input_linker_arg += " ";
+
+  std::string output_exe_linker_arg = "-o ";
+  output_exe_linker_arg += exe_file_path.string();
+  output_exe_linker_arg += " ";
+
+  std::string linker_cmd = "gcc ";
+  linker_cmd += output_exe_linker_arg;
+  linker_cmd += obj_input_linker_arg;
+
+  return linker_cmd;
+}
 
 inline std::string GetLinkerCommand(
     const std::filesystem::path& input_file_path,
@@ -75,7 +88,7 @@ inline std::string GetLinkerCommand(
   return GetLinkerCommandWindows(object_file_path, exe_file_path);
 #endif
 
-#ifdef linux
+#ifdef __unix__
   return GetLinkerCommandLinux(object_file_path, exe_file_path);
 #endif
 }
