@@ -133,6 +133,7 @@ TEST(CodegenTest, fact) { TestCodegen("fact.cl"); }
 TEST(CodegenTest, fibo) { TestCodegen("fibo.cl"); }
 TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
 TEST(CodegenTest, initdefault) { TestCodegen("init-default.cl"); }
+TEST(CodegenTest, inint) { TestCodegen("in-int.cl", true); }
 TEST(CodegenTest, initorderself) { TestCodegen("init-order-self.cl"); }
 TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
 TEST(CodegenTest, instring) { TestCodegen("in-string.cl", true); }

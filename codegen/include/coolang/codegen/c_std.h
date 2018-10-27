@@ -20,12 +20,13 @@ class CStd {
   llvm::Constant* GetExitFunc() const { return exit_func_; }
   llvm::Constant* GetStrCmpFunc() const { return strcmp_func_; }
   llvm::Constant* GetGetcharFunc() const { return getchar_func_; }
+  llvm::Constant* GetAtoiFunc() const { return atoi_func_; }
 
  private:
   llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
                                      const std::string& return_type_str,
                                      const std::vector<std::string>& arg_types,
-                                     bool is_var_arg = false) {
+                                     bool is_var_arg = false) const {
     std::vector<llvm::Type*> llvm_arg_types;
     for (const auto& arg : arg_types) {
       llvm_arg_types.push_back(ast_to_code_map_->LlvmBasicType(arg));
@@ -59,6 +60,7 @@ class CStd {
       CreateCStdFuncDecl("strcat", "String", {"String", "String"});
   llvm::Constant* strcmp_func_ =
       CreateCStdFuncDecl("strcmp", "Int", {"String", "String"});
+  llvm::Constant* atoi_func_ = CreateCStdFuncDecl("atoi", "Int", {"String"});
   llvm::Constant* getchar_func_ = CreateCStdFuncDecl("getchar", "Int", {});
   llvm::Constant* exit_func_ = CreateCStdFuncDecl("exit", "Void", {"Int"});
   // use String (becomes char*) as return type for malloc

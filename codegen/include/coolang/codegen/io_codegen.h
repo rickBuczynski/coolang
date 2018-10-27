@@ -130,8 +130,13 @@ class IoCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    // TODO actually implement in_int instead of just returning void
-    builder_->CreateRetVoid();
+    llvm::Value* str = builder_->CreateCall(
+        ast_to_code_map_->LlvmFunc("IO", "in_string"), {func->arg_begin()});
+
+    llvm::Value* str_as_int =
+        builder_->CreateCall(c_std_->GetAtoiFunc(), {str});
+
+    builder_->CreateRet(str_as_int);
   }
 
   llvm::LLVMContext* context_;
