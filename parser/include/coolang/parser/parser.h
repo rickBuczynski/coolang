@@ -1,6 +1,7 @@
 #ifndef COOLANG_PARSER_PARSER_H_
 #define COOLANG_PARSER_PARSER_H_
 
+#include <filesystem>
 #include "coolang/lexer/lexer.h"
 #include "coolang/lexer/token.h"
 #include "coolang/parser/ast.h"
@@ -9,13 +10,13 @@ namespace coolang {
 
 class ParseError {
  public:
-  ParseError(Token unexpected_token, std::string file_name)
+  ParseError(Token unexpected_token, std::filesystem::path file_path)
       : unexpected_token_(std::move(unexpected_token)),
-        file_name_(std::move(file_name)) {}
+        file_path_(std::move(file_path)) {}
 
   std::string ToString(int indent_depth) const {
     using namespace std::string_literals;
-    return ""s + '"' + file_name_ + '"' + ", line " +
+    return ""s + '"' + file_path_.filename().string() + '"' + ", line " +
            std::to_string(GetLineNum(unexpected_token_)) +
            ": syntax error at or near " +
            TokenTypeSpecificStr(unexpected_token_, " = ") + '\n';
@@ -23,7 +24,7 @@ class ParseError {
 
  private:
   const Token unexpected_token_;
-  const std::string file_name_;
+  const std::filesystem::path file_path_;
 };
 
 class Parser {

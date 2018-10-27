@@ -154,8 +154,8 @@ std::variant<ProgramAst, std::vector<ParseError>> Parser::ParseProgram() {
         auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
         lexer_->PopToken();
       } catch (const UnexpectedTokenExcpetion& e) {
-        const auto parse_error = ParseError(
-            e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+        const auto parse_error =
+            ParseError(e.GetUnexpectedToken(), lexer_->GetInputFile());
         parse_errors_.push_back(parse_error);
         lexer_->AdvanceToNext<TokenClass>();
       }
@@ -170,8 +170,8 @@ std::variant<ProgramAst, std::vector<ParseError>> Parser::ParseProgram() {
     program_ast.emplace(ProgramAst(lexer_->GetInputFile(), std::move(classes),
                                    LineRange(1, program_end_line)));
   } catch (const UnexpectedTokenExcpetion& e) {
-    const auto parse_error = ParseError(
-        e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+    const auto parse_error =
+        ParseError(e.GetUnexpectedToken(), lexer_->GetInputFile());
     parse_errors_.push_back(parse_error);
   }
 
@@ -206,8 +206,8 @@ ClassAst Parser::ParseClass() {
     try {
       features.push_back(ParseFeature());
     } catch (const UnexpectedTokenExcpetion& e) {
-      const auto parse_error = ParseError(
-          e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+      const auto parse_error =
+          ParseError(e.GetUnexpectedToken(), lexer_->GetInputFile());
       parse_errors_.push_back(parse_error);
       lexer_->AdvanceToNext<TokenSemi>();
     }
@@ -465,8 +465,8 @@ std::unique_ptr<CaseExpr> Parser::ParseCaseExpr() {
       branches.emplace_back(line_range, f.GetId(), f.GetType(),
                             std::move(expr));
     } catch (const UnexpectedTokenExcpetion& e) {
-      const auto parse_error = ParseError(
-          e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+      const auto parse_error =
+          ParseError(e.GetUnexpectedToken(), lexer_->GetInputFile());
       parse_errors_.push_back(parse_error);
       lexer_->AdvanceToNext<TokenSemi>();
     }
@@ -598,8 +598,8 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() {
       initialization_exprs.push_back(std::move(initialization_expr));
       formals.push_back(formal);
     } catch (const UnexpectedTokenExcpetion& e) {
-      const auto parse_error = ParseError(
-          e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+      const auto parse_error =
+          ParseError(e.GetUnexpectedToken(), lexer_->GetInputFile());
       parse_errors_.push_back(parse_error);
       lexer_->AdvanceToNext<TokenComma, TokenIn>();
     }
@@ -656,8 +656,8 @@ std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() {
     try {
       exprs.push_back(ParseExpr(0));
     } catch (const UnexpectedTokenExcpetion& e) {
-      const auto parse_error = ParseError(
-          e.GetUnexpectedToken(), lexer_->GetInputFile().filename().string());
+      const auto parse_error =
+          ParseError(e.GetUnexpectedToken(), lexer_->GetInputFile());
       parse_errors_.push_back(parse_error);
       lexer_->AdvanceToNext<TokenSemi>();
     }
