@@ -61,10 +61,9 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
                                                 input_file_name);
   auto parser = std::make_unique<coolang::Parser>(std::move(lexer));
   const auto semantic = std::make_unique<coolang::Semantic>(std::move(parser));
-  auto ast_or_err = semantic->CheckProgramSemantics();
+  auto ast = std::get<coolang::ProgramAst>(semantic->CheckProgramSemantics());
 
-  const auto codegen = std::make_unique<coolang::Codegen>(
-      std::move(std::get<coolang::ProgramAst>(ast_or_err)));
+  const auto codegen = std::make_unique<coolang::Codegen>(ast);
   codegen->GenerateCode();
 
   // Windows won't run exe with "patch" in the name...
