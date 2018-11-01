@@ -159,15 +159,23 @@ class ConstAstVisitor {
   virtual void Visit(const ProgramAst& node) = 0;
 };
 
+// This is mutated by TypeCheckVisitor
+struct TypeCheckInfo {
+  std::string expr_type = "_no_type";
+};
+
 class Expr : public AstNode {
  public:
   explicit Expr(LineRange line_range) : AstNode(line_range) {}
 
-  const std::string& GetExprType() const { return expr_type_; }
-  void SetExprType(const std::string& expr_type) { expr_type_ = expr_type; }
+  const std::string& GetExprType() const { return type_check_info_->expr_type; }
+  void SetExprType(const std::string& expr_type) const {
+    type_check_info_->expr_type = expr_type;
+  }
 
  private:
-  std::string expr_type_ = "_no_type";
+  std::unique_ptr<TypeCheckInfo> type_check_info_ =
+      std::make_unique<TypeCheckInfo>();
 };
 
 class AssignExpr : public Expr {
@@ -250,7 +258,7 @@ class LetExpr : public Expr {
 
   const std::string& GetId() const { return id_; }
   const std::string& GetType() const { return type_; }
-  
+
   const Expr* GetInitializationExpr() const {
     return initialization_expr_.get();
   }
@@ -260,7 +268,7 @@ class LetExpr : public Expr {
   Expr* MutableInExpr() { return in_expr_.get(); }
 
   const LetExpr* GetChainedLet() const { return chained_let_.get(); }
-  LetExpr* MutableChainedLet()  { return chained_let_.get(); }
+  LetExpr* MutableChainedLet() { return chained_let_.get(); }
 
   void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }

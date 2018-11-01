@@ -5,18 +5,18 @@
 
 namespace coolang {
 
-class TypeCheckVisitor : public AstVisitor {
+class TypeCheckVisitor : public ConstAstVisitor {
  public:
   explicit TypeCheckVisitor(ProgramAst& program_ast)
       : program_ast_(&program_ast) {}
 
   const std::vector<SemanticError>& GetErrors() const { return errors_; }
 
-  void Visit(CaseExpr& node) override;
-  void Visit(StrExpr& node) override { node.SetExprType("String"); }
-  void Visit(WhileExpr& node) override;
-  void Visit(LetExpr& node) override;
-  void Visit(IntExpr& node) override {
+  void Visit(const CaseExpr& node) override;
+  void Visit(const StrExpr& node) override { node.SetExprType("String"); }
+  void Visit(const WhileExpr& node) override;
+  void Visit(const LetExpr& node) override;
+  void Visit(const IntExpr& node) override {
     node.SetExprType("Int");
     try {
       std::stoi(node.GetValAsStr());
@@ -28,13 +28,13 @@ class TypeCheckVisitor : public AstVisitor {
           program_ast_->GetFileName());
     }
   }
-  void Visit(IsVoidExpr& node) override {
-    node.MutableChildExpr()->Accept(*this);
+  void Visit(const IsVoidExpr& node) override {
+    node.GetChildExpr()->Accept(*this);
     node.SetExprType("Bool");
   }
-  void Visit(MethodCallExpr& node) override;
-  void Visit(NotExpr& node) override {
-    node.MutableChildExpr()->Accept(*this);
+  void Visit(const MethodCallExpr& node) override;
+  void Visit(const NotExpr& node) override {
+    node.GetChildExpr()->Accept(*this);
 
     if (node.GetChildExpr()->GetExprType() != "Bool") {
       errors_.emplace_back(
@@ -46,9 +46,9 @@ class TypeCheckVisitor : public AstVisitor {
 
     node.SetExprType("Bool");
   }
-  void Visit(IfExpr& node) override;
-  void Visit(NegExpr& node) override {
-    node.MutableChildExpr()->Accept(*this);
+  void Visit(const IfExpr& node) override;
+  void Visit(const NegExpr& node) override {
+    node.GetChildExpr()->Accept(*this);
 
     if (node.GetChildExpr()->GetExprType() != "Int") {
       errors_.emplace_back(node.GetLineRange().end_line_num,
@@ -59,53 +59,53 @@ class TypeCheckVisitor : public AstVisitor {
 
     node.SetExprType("Int");
   }
-  void Visit(BlockExpr& node) override {
+  void Visit(const BlockExpr& node) override {
     for (auto& sub_expr : node.GetExprs()) {
       sub_expr->Accept(*this);
     }
     node.SetExprType(node.GetExprs().back()->GetExprType());
   }
-  void Visit(ObjectExpr& node) override;
-  void Visit(BinOpExpr& node) override;
-  void Visit(MultiplyExpr& node) override {
-    Visit(static_cast<BinOpExpr&>(node));
+  void Visit(const ObjectExpr& node) override;
+  void Visit(const BinOpExpr& node) override;
+  void Visit(const MultiplyExpr& node) override {
+    Visit(static_cast<const BinOpExpr&>(node));
     node.SetExprType("Int");
   }
-  void Visit(LessThanEqualCompareExpr& node) override {
-    Visit(static_cast<BinOpExpr&>(node));
+  void Visit(const LessThanEqualCompareExpr& node) override {
+    Visit(static_cast<const BinOpExpr&>(node));
     node.SetExprType("Bool");
   }
-  void Visit(SubtractExpr& node) override {
-    Visit(static_cast<BinOpExpr&>(node));
+  void Visit(const SubtractExpr& node) override {
+    Visit(static_cast<const BinOpExpr&>(node));
     node.SetExprType("Int");
   }
-  void Visit(AddExpr& node) override {
-    Visit(static_cast<BinOpExpr&>(node));
+  void Visit(const AddExpr& node) override {
+    Visit(static_cast<const BinOpExpr&>(node));
     node.SetExprType("Int");
   }
-  void Visit(EqCompareExpr& node) override;
-  void Visit(DivideExpr& node) override {
-    Visit(static_cast<BinOpExpr&>(node));
+  void Visit(const EqCompareExpr& node) override;
+  void Visit(const DivideExpr& node) override {
+    Visit(static_cast<const BinOpExpr&>(node));
     node.SetExprType("Int");
   }
-  void Visit(LessThanCompareExpr& node) override {
-    Visit(static_cast<BinOpExpr&>(node));
+  void Visit(const LessThanCompareExpr& node) override {
+    Visit(static_cast<const BinOpExpr&>(node));
     node.SetExprType("Bool");
   }
-  void Visit(NewExpr& node) override { node.SetExprType(node.GetType()); }
-  void Visit(AssignExpr& node) override;
-  void Visit(BoolExpr& node) override { node.SetExprType("Bool"); }
-  void Visit(ClassAst& node) override;
-  void Visit(CaseBranch& node) override {
+  void Visit(const NewExpr& node) override { node.SetExprType(node.GetType()); }
+  void Visit(const AssignExpr& node) override;
+  void Visit(const BoolExpr& node) override { node.SetExprType("Bool"); }
+  void Visit(const ClassAst& node) override;
+  void Visit(const CaseBranch& node) override {
     AddToScope(node.GetId(), node.GetType());
-    node.MutableExpr()->Accept(*this);
+    node.GetExpr()->Accept(*this);
     RemoveFromScope(node.GetId());
   }
-  void Visit(MethodFeature& node) override {
+  void Visit(const MethodFeature& node) override {
   }  // not needed, handled by class visitor
-  void Visit(AttributeFeature& node) override {
+  void Visit(const AttributeFeature& node) override {
   }  // not needed, handled by class visitor
-  void Visit(ProgramAst& node) override;
+  void Visit(const ProgramAst& node) override;
 
  private:
   void CheckMethodOverrideHasSameArgs(const ClassAst* class_ast,
@@ -184,11 +184,11 @@ class TypeCheckVisitor : public AstVisitor {
 
   std::vector<SemanticError> errors_;
   std::unordered_map<std::string, std::stack<std::string>> in_scope_vars_;
-  ClassAst* current_class_ = nullptr;
+  const ClassAst* current_class_ = nullptr;
   ProgramAst* program_ast_;
 };
 
-void TypeCheckVisitor::Visit(ObjectExpr& node) {
+void TypeCheckVisitor::Visit(const ObjectExpr& node) {
   if (node.GetId() == "self") {
     node.SetExprType("SELF_TYPE");
     return;
@@ -204,9 +204,9 @@ void TypeCheckVisitor::Visit(ObjectExpr& node) {
   }
 }
 
-void TypeCheckVisitor::Visit(BinOpExpr& node) {
-  node.MutableLhsExpr()->Accept(*this);
-  node.MutableRhsExpr()->Accept(*this);
+void TypeCheckVisitor::Visit(const BinOpExpr& node) {
+  node.GetLhsExpr()->Accept(*this);
+  node.GetRhsExpr()->Accept(*this);
 
   const std::string lhs_type = node.GetLhsExpr()->GetExprType();
   const std::string rhs_type = node.GetRhsExpr()->GetExprType();
@@ -218,11 +218,11 @@ void TypeCheckVisitor::Visit(BinOpExpr& node) {
   }
 }
 
-void TypeCheckVisitor::Visit(CaseExpr& node) {
-  node.MutableCaseExpr()->Accept(*this);
+void TypeCheckVisitor::Visit(const CaseExpr& node) {
+  node.GetCaseExpr()->Accept(*this);
 
   std::set<std::string> branch_types;
-  for (auto& branch : node.MutableBranches()) {
+  for (auto& branch : node.GetBranches()) {
     branch.Accept(*this);
     if (branch_types.find(branch.GetType()) != branch_types.end()) {
       errors_.emplace_back(
@@ -242,27 +242,27 @@ void TypeCheckVisitor::Visit(CaseExpr& node) {
   node.SetExprType(FirstCommonSupertype(branch_return_types));
 }
 
-void TypeCheckVisitor::Visit(WhileExpr& node) {
-  node.MutableConditionExpr()->Accept(*this);
+void TypeCheckVisitor::Visit(const WhileExpr& node) {
+  node.GetConditionExpr()->Accept(*this);
   if (node.GetConditionExpr()->GetExprType() != "Bool") {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Loop condition does not have type Bool.",
                          program_ast_->GetFileName());
   }
 
-  node.MutableLoopExpr()->Accept(*this);
+  node.GetLoopExpr()->Accept(*this);
 
   node.SetExprType("Object");
 }
 
-void TypeCheckVisitor::Visit(LetExpr& node) {
+void TypeCheckVisitor::Visit(const LetExpr& node) {
   std::vector<Formal> bindings;
-  LetExpr* cur_let = &node;
-  Expr* in_expr = nullptr;
+  const LetExpr* cur_let = &node;
+  const Expr* in_expr = nullptr;
 
   while (in_expr == nullptr) {
-    if (cur_let->MutableInitializationExpr()) {
-      cur_let->MutableInitializationExpr()->Accept(*this);
+    if (cur_let->GetInitializationExpr()) {
+      cur_let->GetInitializationExpr()->Accept(*this);
 
       if (!IsSubtype(cur_let->GetInitializationExpr()->GetExprType(),
                      cur_let->GetType())) {
@@ -286,8 +286,8 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
                             LineRange(0, 0));
     }
 
-    in_expr = cur_let->MutableInExpr();
-    cur_let = cur_let->MutableChainedLet();
+    in_expr = cur_let->GetInExpr();
+    cur_let = cur_let->GetChainedLet();
   }
 
   in_expr->Accept(*this);
@@ -296,14 +296,14 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
     RemoveFromScope(f.GetId());
   }
 
-  for (LetExpr* let_expr = &node; let_expr != nullptr;
-       let_expr = let_expr->MutableChainedLet()) {
+  for (const LetExpr* let_expr = &node; let_expr != nullptr;
+       let_expr = let_expr->GetChainedLet()) {
     let_expr->SetExprType(in_expr->GetExprType());
   }
 }
 
-void TypeCheckVisitor::Visit(MethodCallExpr& node) {
-  node.MutableLhsExpr()->Accept(*this);
+void TypeCheckVisitor::Visit(const MethodCallExpr& node) {
+  node.GetLhsExpr()->Accept(*this);
   std::string caller_type = node.GetLhsExpr()->GetExprType();
 
   if (node.GetStaticDispatchType().has_value()) {
@@ -334,7 +334,7 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   }
 
   auto expected_args = method_feature->GetArgs();
-  auto& args = node.MutableArgs();
+  auto& args = node.GetArgs();
 
   if (expected_args.size() != args.size()) {
     errors_.emplace_back(
@@ -375,24 +375,24 @@ void TypeCheckVisitor::Visit(MethodCallExpr& node) {
   node.SetExprType(return_type);
 }
 
-void TypeCheckVisitor::Visit(IfExpr& node) {
-  node.MutableIfConditionExpr()->Accept(*this);
+void TypeCheckVisitor::Visit(const IfExpr& node) {
+  node.GetIfConditionExpr()->Accept(*this);
   if (node.GetIfConditionExpr()->GetExprType() != "Bool") {
     errors_.emplace_back(node.GetLineRange().end_line_num,
                          "Loop condition does not have type Bool.",
                          program_ast_->GetFileName());
   }
 
-  node.MutableThenExpr()->Accept(*this);
-  node.MutableElseExpr()->Accept(*this);
+  node.GetThenExpr()->Accept(*this);
+  node.GetElseExpr()->Accept(*this);
 
   node.SetExprType(FirstCommonSupertype(
       {node.GetThenExpr()->GetExprType(), node.GetElseExpr()->GetExprType()}));
 }
 
-void TypeCheckVisitor::Visit(EqCompareExpr& node) {
-  node.MutableLhsExpr()->Accept(*this);
-  node.MutableRhsExpr()->Accept(*this);
+void TypeCheckVisitor::Visit(const EqCompareExpr& node) {
+  node.GetLhsExpr()->Accept(*this);
+  node.GetRhsExpr()->Accept(*this);
 
   const std::string lhs_type = node.GetLhsExpr()->GetExprType();
   const std::string rhs_type = node.GetRhsExpr()->GetExprType();
@@ -409,7 +409,7 @@ void TypeCheckVisitor::Visit(EqCompareExpr& node) {
   node.SetExprType("Bool");
 }
 
-void TypeCheckVisitor::Visit(AssignExpr& node) {
+void TypeCheckVisitor::Visit(const AssignExpr& node) {
   node.GetRhsExpr()->Accept(*this);
 
   if (node.GetId() == "self") {
@@ -438,7 +438,7 @@ void TypeCheckVisitor::Visit(AssignExpr& node) {
   node.SetExprType(rhs_type);
 }
 
-void TypeCheckVisitor::Visit(ClassAst& node) {
+void TypeCheckVisitor::Visit(const ClassAst& node) {
   current_class_ = &node;
 
   if (node.GetName() == "Int" || node.GetName() == "Bool" ||
@@ -606,9 +606,9 @@ void TypeCheckVisitor::CheckMethodOverrideHasSameArgs(
   }
 }
 
-void TypeCheckVisitor::Visit(ProgramAst& node) {
+void TypeCheckVisitor::Visit(const ProgramAst& node) {
   std::set<std::string> class_names;
-  for (auto& cool_class : node.MutableClasses()) {
+  for (auto& cool_class : node.GetClasses()) {
     if (class_names.find(cool_class.GetName()) != class_names.end()) {
       errors_.emplace_back(
           cool_class.GetLineRange().end_line_num,
