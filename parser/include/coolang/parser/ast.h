@@ -43,7 +43,6 @@ class AstNode {
 
   virtual std::string ToString(int indent_depth) const = 0;
 
-  virtual void Accept(AstVisitor& vis) = 0;
   virtual void Accept(ConstAstVisitor& vis) const = 0;
 
  private:
@@ -80,45 +79,6 @@ class Feature;
 class MethodFeature;
 class AttributeFeature;
 class ProgramAst;
-
-class AstVisitor {
- public:
-  AstVisitor() = default;
-  virtual ~AstVisitor() = default;
-  AstVisitor(const AstVisitor& other) = default;
-  AstVisitor(AstVisitor&& other) noexcept = default;
-  AstVisitor& operator=(const AstVisitor& other) = default;
-  AstVisitor& operator=(AstVisitor&& other) noexcept = default;
-
-  virtual void Visit(CaseExpr& node) = 0;
-  virtual void Visit(StrExpr& node) = 0;
-  virtual void Visit(WhileExpr& node) = 0;
-  virtual void Visit(LetExpr& node) = 0;
-  virtual void Visit(IntExpr& node) = 0;
-  virtual void Visit(IsVoidExpr& node) = 0;
-  virtual void Visit(MethodCallExpr& node) = 0;
-  virtual void Visit(NotExpr& node) = 0;
-  virtual void Visit(IfExpr& node) = 0;
-  virtual void Visit(NegExpr& node) = 0;
-  virtual void Visit(BlockExpr& node) = 0;
-  virtual void Visit(ObjectExpr& node) = 0;
-  virtual void Visit(BinOpExpr& node) = 0;
-  virtual void Visit(MultiplyExpr& node) = 0;
-  virtual void Visit(LessThanEqualCompareExpr& node) = 0;
-  virtual void Visit(SubtractExpr& node) = 0;
-  virtual void Visit(AddExpr& node) = 0;
-  virtual void Visit(EqCompareExpr& node) = 0;
-  virtual void Visit(DivideExpr& node) = 0;
-  virtual void Visit(LessThanCompareExpr& node) = 0;
-  virtual void Visit(NewExpr& node) = 0;
-  virtual void Visit(AssignExpr& node) = 0;
-  virtual void Visit(BoolExpr& node) = 0;
-  virtual void Visit(ClassAst& node) = 0;
-  virtual void Visit(CaseBranch& node) = 0;
-  virtual void Visit(MethodFeature& node) = 0;
-  virtual void Visit(AttributeFeature& node) = 0;
-  virtual void Visit(ProgramAst& node) = 0;
-};
 
 class ConstAstVisitor {
  public:
@@ -189,7 +149,6 @@ class AssignExpr : public Expr {
   const std::string& GetId() const { return id_; }
   Expr* GetRhsExpr() const { return rhs_expr_.get(); }
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -206,7 +165,7 @@ class IntExpr : public Expr {
   std::string GetValAsStr() const { return val_; }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -220,7 +179,7 @@ class BoolExpr : public Expr {
   bool GetVal() const { return val_; }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -235,7 +194,7 @@ class StrExpr : public Expr {
   const std::string& GetVal() const { return val_; }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -270,7 +229,6 @@ class LetExpr : public Expr {
   const LetExpr* GetChainedLet() const { return chained_let_.get(); }
   LetExpr* MutableChainedLet() { return chained_let_.get(); }
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -295,7 +253,7 @@ class NegExpr : public Expr {
   Expr* MutableChildExpr() { return child_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -317,7 +275,6 @@ class BinOpExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  protected:
@@ -332,7 +289,6 @@ class DivideExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  protected:
@@ -343,7 +299,6 @@ class MultiplyExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  protected:
@@ -354,7 +309,6 @@ class AddExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  protected:
@@ -365,7 +319,6 @@ class SubtractExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  protected:
@@ -376,7 +329,6 @@ class EqCompareExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  protected:
@@ -387,7 +339,6 @@ class LessThanCompareExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  protected:
@@ -398,7 +349,6 @@ class LessThanEqualCompareExpr : public BinOpExpr {
  public:
   using BinOpExpr::BinOpExpr;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  protected:
@@ -414,7 +364,6 @@ class ObjectExpr : public Expr {
 
   const std::string& GetId() const { return id_; }
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -430,7 +379,6 @@ class BlockExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -460,7 +408,6 @@ class MethodCallExpr : public Expr {
     return static_dispatch_type_;
   }
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -488,7 +435,7 @@ class IfExpr : public Expr {
   Expr* MutableElseExpr() const { return else_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -512,7 +459,7 @@ class CaseBranch : public AstNode {
   const std::string& GetType() const { return type_; }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -544,7 +491,7 @@ class CaseExpr : public Expr {
   }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -568,7 +515,6 @@ class WhileExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -585,7 +531,7 @@ class NotExpr : public Expr {
   Expr* MutableChildExpr() { return child_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -601,7 +547,7 @@ class IsVoidExpr : public Expr {
   Expr* MutableChildExpr() { return child_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -617,7 +563,6 @@ class NewExpr : public Expr {
 
   std::string ToString(int indent_depth) const override;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -667,7 +612,6 @@ class MethodFeature : public Feature {
 
   std::string ToString(int indent_depth) const override;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -696,7 +640,6 @@ class AttributeFeature : public Feature {
 
   std::string ToString(int indent_depth) const override;
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -821,7 +764,6 @@ class ClassAst : public AstNode {
     return super_class_->GetClassOrSuperClassThatDefinesMethod(method);
   }
 
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
@@ -922,7 +864,7 @@ class ProgramAst : public AstNode {
   const ClassAst* GetBoolClass() const { return bool_class_.get(); }
 
   std::string ToString(int indent_depth) const override;
-  void Accept(AstVisitor& vis) override { vis.Visit(*this); }
+
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
 
  private:
