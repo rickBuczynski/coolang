@@ -237,13 +237,10 @@ class LetExpr : public Expr {
   const Expr* GetInitializationExpr() const {
     return initialization_expr_.get();
   }
-  Expr* MutableInitializationExpr() { return initialization_expr_.get(); }
 
   const Expr* GetInExpr() const { return in_expr_.get(); }
-  Expr* MutableInExpr() { return in_expr_.get(); }
 
   const LetExpr* GetChainedLet() const { return chained_let_.get(); }
-  LetExpr* MutableChainedLet() { return chained_let_.get(); }
 
   void Accept(AstVisitor& vis) const override { vis.Visit(*this); }
 
@@ -266,7 +263,6 @@ class NegExpr : public Expr {
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
   const Expr* GetChildExpr() const { return child_expr_.get(); }
-  Expr* MutableChildExpr() { return child_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
 
@@ -286,8 +282,6 @@ class BinOpExpr : public Expr {
 
   const Expr* GetLhsExpr() const { return lhs_expr_.get(); }
   const Expr* GetRhsExpr() const { return rhs_expr_.get(); }
-  Expr* MutableLhsExpr() { return lhs_expr_.get(); }
-  Expr* MutableRhsExpr() { return rhs_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
 
@@ -417,9 +411,7 @@ class MethodCallExpr : public Expr {
 
   const std::string& GetMethodName() const { return method_name_; }
   const Expr* GetLhsExpr() const { return lhs_expr_.get(); }
-  Expr* MutableLhsExpr() { return lhs_expr_.get(); }
   const std::vector<std::unique_ptr<Expr>>& GetArgs() const { return args_; }
-  std::vector<std::unique_ptr<Expr>> const& MutableArgs() { return args_; }
   const std::optional<std::string>& GetStaticDispatchType() const {
     return static_dispatch_type_;
   }
@@ -470,7 +462,6 @@ class CaseBranch : public AstNode {
         expr_(std::move(expr)) {}
 
   const Expr* GetExpr() const { return expr_.get(); }
-  Expr* MutableExpr() { return expr_.get(); }
   const std::string& GetId() const { return id_; }
   const std::string& GetType() const { return type_; }
 
@@ -495,7 +486,6 @@ class CaseExpr : public Expr {
   const Expr* GetCaseExpr() const { return case_expr_.get(); }
   const std::vector<CaseBranch>& GetBranches() const { return branches_; }
 
-  Expr* MutableCaseExpr() { return case_expr_.get(); }
   std::vector<CaseBranch>& MutableBranches() { return branches_; }
 
   std::unordered_map<std::string, const CaseBranch*> BranchesByType() const {
@@ -526,8 +516,6 @@ class WhileExpr : public Expr {
 
   const Expr* GetConditionExpr() const { return condition_expr_.get(); }
   const Expr* GetLoopExpr() const { return loop_expr_.get(); }
-  Expr* MutableConditionExpr() { return condition_expr_.get(); }
-  Expr* MutableLoopExpr() { return loop_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
 
@@ -544,7 +532,6 @@ class NotExpr : public Expr {
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
   const Expr* GetChildExpr() const { return child_expr_.get(); }
-  Expr* MutableChildExpr() { return child_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
 
@@ -560,7 +547,6 @@ class IsVoidExpr : public Expr {
       : Expr(line_range), child_expr_(std::move(child_expr)) {}
 
   const Expr* GetChildExpr() const { return child_expr_.get(); }
-  Expr* MutableChildExpr() { return child_expr_.get(); }
 
   std::string ToString(int indent_depth) const override;
 
