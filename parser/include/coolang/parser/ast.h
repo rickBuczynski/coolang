@@ -2,11 +2,16 @@
 #define COOLANG_PARSER_AST_H
 
 #include <algorithm>
+#include <cassert>
 #include <filesystem>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+namespace llvm {
+class Value;
+}
 
 namespace coolang {
 
@@ -123,6 +128,11 @@ struct TypeCheckInfo {
   std::string expr_type = "_no_type";
 };
 
+// This is mutated by CodegenVisitor
+struct CodegenInfo {
+  llvm::Value* value = nullptr;
+};
+
 class Expr : public AstNode {
  public:
   explicit Expr(LineRange line_range) : AstNode(line_range) {}
@@ -132,9 +142,16 @@ class Expr : public AstNode {
     type_check_info_->expr_type = expr_type;
   }
 
+  llvm::Value* LlvmValue() const {
+    assert(codegen_info_->value != nullptr);
+    return codegen_info_->value;
+  }
+  void SetLlvmValue(llvm::Value* value) const { codegen_info_->value = value; }
+
  private:
   std::unique_ptr<TypeCheckInfo> type_check_info_ =
       std::make_unique<TypeCheckInfo>();
+  std::unique_ptr<CodegenInfo> codegen_info_ = std::make_unique<CodegenInfo>();
 };
 
 class AssignExpr : public Expr {
