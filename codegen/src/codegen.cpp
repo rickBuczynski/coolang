@@ -32,7 +32,7 @@
 
 namespace coolang {
 
-class CodegenVisitor : public ConstAstVisitor {
+class CodegenVisitor : public AstVisitor {
  public:
   explicit CodegenVisitor(const ProgramAst& program_ast)
       : module_(new llvm::Module(program_ast.GetFilePath().filename().string(),
@@ -1022,7 +1022,7 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
     class_ast.Accept(*this);
   }
 
-  module_->print(llvm::errs(), nullptr);
+  // module_->print(llvm::errs(), nullptr);
 
   // Initialize the target registry etc.
   LLVMInitializeX86TargetInfo();

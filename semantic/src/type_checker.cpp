@@ -5,7 +5,7 @@
 
 namespace coolang {
 
-class TypeCheckVisitor : public ConstAstVisitor {
+class TypeCheckVisitor : public AstVisitor {
  public:
   explicit TypeCheckVisitor(ProgramAst& program_ast)
       : program_ast_(&program_ast) {}
