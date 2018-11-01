@@ -123,16 +123,6 @@ class AstVisitor {
   virtual void Visit(const ProgramAst& node) = 0;
 };
 
-// This is mutated by TypeCheckVisitor
-struct TypeCheckInfo {
-  std::string expr_type = "_no_type";
-};
-
-// This is mutated by CodegenVisitor
-struct CodegenInfo {
-  llvm::Value* value = nullptr;
-};
-
 class Expr : public AstNode {
  public:
   explicit Expr(LineRange line_range) : AstNode(line_range) {}
@@ -149,8 +139,17 @@ class Expr : public AstNode {
   void SetLlvmValue(llvm::Value* value) const { codegen_info_->value = value; }
 
  private:
+  struct TypeCheckInfo {
+    std::string expr_type = "_no_type";
+  };
+  // This is mutated by TypeCheckVisitor
   std::unique_ptr<TypeCheckInfo> type_check_info_ =
       std::make_unique<TypeCheckInfo>();
+
+  struct CodegenInfo {
+    llvm::Value* value = nullptr;
+  };
+  // This is mutated by CodegenVisitor
   std::unique_ptr<CodegenInfo> codegen_info_ = std::make_unique<CodegenInfo>();
 };
 
