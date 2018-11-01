@@ -250,11 +250,17 @@ class LetExpr : public Expr {
 
   const std::string& GetId() const { return id_; }
   const std::string& GetType() const { return type_; }
-  const std::unique_ptr<Expr>& GetInitializationExpr() const {
-    return initialization_expr_;
+  
+  const Expr* GetInitializationExpr() const {
+    return initialization_expr_.get();
   }
-  const std::unique_ptr<Expr>& GetInExpr() const { return in_expr_; }
-  const std::unique_ptr<LetExpr>& GetChainedLet() const { return chained_let_; }
+  Expr* MutableInitializationExpr() { return initialization_expr_.get(); }
+
+  const Expr* GetInExpr() const { return in_expr_.get(); }
+  Expr* MutableInExpr() { return in_expr_.get(); }
+
+  const LetExpr* GetChainedLet() const { return chained_let_.get(); }
+  LetExpr* MutableChainedLet()  { return chained_let_.get(); }
 
   void Accept(AstVisitor& vis) override { vis.Visit(*this); }
   void Accept(ConstAstVisitor& vis) const override { vis.Visit(*this); }
@@ -296,8 +302,8 @@ class BinOpExpr : public Expr {
         lhs_expr_(std::move(lhs_expr)),
         rhs_expr_(std::move(rhs_expr)) {}
 
-  const std::unique_ptr<Expr>& GetLhsExpr() const { return lhs_expr_; }
-  const std::unique_ptr<Expr>& GetRhsExpr() const { return rhs_expr_; }
+  const Expr* GetLhsExpr() const { return lhs_expr_.get(); }
+  const Expr* GetRhsExpr() const { return rhs_expr_.get(); }
   Expr* MutableLhsExpr() { return lhs_expr_.get(); }
   Expr* MutableRhsExpr() { return rhs_expr_.get(); }
 
@@ -630,7 +636,8 @@ class Formal {
 class Feature : public AstNode {
  public:
   Feature(LineRange line_range) : AstNode(line_range) {}
-  virtual const std::unique_ptr<Expr>& GetRootExpr() const = 0;
+  virtual const Expr* GetRootExpr() const = 0;
+  virtual Expr* MutableRootExpr() = 0;
 };
 
 class MethodFeature : public Feature {
@@ -643,7 +650,9 @@ class MethodFeature : public Feature {
         return_type_(std::move(return_type)),
         body_(std::move(body)) {}
 
-  const std::unique_ptr<Expr>& GetRootExpr() const override { return body_; }
+  const Expr* GetRootExpr() const override { return body_.get(); }
+  Expr* MutableRootExpr() override { return body_.get(); }
+
   const std::string& GetId() const { return id_; }
   const std::vector<Formal>& GetArgs() const { return args_; }
   const std::string& GetReturnType() const { return return_type_; }
@@ -669,9 +678,11 @@ class AttributeFeature : public Feature {
         type_(std::move(type)),
         initialization_expr_(std::move(initialization_expr)) {}
 
-  const std::unique_ptr<Expr>& GetRootExpr() const override {
-    return initialization_expr_;
+  const Expr* GetRootExpr() const override {
+    return initialization_expr_.get();
   }
+  Expr* MutableRootExpr() override { return initialization_expr_.get(); }
+
   const std::string& GetId() const { return id_; }
   const std::string& GetType() const { return type_; }
 

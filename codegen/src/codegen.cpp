@@ -313,7 +313,7 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
       cur_let->GetInitializationExpr()->Accept(*this);
 
       llvm::Value* init_val =
-          codegened_values_.at(cur_let->GetInitializationExpr().get());
+          codegened_values_.at(cur_let->GetInitializationExpr());
       llvm::Type* let_type = ast_to_.LlvmBasicOrClassPtrTy(cur_let->GetType());
 
       if (AstToCodeMap::IsBasicType(
@@ -335,8 +335,8 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
     AddToScope(cur_let->GetId(), alloca_inst);
     bindings.emplace_back(cur_let->GetId(), alloca_inst);
 
-    in_expr = cur_let->GetInExpr().get();
-    cur_let = cur_let->GetChainedLet().get();
+    in_expr = cur_let->GetInExpr();
+    cur_let = cur_let->GetChainedLet();
   }
 
   in_expr->Accept(*this);
@@ -553,40 +553,40 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
 
 void CodegenVisitor::Visit(const MultiplyExpr& mult) {
   mult.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_value = codegened_values_.at(mult.GetLhsExpr().get());
+  llvm::Value* lhs_value = codegened_values_.at(mult.GetLhsExpr());
 
   mult.GetRhsExpr()->Accept(*this);
-  llvm::Value* rhs_value = codegened_values_.at(mult.GetRhsExpr().get());
+  llvm::Value* rhs_value = codegened_values_.at(mult.GetRhsExpr());
 
   codegened_values_[&mult] = builder_.CreateMul(lhs_value, rhs_value);
 }
 
 void CodegenVisitor::Visit(const LessThanEqualCompareExpr& le_expr) {
   le_expr.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_val = codegened_values_.at(le_expr.GetLhsExpr().get());
+  llvm::Value* lhs_val = codegened_values_.at(le_expr.GetLhsExpr());
 
   le_expr.GetRhsExpr()->Accept(*this);
-  llvm::Value* rhs_val = codegened_values_.at(le_expr.GetRhsExpr().get());
+  llvm::Value* rhs_val = codegened_values_.at(le_expr.GetRhsExpr());
 
   codegened_values_[&le_expr] = builder_.CreateICmpSLE(lhs_val, rhs_val);
 }
 
 void CodegenVisitor::Visit(const SubtractExpr& minus) {
   minus.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_value = codegened_values_.at(minus.GetLhsExpr().get());
+  llvm::Value* lhs_value = codegened_values_.at(minus.GetLhsExpr());
 
   minus.GetRhsExpr()->Accept(*this);
-  llvm::Value* rhs_value = codegened_values_.at(minus.GetRhsExpr().get());
+  llvm::Value* rhs_value = codegened_values_.at(minus.GetRhsExpr());
 
   codegened_values_[&minus] = builder_.CreateSub(lhs_value, rhs_value);
 }
 
 void CodegenVisitor::Visit(const AddExpr& add_expr) {
   add_expr.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_value = codegened_values_.at(add_expr.GetLhsExpr().get());
+  llvm::Value* lhs_value = codegened_values_.at(add_expr.GetLhsExpr());
 
   add_expr.GetRhsExpr()->Accept(*this);
-  llvm::Value* rhs_value = codegened_values_.at(add_expr.GetRhsExpr().get());
+  llvm::Value* rhs_value = codegened_values_.at(add_expr.GetRhsExpr());
 
   codegened_values_[&add_expr] = builder_.CreateAdd(lhs_value, rhs_value);
 }
@@ -634,10 +634,10 @@ void CodegenVisitor::GenExit(int line_num,
 
 void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   eq_expr.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_value = codegened_values_.at(eq_expr.GetLhsExpr().get());
+  llvm::Value* lhs_value = codegened_values_.at(eq_expr.GetLhsExpr());
 
   eq_expr.GetRhsExpr()->Accept(*this);
-  llvm::Value* rhs_value = codegened_values_.at(eq_expr.GetRhsExpr().get());
+  llvm::Value* rhs_value = codegened_values_.at(eq_expr.GetRhsExpr());
 
   if (eq_expr.GetLhsExpr()->GetExprType() == "Int" ||
       eq_expr.GetLhsExpr()->GetExprType() == "Bool") {
@@ -657,10 +657,10 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
 
 void CodegenVisitor::Visit(const DivideExpr& div_expr) {
   div_expr.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_value = codegened_values_.at(div_expr.GetLhsExpr().get());
+  llvm::Value* lhs_value = codegened_values_.at(div_expr.GetLhsExpr());
 
   div_expr.GetRhsExpr()->Accept(*this);
-  llvm::Value* rhs_value = codegened_values_.at(div_expr.GetRhsExpr().get());
+  llvm::Value* rhs_value = codegened_values_.at(div_expr.GetRhsExpr());
 
   codegened_values_[&div_expr] = builder_.CreateSDiv(lhs_value, rhs_value);
 }
@@ -727,7 +727,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
       if (attr->GetRootExpr()) {
         attr->GetRootExpr()->Accept(*this);
-        llvm::Value* init_val = codegened_values_.at(attr->GetRootExpr().get());
+        llvm::Value* init_val = codegened_values_.at(attr->GetRootExpr());
         init_val = ConvertType(init_val, attr->GetRootExpr()->GetExprType(),
                                attr->GetType());
 
@@ -773,7 +773,7 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
     }
 
     llvm::Value* retval = ConvertType(
-        codegened_values_.at(method->GetRootExpr().get()),
+        codegened_values_.at(method->GetRootExpr()),
         method->GetRootExpr()->GetExprType(), method->GetReturnType());
     builder_.CreateRet(retval);
   }
@@ -781,10 +781,10 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
 
 void CodegenVisitor::Visit(const LessThanCompareExpr& lt_expr) {
   lt_expr.GetLhsExpr()->Accept(*this);
-  llvm::Value* lhs_val = codegened_values_.at(lt_expr.GetLhsExpr().get());
+  llvm::Value* lhs_val = codegened_values_.at(lt_expr.GetLhsExpr());
 
   lt_expr.GetRhsExpr()->Accept(*this);
-  llvm::Value* rhs_val = codegened_values_.at(lt_expr.GetRhsExpr().get());
+  llvm::Value* rhs_val = codegened_values_.at(lt_expr.GetRhsExpr());
 
   codegened_values_[&lt_expr] = builder_.CreateICmpSLT(lhs_val, rhs_val);
 }

@@ -20,7 +20,7 @@ class TypeCheckVisitor : public AstVisitor {
     node.SetExprType("Int");
     try {
       std::stoi(node.GetValAsStr());
-    } catch (const std::out_of_range& oor) {
+    } catch (const std::out_of_range&) {
       errors_.emplace_back(
           node.GetLineRange().end_line_num,
           "Value: " + node.GetValAsStr() +
@@ -261,8 +261,8 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
   Expr* in_expr = nullptr;
 
   while (in_expr == nullptr) {
-    if (cur_let->GetInitializationExpr()) {
-      cur_let->GetInitializationExpr()->Accept(*this);
+    if (cur_let->MutableInitializationExpr()) {
+      cur_let->MutableInitializationExpr()->Accept(*this);
 
       if (!IsSubtype(cur_let->GetInitializationExpr()->GetExprType(),
                      cur_let->GetType())) {
@@ -286,8 +286,8 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
                             LineRange(0, 0));
     }
 
-    in_expr = cur_let->GetInExpr().get();
-    cur_let = cur_let->GetChainedLet().get();
+    in_expr = cur_let->MutableInExpr();
+    cur_let = cur_let->MutableChainedLet();
   }
 
   in_expr->Accept(*this);
@@ -297,7 +297,7 @@ void TypeCheckVisitor::Visit(LetExpr& node) {
   }
 
   for (LetExpr* let_expr = &node; let_expr != nullptr;
-       let_expr = let_expr->GetChainedLet().get()) {
+       let_expr = let_expr->MutableChainedLet()) {
     let_expr->SetExprType(in_expr->GetExprType());
   }
 }
@@ -525,7 +525,7 @@ void TypeCheckVisitor::Visit(ClassAst& node) {
     }
 
     if (feature->GetRootExpr()) {
-      feature->GetRootExpr()->Accept(*this);
+      feature->MutableRootExpr()->Accept(*this);
     }
 
     if (auto* method_feature = dynamic_cast<MethodFeature*>(feature.get())) {
