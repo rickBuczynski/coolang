@@ -66,7 +66,7 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
   const coolang::Semantic semantic;
   auto semantic_errors = semantic.CheckProgramSemantics(ast);
   if (!semantic_errors.empty()) {
-    return coolang::Semantic::ToString(semantic_errors);
+    return coolang::SemanticError::ToString(semantic_errors);
   }
 
   const auto codegen = std::make_unique<coolang::Codegen>(ast);

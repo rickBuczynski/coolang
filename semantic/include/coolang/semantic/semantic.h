@@ -10,15 +10,6 @@ namespace coolang {
 class Semantic {
  public:
   std::vector<SemanticError> CheckProgramSemantics(ProgramAst& ast) const;
-
-  static std::string ToString(const std::vector<SemanticError>& errors) {
-    std::string str;
-    for (const auto& err : errors) {
-      str += err.ToString(0);
-    }
-    str += "Compilation halted due to static semantic errors.\n";
-    return str;
-  }
 };
 
 }  // namespace coolang

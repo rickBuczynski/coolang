@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   const coolang::Semantic semantic;
   auto semantic_errors = semantic.CheckProgramSemantics(ast);
   if (!semantic_errors.empty()) {
-    std::cerr << coolang::Semantic::ToString(semantic_errors);
+    std::cerr << coolang::SemanticError::ToString(semantic_errors);
     return EXIT_FAILURE;
   }
 

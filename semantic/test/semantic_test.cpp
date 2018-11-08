@@ -22,7 +22,7 @@ std::string GetSemanticOutput(const std::string& input_file_name) {
   auto semantic_errors = semantic.CheckProgramSemantics(ast);
 
   if (!semantic_errors.empty()) {
-    return coolang::Semantic::ToString(semantic_errors);
+    return coolang::SemanticError::ToString(semantic_errors);
   } else {
     return ast.ToString(0);
   }

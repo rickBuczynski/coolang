@@ -19,6 +19,15 @@ class SemanticError {
            ": " + error_message_ + "\n";
   }
 
+  static std::string ToString(const std::vector<SemanticError>& errors) {
+    std::string str;
+    for (const auto& err : errors) {
+      str += err.ToString(0);
+    }
+    str += "Compilation halted due to static semantic errors.\n";
+    return str;
+  }
+
  private:
   int line_num_;
   std::string error_message_;
