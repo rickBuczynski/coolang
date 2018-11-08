@@ -9,11 +9,11 @@
 #include "coolang/semantic/semantic.h"
 
 int main(int argc, char *argv[]) {
-  if (argc != 1) {
+  if (argc != 2) {
     std::cerr << "usage: pass 1 arg, the path of the file to compile";
     return EXIT_FAILURE;
   }
-  std::string file_name = argv[0];
+  std::string file_name = argv[1];
 
   auto lexer = std::make_unique<coolang::Lexer>(file_name);
   auto parser = std::make_unique<coolang::Parser>(std::move(lexer));
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  auto ast = std::get<coolang::ProgramAst>(parser->ParseProgram());
+  auto ast = std::get<coolang::ProgramAst>(std::move(ast_or_err));
 
   const coolang::Semantic semantic;
   auto semantic_errors = semantic.CheckProgramSemantics(ast);
@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
 
   const auto codegen = std::make_unique<coolang::Codegen>(ast);
   codegen->GenerateCode();
+  codegen->Link();
 
   return EXIT_SUCCESS;
 }
