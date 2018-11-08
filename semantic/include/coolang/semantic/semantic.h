@@ -11,7 +11,7 @@ class Semantic {
  public:
   std::vector<SemanticError> CheckProgramSemantics(ProgramAst& ast) const;
 
-  static std::string ToString(std::vector<SemanticError> errors) {
+  static std::string ToString(const std::vector<SemanticError>& errors) {
     std::string str;
     for (const auto& err : errors) {
       str += err.ToString(0);

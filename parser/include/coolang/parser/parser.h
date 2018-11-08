@@ -23,6 +23,15 @@ class ParseError {
            TokenTypeSpecificStr(unexpected_token_, " = ") + '\n';
   }
 
+  static std::string ToString(const std::vector<ParseError>& errors) {
+    std::string str;
+    for (const auto& err : errors) {
+      str += err.ToString(0);
+    }
+    str += "Compilation halted due to lex and parse errors\n";
+    return str;
+  }
+
  private:
   const Token unexpected_token_;
   const std::filesystem::path file_path_;

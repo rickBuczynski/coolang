@@ -1,5 +1,5 @@
-#include "coolang/lexer/lexer.h"
 #include "coolang/parser/parser.h"
+#include "coolang/lexer/lexer.h"
 #include "gtest/gtest.h"
 
 namespace {
@@ -25,16 +25,11 @@ std::string GetParserOutput(const std::string& input_file_name) {
           return arg.ToString(0);
         } else if constexpr (std::is_same_v<T,
                                             std::vector<coolang::ParseError>>) {
-          std::string str;
-          for (const auto& err : arg) {
-            str += err.ToString(0);
-          }
-          str += "Compilation halted due to lex and parse errors\n";
-          return str;
+          return coolang::ParseError::ToString(arg);
         }
       },
       program_or_error);
-  //std::cout << parse_output;
+  // std::cout << parse_output;
   return parse_output;
 }
 
