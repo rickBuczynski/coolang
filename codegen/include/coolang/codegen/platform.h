@@ -38,16 +38,16 @@ inline std::string GetLinkerCommandWindows(
 
   // clang-format off
   std::string linker_cmd = "cmd /C \"";
-  linker_cmd += "\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/bin/Hostx86/x86/link.exe\" ";
+  linker_cmd += "\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.15.26726/bin/Hostx86/x86/link.exe\" ";
   linker_cmd += obj_input_linker_arg;
   linker_cmd += output_exe_linker_arg;
   linker_cmd += "libcmt.lib ";
   // TODO windows requires legacy_stdio_definitions.lib in new versions of MSVC to link against printf but not in old versions
   // https://github.com/rust-lang/rust/issues/42830
   linker_cmd += "legacy_stdio_definitions.lib ";
-  linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/lib/x86\" ";
-  linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.16299.0/um/x86\" ";
-  linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.16299.0/ucrt/x86\" ";
+  linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.15.26726/lib/x86\" ";
+  linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.17134.0/um/x86\" ";
+  linker_cmd += "-LIBPATH:\"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.17134.0/ucrt/x86\" ";
   linker_cmd += "-SUBSYSTEM:CONSOLE ";
   linker_cmd += "-MACHINE:X86";
   linker_cmd += "\"";
