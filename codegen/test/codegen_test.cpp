@@ -1,5 +1,5 @@
-#include <filesystem>
 #include "coolang/codegen/codegen.h"
+#include <filesystem>
 #include "coolang/codegen/platform.h"
 #include "coolang/lexer/lexer.h"
 #include "coolang/parser/parser.h"
@@ -61,8 +61,13 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
   auto lexer = std::make_unique<coolang::Lexer>(CODEGEN_TEST_DATA_PATH +
                                                 input_file_name);
   auto parser = std::make_unique<coolang::Parser>(std::move(lexer));
-  const auto semantic = std::make_unique<coolang::Semantic>(std::move(parser));
-  auto ast = std::get<coolang::ProgramAst>(semantic->CheckProgramSemantics());
+  auto ast = std::get<coolang::ProgramAst>(parser->ParseProgram());
+
+  const coolang::Semantic semantic;
+  auto semantic_errors = semantic.CheckProgramSemantics(ast);
+  if (!semantic_errors.empty()) {
+    return coolang::Semantic::ToString(semantic_errors);
+  }
 
   const auto codegen = std::make_unique<coolang::Codegen>(ast);
   codegen->GenerateCode();

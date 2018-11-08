@@ -3,8 +3,6 @@
 
 #include <set>
 #include <string>
-#include <unordered_map>
-#include <variant>
 #include "coolang/parser/ast.h"
 #include "coolang/semantic/semantic_error.h"
 

@@ -1,6 +1,6 @@
+#include "coolang/semantic/semantic.h"
 #include "coolang/lexer/lexer.h"
 #include "coolang/parser/parser.h"
-#include "coolang/semantic/semantic.h"
 #include "gtest/gtest.h"
 
 namespace {
@@ -16,42 +16,22 @@ std::string GetSemanticOutput(const std::string& input_file_name) {
   auto lexer = std::make_unique<coolang::Lexer>(SEMANTIC_TEST_DATA_PATH +
                                                 input_file_name);
   auto parser = std::make_unique<coolang::Parser>(std::move(lexer));
+  auto ast = std::get<coolang::ProgramAst>(parser->ParseProgram());
 
-  const coolang::Semantic semantic(std::move(parser));
+  const coolang::Semantic semantic;
+  auto semantic_errors = semantic.CheckProgramSemantics(ast);
 
-  auto program_or_error = semantic.CheckProgramSemantics();
-
-  std::string parse_output = std::visit(
-      [](auto&& arg) -> std::string {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, coolang::ProgramAst>) {
-          return arg.ToString(0);
-        } else if constexpr (std::is_same_v<T,
-                                            std::vector<coolang::ParseError>>) {
-          std::string str;
-          for (const auto& err : arg) {
-            str += err.ToString(0);
-          }
-          str += "Compilation halted due to lex and parse errors\n";
-          return str;
-
-        } else if constexpr (std::is_same_v<
-                                 T, std::vector<coolang::SemanticError>>) {
-          std::string str;
-          for (const auto& err : arg) {
-            str += err.ToString(0);
-          }
-          str += "Compilation halted due to static semantic errors.\n";
-          return str;
-        }
-      },
-      program_or_error);
-  std::cout << parse_output;
-  return parse_output;
+  if (!semantic_errors.empty()) {
+    return coolang::Semantic::ToString(semantic_errors);
+  } else {
+    return ast.ToString(0);
+  }
 }
 
 void TestSemantic(const std::string& input_file) {
   const std::string parser_output = GetSemanticOutput(input_file);
+  std::cout << parser_output;
+
   std::string expected_output =
       GetExpectedOutput(SEMANTIC_TEST_DATA_PATH + input_file + ".out");
   EXPECT_EQ(expected_output, parser_output);

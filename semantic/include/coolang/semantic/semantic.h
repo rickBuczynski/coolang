@@ -9,14 +9,16 @@ namespace coolang {
 
 class Semantic {
  public:
-  explicit Semantic(std::unique_ptr<Parser> parser)
-      : parser_(std::move(parser)) {}
+  std::vector<SemanticError> CheckProgramSemantics(ProgramAst& ast) const;
 
-  std::variant<ProgramAst, std::vector<ParseError>, std::vector<SemanticError>>
-  CheckProgramSemantics() const;
-
- private:
-  std::unique_ptr<Parser> parser_;
+  static std::string ToString(std::vector<SemanticError> errors) {
+    std::string str;
+    for (const auto& err : errors) {
+      str += err.ToString(0);
+    }
+    str += "Compilation halted due to static semantic errors.\n";
+    return str;
+  }
 };
 
 }  // namespace coolang
