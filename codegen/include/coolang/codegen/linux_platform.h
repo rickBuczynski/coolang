@@ -6,6 +6,7 @@
 namespace coolang {
 
 class LinuxPlatform {
+ public:
   static std::string GetObjectFileExtension() { return ".o"; }
   static std::string GetExeFileExtension() { return ""; }
 
