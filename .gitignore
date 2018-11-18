@@ -1,5 +1,3 @@
 /build
+/codegen/test/codegen_test_data/test_output
 *.TMP
-*.exe
-*.runout
-*.obj
