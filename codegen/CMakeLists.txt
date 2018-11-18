@@ -4,6 +4,7 @@ set(SOURCES
   src/ast_to_code_map.cpp
   src/codegen.cpp
   src/vtable.cpp
+  src/platform.cpp
 )
 
 set(HEADERS
