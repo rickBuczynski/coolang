@@ -15,6 +15,7 @@ set(HEADERS
   include/coolang/codegen/string_codegen.h
   include/coolang/codegen/c_std.h
   include/coolang/codegen/platform.h
+  include/coolang/codegen/windows_com.hpp
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
