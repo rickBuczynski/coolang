@@ -2,13 +2,12 @@
 #define COOLANG_CODEGEN_PLATFORM_H
 
 #include <filesystem>
-#include <optional>
 
 namespace coolang {
 namespace platform {
 
-std::string GetLinkerCommand(const std::filesystem::path& input_file_path,
-                             const std::optional<std::string>& exe_filename);
+std::string GetLinkerCommand(const std::filesystem::path& obj_path,
+                             const std::filesystem::path& exe_path);
 std::string GetObjectFileExtension();
 std::string GetExeFileExtension();
 

@@ -1080,9 +1080,8 @@ void Codegen::GenerateCode() const {
   ast_->Accept(codegen_visitor);
 }
 
-void Codegen::Link(const std::optional<std::string>& exe_filename) const {
-  std::string linker_cmd =
-      platform::GetLinkerCommand(ast_->GetFilePath(), exe_filename);
+void Codegen::Link() const {
+  std::string linker_cmd = platform::GetLinkerCommand(obj_path_, exe_path_);
   std::cout << linker_cmd << std::endl;
   system(linker_cmd.c_str());
 }

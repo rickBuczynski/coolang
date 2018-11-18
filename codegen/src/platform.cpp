@@ -19,18 +19,9 @@ using PlatformClass = WindowsPlatform;
 using PlatformClass = LinuxPlatform;
 #endif
 
-std::string GetLinkerCommand(const std::filesystem::path& input_file_path,
-                             const std::optional<std::string>& exe_filename) {
-  std::filesystem::path object_file_path = input_file_path;
-  object_file_path.replace_extension(PlatformClass::GetObjectFileExtension());
-
-  std::filesystem::path exe_file_path = input_file_path;
-  if (exe_filename.has_value()) {
-    exe_file_path.replace_filename(exe_filename.value());
-  }
-  exe_file_path.replace_extension(PlatformClass::GetExeFileExtension());
-
-  return PlatformClass::GetLinkerCommand(object_file_path, exe_file_path);
+std::string GetLinkerCommand(const std::filesystem::path& obj_path,
+                             const std::filesystem::path& exe_path) {
+  return PlatformClass::GetLinkerCommand(obj_path, exe_path);
 }
 
 std::string GetObjectFileExtension() {
