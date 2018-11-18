@@ -15,6 +15,8 @@ set(HEADERS
   include/coolang/codegen/string_codegen.h
   include/coolang/codegen/c_std.h
   include/coolang/codegen/platform.h
+  include/coolang/codegen/linux_platform.h
+  include/coolang/codegen/windows_platform.h
   include/coolang/codegen/windows_com.hpp
 )
 
