@@ -115,7 +115,6 @@ class CodegenVisitor : public AstVisitor {
   const ClassAst* CurClass() const { return ast_to_.CurClass(); }
   const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
 
-  // TODO change & to *
   llvm::LLVMContext& context_;
   llvm::Module* module_;
   llvm::DataLayout data_layout_;
