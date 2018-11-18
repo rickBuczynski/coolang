@@ -34,14 +34,14 @@ namespace coolang {
 
 class CodegenVisitor : public AstVisitor {
  public:
-  explicit CodegenVisitor(const ProgramAst& program_ast)
-      : module_(new llvm::Module(program_ast.GetFilePath().filename().string(),
-                                 context_)),
-        data_layout_(module_.get()),
+  explicit CodegenVisitor(const ProgramAst& program_ast,
+                          llvm::LLVMContext* context, llvm::Module* module)
+      : context_(*context),
+        module_(module),
+        data_layout_(module_),
         builder_(context_),
-        ast_to_(&context_, module_.get(), &builder_, &data_layout_,
-                &program_ast),
-        c_std_(module_.get(), &ast_to_),
+        ast_to_(&context_, module_, &builder_, &data_layout_, &program_ast),
+        c_std_(module_, &ast_to_),
         object_codegen_(&context_, &builder_, &ast_to_, &c_std_) {}
 
   void Visit(const CaseExpr& case_expr) override;
@@ -115,8 +115,9 @@ class CodegenVisitor : public AstVisitor {
   const ClassAst* CurClass() const { return ast_to_.CurClass(); }
   const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
 
-  llvm::LLVMContext context_;
-  std::unique_ptr<llvm::Module> module_;
+  // TODO change & to *
+  llvm::LLVMContext& context_;
+  llvm::Module* module_;
   llvm::DataLayout data_layout_;
   llvm::IRBuilder<> builder_;
   AstToCodeMap ast_to_;
@@ -951,7 +952,7 @@ void CodegenVisitor::GenMainFunc() {
   llvm::FunctionType* func_type =
       llvm::FunctionType::get(builder_.getVoidTy(), false);
   llvm::Function* func = llvm::Function::Create(
-      func_type, llvm::Function::ExternalLinkage, "main", module_.get());
+      func_type, llvm::Function::ExternalLinkage, "main", module_);
   llvm::BasicBlock* entry =
       llvm::BasicBlock::Create(context_, "entrypoint", func);
   builder_.SetInsertPoint(entry);
@@ -1012,6 +1013,34 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   for (const auto& class_ast : prog.GetClasses()) {
     class_ast.Accept(*this);
   }
+}
+
+Codegen::Codegen(ProgramAst& ast, std::optional<std::filesystem::path> obj_path,
+                 std::optional<std::filesystem::path> exe_path)
+    : ast_(&ast),
+      context_(llvm::make_unique<llvm::LLVMContext>()),
+      module_(new llvm::Module(ast_->GetFilePath().filename().string(),
+                               *context_)) {
+  if (obj_path.has_value()) {
+    obj_path_ = obj_path.value();
+  } else {
+    obj_path_ = ast_->GetFilePath();
+    obj_path_.replace_extension(platform::GetObjectFileExtension());
+  }
+
+  if (exe_path.has_value()) {
+    exe_path_ = exe_path.value();
+  } else {
+    exe_path_ = ast_->GetFilePath();
+    exe_path_.replace_extension(platform::GetExeFileExtension());
+  }
+}
+
+Codegen::~Codegen() = default;
+
+void Codegen::GenerateCode() const {
+  CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get());
+  ast_->Accept(codegen_visitor);
 
   // module_->print(llvm::errs(), nullptr);
 
@@ -1047,12 +1076,7 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   module_->setDataLayout(the_target_machine->createDataLayout());
 
   std::error_code ec;
-
-  std::filesystem::path object_file_path = GetProgramAst()->GetFilePath();
-  object_file_path.replace_extension(platform::GetObjectFileExtension());
-
-  llvm::raw_fd_ostream dest(object_file_path.string(), ec,
-                            llvm::sys::fs::F_None);
+  llvm::raw_fd_ostream dest(obj_path_.string(), ec, llvm::sys::fs::F_None);
 
   if (ec) {
     llvm::errs() << "Could not open file: " << ec.message();
@@ -1070,14 +1094,9 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   pass.run(*module_);
   dest.flush();
 
-  std::cout << "ast_->GetFileName() " << GetProgramAst()->GetFileName() << "\n";
+  std::cout << "ast_->GetFileName() " << ast_->GetFileName() << "\n";
 
-  std::cout << "Wrote " << object_file_path.string() << "\n";
-}
-
-void Codegen::GenerateCode() const {
-  CodegenVisitor codegen_visitor(*ast_);
-  ast_->Accept(codegen_visitor);
+  std::cout << "Wrote " << obj_path_.string() << "\n";
 }
 
 void Codegen::Link() const {

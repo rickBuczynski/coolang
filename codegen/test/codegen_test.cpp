@@ -69,11 +69,15 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
       ast.GetFilePath().parent_path() / "test_output" / ast.GetFileName();
   exe_path.replace_extension(coolang::platform::GetExeFileExtension());
 
+  std::filesystem::path obj_path =
+      ast.GetFilePath().parent_path() / "test_output" / ast.GetFileName();
+  obj_path.replace_extension(coolang::platform::GetObjectFileExtension());
+
   if (!std::filesystem::exists(exe_path.parent_path())) {
     std::filesystem::create_directories(exe_path.parent_path());
   }
 
-  // Windows won't run exe with "patch" in the name...
+  // Windows won't run an exe with "patch" in the name...
   if (exe_path.filename().string().find("patch") != std::string::npos) {
     const std::string replaced_patch_filename =
         ReplacedPatchWithPaatch(exe_path.filename().string());
@@ -81,7 +85,7 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
   }
 
   const auto codegen =
-      std::make_unique<coolang::Codegen>(ast, std::nullopt, exe_path);
+      std::make_unique<coolang::Codegen>(ast, obj_path, exe_path);
   codegen->GenerateCode();
   codegen->Link();
 

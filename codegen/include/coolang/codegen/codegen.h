@@ -1,8 +1,12 @@
 #ifndef COOLANG_CODEGEN_CODEGEN_H
 #define COOLANG_CODEGEN_CODEGEN_H
 
-#include "coolang/codegen/platform.h"
 #include "coolang/parser/ast.h"
+
+namespace llvm {
+class LLVMContext;
+class Module;
+}  // namespace llvm
 
 namespace coolang {
 
@@ -12,22 +16,13 @@ class Codegen {
       : Codegen(ast, std::nullopt, std::nullopt) {}
 
   Codegen(ProgramAst& ast, std::optional<std::filesystem::path> obj_path,
-          std::optional<std::filesystem::path> exe_path)
-      : ast_(&ast) {
-    if (obj_path.has_value()) {
-      obj_path_ = obj_path.value();
-    } else {
-      obj_path_ = ast_->GetFilePath();
-      obj_path_.replace_extension(platform::GetObjectFileExtension());
-    }
+          std::optional<std::filesystem::path> exe_path);
 
-    if (exe_path.has_value()) {
-      exe_path_ = exe_path.value();
-    } else {
-      exe_path_ = ast_->GetFilePath();
-      exe_path_.replace_extension(platform::GetExeFileExtension());
-    }
-  }
+  ~Codegen();  // define in cpp because of unique_ptr to fwd declared
+  Codegen(const Codegen&) = delete;
+  Codegen(Codegen&&) noexcept = delete;
+  Codegen& operator=(const Codegen& other) = delete;
+  Codegen& operator=(Codegen&& other) noexcept = delete;
 
   void GenerateCode() const;
   void Link() const;
@@ -38,6 +33,9 @@ class Codegen {
 
  private:
   ProgramAst* ast_;
+
+  std::unique_ptr<llvm::LLVMContext> context_;
+  std::unique_ptr<llvm::Module> module_;
 
   std::filesystem::path obj_path_;
   std::filesystem::path exe_path_;
