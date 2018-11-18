@@ -12,9 +12,6 @@ namespace coolang {
 
 class Codegen {
  public:
-  explicit Codegen(ProgramAst& ast)
-      : Codegen(ast, std::nullopt, std::nullopt) {}
-
   Codegen(ProgramAst& ast, std::optional<std::filesystem::path> obj_path,
           std::optional<std::filesystem::path> exe_path);
 
