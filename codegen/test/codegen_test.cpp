@@ -25,15 +25,11 @@ std::string GetExpectedOutput(const std::string& expected_output_file) {
   return buffer.str();
 }
 
-void RunProgram(const std::filesystem::path input_file_path,
+void RunProgram(const std::filesystem::path& exe_path,
+                const std::filesystem::path& input_file_path,
                 bool use_stdin_redirection) {
   std::filesystem::path output_file_path = input_file_path;
   output_file_path.replace_extension(".runout");
-
-  std::filesystem::path exe_path = input_file_path;
-  exe_path.replace_extension(coolang::platform::GetExeFileExtension());
-  exe_path.replace_filename(
-      ReplacedPatchWithPaatch(exe_path.filename().string()));
 
   std::string command = exe_path.string() + " > " + output_file_path.string();
   if (use_stdin_redirection) {
@@ -69,8 +65,13 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
     return coolang::SemanticError::ToString(semantic_errors);
   }
 
-  std::filesystem::path exe_path = ast.GetFilePath();
+  std::filesystem::path exe_path =
+      ast.GetFilePath().parent_path() / "test_output" / ast.GetFileName();
   exe_path.replace_extension(coolang::platform::GetExeFileExtension());
+
+  if (!std::filesystem::exists(exe_path.parent_path())) {
+    std::filesystem::create_directories(exe_path.parent_path());
+  }
 
   // Windows won't run exe with "patch" in the name...
   if (exe_path.filename().string().find("patch") != std::string::npos) {
@@ -84,7 +85,7 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
   codegen->GenerateCode();
   codegen->Link();
 
-  RunProgram(codegen->GetFilePath(), use_stdin_redirection);
+  RunProgram(exe_path, codegen->GetFilePath(), use_stdin_redirection);
   return GetProgramOutput(codegen->GetFilePath());
 }
 
