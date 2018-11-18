@@ -1093,15 +1093,14 @@ void Codegen::GenerateCode() const {
   pass.run(*module_);
   dest.flush();
 
-  std::cout << "ast_->GetFileName() " << ast_->GetFileName() << "\n";
-
-  std::cout << "Wrote " << obj_path_.string() << "\n";
+  std::cout << "Source input: " << ast_->GetFilePath().string() << std::endl;
+  std::cout << "Object output: " << obj_path_.string() << std::endl;
 }
 
 void Codegen::Link() const {
   std::string linker_cmd = platform::GetLinkerCommand(obj_path_, exe_path_);
-  std::cout << linker_cmd << std::endl;
   system(linker_cmd.c_str());
+  std::cout << "Executable output: " << exe_path_.string() << std::endl;
 }
 
 }  // namespace coolang

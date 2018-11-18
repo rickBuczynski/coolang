@@ -38,8 +38,6 @@ void RunProgram(const std::filesystem::path& in_path,
     command += in_path.string();
     command += ".in";
   }
-  std::cout << command << std::endl;
-
   std::system(command.c_str());
 }
 
