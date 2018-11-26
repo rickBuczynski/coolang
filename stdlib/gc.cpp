@@ -15,13 +15,21 @@ void PrintList(GcObj* list) {
     printf("obj=%d\n", (int)list->obj);
     printf("is_reachable=%d\n", (int)list->is_reachable);
     // TOOD try getting the type name, need to cast obj pointer to int** and increment then cast to char*, should point to typename
+
+    char** obj_vtable_ptr = (char**)list->obj;
+    char** typename_ptr = obj_vtable_ptr + 1;
+
+    printf("typename=%s\n", *typename_ptr);
+
     list = list->next;
   }
   printf("list end\n");
 }
 
 extern "C" void* gc_malloc(int size) {
-  //printf("qwe %s\n", "gc_malloc");
+  // need to print before the new malloc because the new obj wont have typename set untill it's constructor is called
+  PrintList(gc_obj_list);
+
   void* obj = malloc(size);
  
   GcObj* old_head = gc_obj_list;
@@ -30,7 +38,5 @@ extern "C" void* gc_malloc(int size) {
   new_gc_obj->next = old_head;
   gc_obj_list = new_gc_obj;
 
-  PrintList(gc_obj_list);
-  
   return obj;
 }
