@@ -21,8 +21,10 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
+#include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
+#include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
@@ -1037,21 +1039,10 @@ Codegen::Codegen(ProgramAst& ast, std::optional<std::filesystem::path> obj_path,
 
 Codegen::~Codegen() = default;
 
-void Codegen::GenerateCode() const {
-  CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get());
-  ast_->Accept(codegen_visitor);
-
-  // module_->print(llvm::errs(), nullptr);
-
-  // Initialize the target registry etc.
-  LLVMInitializeX86TargetInfo();
-  LLVMInitializeX86Target();
-  LLVMInitializeX86TargetMC();
-  LLVMInitializeX86AsmParser();
-  LLVMInitializeX86AsmPrinter();
-
+void OutputModuleToObjectFile(llvm::Module* module,
+                              const std::filesystem::path& obj_path) {
   const auto target_triple = llvm::sys::getDefaultTargetTriple();
-  module_->setTargetTriple(target_triple);
+  module->setTargetTriple(target_triple);
 
   std::string error;
   const auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
@@ -1072,10 +1063,10 @@ void Codegen::GenerateCode() const {
   auto the_target_machine =
       target->createTargetMachine(target_triple, cpu, features, opt, rm);
 
-  module_->setDataLayout(the_target_machine->createDataLayout());
+  module->setDataLayout(the_target_machine->createDataLayout());
 
   std::error_code ec;
-  llvm::raw_fd_ostream dest(obj_path_.string(), ec, llvm::sys::fs::F_None);
+  llvm::raw_fd_ostream dest(obj_path.string(), ec, llvm::sys::fs::F_None);
 
   if (ec) {
     llvm::errs() << "Could not open file: " << ec.message();
@@ -1090,15 +1081,43 @@ void Codegen::GenerateCode() const {
     return;
   }
 
-  pass.run(*module_);
+  pass.run(*module);
   dest.flush();
+}
 
+void Codegen::GenerateCode() const {
+  CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get());
+  ast_->Accept(codegen_visitor);
+
+  // module_->print(llvm::errs(), nullptr);
+
+  // Initialize the target registry etc.
+  LLVMInitializeX86TargetInfo();
+  LLVMInitializeX86Target();
+  LLVMInitializeX86TargetMC();
+  LLVMInitializeX86AsmParser();
+  LLVMInitializeX86AsmPrinter();
+
+  std::filesystem::path std_lib_obj_path = std_lib_path_;
+  std_lib_obj_path.replace_extension(platform::GetObjectFileExtension());
+
+  llvm::LLVMContext context;
+  llvm::SMDiagnostic smd;
+  std::unique_ptr<llvm::Module> std_lib_module =
+      parseIRFile(std_lib_path_.string(), smd, context);
+  OutputModuleToObjectFile(std_lib_module.get(), std_lib_obj_path);
+
+  OutputModuleToObjectFile(module_.get(), obj_path_);
   std::cout << "Source input: " << ast_->GetFilePath().string() << std::endl;
   std::cout << "Object output: " << obj_path_.string() << std::endl;
 }
 
 void Codegen::Link() const {
-  std::string linker_cmd = platform::GetLinkerCommand(obj_path_, exe_path_);
+  std::filesystem::path std_lib_obj_path = std_lib_path_;
+  std_lib_obj_path.replace_extension(platform::GetObjectFileExtension());
+
+  std::string linker_cmd =
+      platform::GetLinkerCommand(obj_path_, std_lib_obj_path, exe_path_);
   system(linker_cmd.c_str());
   std::cout << "Executable output: " << exe_path_.string() << std::endl;
 }

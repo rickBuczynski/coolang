@@ -66,7 +66,7 @@ class CStd {
   // use String (becomes char*) as return type for malloc
   // since llvm has no void* type
   llvm::Constant* malloc_func_ =
-      CreateCStdFuncDecl("malloc", "String", {"Int"});
+      CreateCStdFuncDecl("gc_malloc", "String", {"Int"});
 };
 
 }  // namespace coolang
