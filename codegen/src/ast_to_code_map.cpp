@@ -12,14 +12,17 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   std::vector<llvm::Type*> class_attributes;
   // obj_gc_next_index
   class_attributes.push_back(LlvmClass("Object")->getPointerTo());
-  // obj_is_reachable_index
-  class_attributes.push_back(builder_->getInt1Ty());
+  // obj_gc_is_reachable_index
+  // use an i8 instead of i1 since clang emits i8 for bool
+  // i1 should work too since i8 is min addressable data but use i8 to be safe
+  class_attributes.push_back(builder_->getInt8Ty());
+
+  // obj_typename_index
+  class_attributes.push_back(builder_->getInt8PtrTy());
 
   // obj_vtable_index
   class_attributes.push_back(
       GetVtable(class_ast).GetStructType()->getPointerTo());
-  // obj_typename_index
-  class_attributes.push_back(builder_->getInt8PtrTy());
   // obj_typesize_index (to allow copying without a different function per type)
   class_attributes.push_back(builder_->getInt32Ty());
   // obj_constructor_index (to support "new SELF_TYPE")

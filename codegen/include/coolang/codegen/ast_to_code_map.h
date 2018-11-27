@@ -20,10 +20,11 @@ class AstToCodeMap {
         program_ast_(program_ast) {}
 
   static constexpr int obj_gc_next_index = 0;
-  static constexpr int obj_is_reachable_index = 1;
+  static constexpr int obj_gc_is_reachable_index = 1;
 
-  static constexpr int obj_vtable_index = 2;
-  static constexpr int obj_typename_index = 3;
+  static constexpr int obj_typename_index = 2;
+
+  static constexpr int obj_vtable_index = 3;
   static constexpr int obj_typesize_index = 4;
   // need a pointer to constructor to handle "new SELF_TYPE"
   static constexpr int obj_constructor_index = 5;
