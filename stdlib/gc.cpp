@@ -12,7 +12,14 @@ struct GcObj {
 GcObj* gc_obj_list = nullptr;
 GcObj* gc_root_list = nullptr;
 
-void PrintList(GcObj* list, bool print_roots) {
+void PrintList(bool print_roots) {
+  GcObj* list;
+  if (print_roots) {
+    list = gc_root_list;
+  } else {
+    list = gc_obj_list;
+  }
+
   printf("list start\n");
   while (list != nullptr) {
     printf("obj=%d\n", (int)list);
@@ -30,7 +37,7 @@ void PrintList(GcObj* list, bool print_roots) {
 
 extern "C" void* gc_malloc(int size) {
   // need to print before the new malloc because the new obj wont have typename set untill it's constructor is called
-  PrintList(gc_obj_list, true);
+  PrintList(false);
 
   GcObj* obj = (GcObj*)malloc(size);
 
@@ -45,7 +52,7 @@ extern "C" void* gc_malloc(int size) {
 
 extern "C" void gc_add_root(GcObj* root) {
   // need to print before the new malloc because the new obj wont have typename set untill it's constructor is called
-  PrintList(gc_root_list, true);
+  PrintList(true);
 
   root->next_root = gc_root_list;
 
