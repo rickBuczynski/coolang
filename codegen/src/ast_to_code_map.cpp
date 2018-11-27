@@ -10,7 +10,9 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   current_class_ = class_ast;
 
   std::vector<llvm::Type*> class_attributes;
-  // obj_gc_next_index
+  // obj_gc_next_obj_index
+  class_attributes.push_back(LlvmClass("Object")->getPointerTo());
+  // obj_gc_next_root_index
   class_attributes.push_back(LlvmClass("Object")->getPointerTo());
   // obj_gc_is_reachable_index
   // use an i8 instead of i1 since clang emits i8 for bool
