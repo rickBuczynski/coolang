@@ -1,6 +1,6 @@
+#include "coolang/codegen/ast_to_code_map.h"
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
-#include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/vtable.h"
 #include "coolang/parser/ast.h"
 
@@ -10,17 +10,22 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   current_class_ = class_ast;
 
   std::vector<llvm::Type*> class_attributes;
-  // vtable ptr
+  // obj_gc_next_index
+  class_attributes.push_back(LlvmClass("Object")->getPointerTo());
+  // obj_is_reachable_index
+  class_attributes.push_back(builder_->getInt1Ty());
+
+  // obj_vtable_index
   class_attributes.push_back(
       GetVtable(class_ast).GetStructType()->getPointerTo());
-  // typename
+  // obj_typename_index
   class_attributes.push_back(builder_->getInt8PtrTy());
-  // object size (to allow copying without a different function per type)
+  // obj_typesize_index (to allow copying without a different function per type)
   class_attributes.push_back(builder_->getInt32Ty());
-  // pointer to constructor to support "new SELF_TYPE"
+  // obj_constructor_index (to support "new SELF_TYPE")
   class_attributes.push_back(
       GetConstructorFunctionType(class_ast)->getPointerTo());
-  // obj_boxed_data
+  // obj_boxed_data_index
   class_attributes.push_back(builder_->getInt8PtrTy());
 
   for (const ClassAst* cur_class : class_ast->SupersThenThis()) {

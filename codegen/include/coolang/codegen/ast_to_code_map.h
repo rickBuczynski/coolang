@@ -19,15 +19,18 @@ class AstToCodeMap {
         data_layout_(data_layout),
         program_ast_(program_ast) {}
 
-  static constexpr int obj_vtable_index = 0;
-  static constexpr int obj_typename_index = 1;
-  static constexpr int obj_typesize_index = 2;
-  // need a pointer to constructor to handle "new SELF_TYPE"
-  static constexpr int obj_constructor_index = 3;
-  static constexpr int obj_boxed_data_index = 4;
+  static constexpr int obj_gc_next_index = 0;
+  static constexpr int obj_is_reachable_index = 1;
 
-  // attrbiutes start at index 5, after the 5 things above
-  static constexpr int obj_attributes_offset = 5;
+  static constexpr int obj_vtable_index = 2;
+  static constexpr int obj_typename_index = 3;
+  static constexpr int obj_typesize_index = 4;
+  // need a pointer to constructor to handle "new SELF_TYPE"
+  static constexpr int obj_constructor_index = 5;
+  static constexpr int obj_boxed_data_index = 6;
+
+  // attributes start after the things above
+  static constexpr int obj_attributes_offset = 7;
 
   void Insert(const ClassAst* class_ast) {
     types_.insert(std::make_pair(

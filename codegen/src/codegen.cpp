@@ -424,7 +424,8 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
     call_expr.SetLlvmValue(builder_.CreateCall(called_method, arg_vals));
   } else {
     llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-        ast_to_.LlvmClass(call_expr.GetLhsExpr()->GetExprType()), lhs_val, 0);
+        ast_to_.LlvmClass(call_expr.GetLhsExpr()->GetExprType()), lhs_val,
+        AstToCodeMap::obj_vtable_index);
     llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
     const int method_offset_in_vtable =
         ast_to_.GetVtable(class_calling_method)
