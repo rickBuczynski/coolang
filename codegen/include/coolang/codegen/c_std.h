@@ -21,6 +21,7 @@ class CStd {
   llvm::Constant* GetStrCmpFunc() const { return strcmp_func_; }
   llvm::Constant* GetGetcharFunc() const { return getchar_func_; }
   llvm::Constant* GetAtoiFunc() const { return atoi_func_; }
+  llvm::Constant* GetGcAddRootFunc() const { return gc_add_root_func_; }
 
  private:
   llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
@@ -39,9 +40,16 @@ class CStd {
       return_type = ast_to_code_map_->LlvmBasicType(return_type_str);
     }
 
+    return CreateCStdFuncDecl(func_name, return_type, llvm_arg_types,
+                              is_var_arg);
+  }
+
+  llvm::Constant* CreateCStdFuncDecl(
+      const std::string& func_name, llvm::Type* return_type,
+      const std::vector<llvm::Type*>& llvm_arg_types,
+      bool is_var_arg = false) const {
     llvm::FunctionType* func_type =
         llvm::FunctionType::get(return_type, llvm_arg_types, is_var_arg);
-
     return module_->getOrInsertFunction(func_name, func_type);
   }
 
@@ -67,6 +75,9 @@ class CStd {
   // since llvm has no void* type
   llvm::Constant* malloc_func_ =
       CreateCStdFuncDecl("gc_malloc", "String", {"Int"});
+  llvm::Constant* gc_add_root_func_ = CreateCStdFuncDecl(
+      "gc_add_root", ast_to_code_map_->LlvmVoidType(),
+      {ast_to_code_map_->LlvmClass("Object")->getPointerTo()}, false);
 };
 
 }  // namespace coolang

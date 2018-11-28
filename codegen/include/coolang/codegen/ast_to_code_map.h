@@ -17,7 +17,13 @@ class AstToCodeMap {
         module_(module),
         builder_(builder),
         data_layout_(data_layout),
-        program_ast_(program_ast) {}
+        program_ast_(program_ast) {
+    for (const auto& class_ast : program_ast->GetClasses()) {
+      Insert(&class_ast);
+    }
+    Insert(program_ast->GetIoClass());
+    Insert(program_ast->GetObjectClass());
+  }
 
   static constexpr int obj_gc_next_obj_index = 0;
   static constexpr int obj_gc_next_root_index = 1;
@@ -33,12 +39,6 @@ class AstToCodeMap {
 
   // attributes start after the things above
   static constexpr int obj_attributes_offset = 8;
-
-  void Insert(const ClassAst* class_ast) {
-    types_.insert(std::make_pair(
-        class_ast, llvm::StructType::create(*context_, class_ast->GetName())));
-    vtables_.insert(std::make_pair(class_ast, Vtable(*context_, class_ast)));
-  }
 
   void AddAttributes(const ClassAst* class_ast);
   void AddMethods(const ClassAst* class_ast);
@@ -176,6 +176,12 @@ class AstToCodeMap {
   llvm::FunctionType* GetConstructorFunctionType(const ClassAst* class_ast);
 
  private:
+  void Insert(const ClassAst* class_ast) {
+    types_.insert(std::make_pair(
+        class_ast, llvm::StructType::create(*context_, class_ast->GetName())));
+    vtables_.insert(std::make_pair(class_ast, Vtable(*context_, class_ast)));
+  }
+
   std::unordered_map<const ClassAst*, llvm::StructType*> types_;
   std::unordered_map<const ClassAst*, Vtable> vtables_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;

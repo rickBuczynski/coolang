@@ -330,6 +330,11 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
           alloca_inst);
     }
 
+    builder_.CreateCall(c_std_.GetGcAddRootFunc(),
+                        {ConvertType(builder_.CreateLoad(alloca_inst),
+                                     cur_let->GetType(), "Object")});
+    // TODO remove the root at the end of the let
+
     AddToScope(cur_let->GetId(), alloca_inst);
     bindings.emplace_back(cur_let->GetId(), alloca_inst);
 
@@ -970,12 +975,6 @@ void CodegenVisitor::GenMainFunc() {
 }
 
 void CodegenVisitor::Visit(const ProgramAst& prog) {
-  for (const auto& class_ast : prog.GetClasses()) {
-    ast_to_.Insert(&class_ast);
-  }
-  ast_to_.Insert(prog.GetIoClass());
-  ast_to_.Insert(prog.GetObjectClass());
-
   ast_to_.AddMethods(prog.GetObjectClass());
   ast_to_.AddMethods(prog.GetIoClass());
 
