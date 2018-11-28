@@ -3,59 +3,75 @@ extern "C" void* malloc(int size);
 
 // TODO GCwont work for Cool Strings
 struct GcObj {
+  // initialize these during malloc
+  // the cool program wont touch these so they will contain garbage
   GcObj* next_obj;
   GcObj* next_root;
   bool is_reachable;
+  // don't initialize this during malloc
+  // the cool program itself handles initializing this
   char* obj_typename;
 };
 
-GcObj* gc_obj_list = nullptr;
-GcObj* gc_root_list = nullptr;
+template <class T>
+class GcList {
+ public:
+  void PrintList() {
+    GcObj* obj = head_;
 
-void PrintList(bool print_roots) {
-  GcObj* list;
-  if (print_roots) {
-    list = gc_root_list;
-  } else {
-    list = gc_obj_list;
-  }
+    printf("%s start\n", T::ListName());
+    while (obj != nullptr) {
+      printf("obj=%d\n", reinterpret_cast<int>(obj));
+      printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
+      printf("  typename=%s\n", obj->obj_typename);
 
-  printf("%s start\n", print_roots ? "gc roots" : "gc objs");
-  while (list != nullptr) {
-    printf("obj=%d\n", (int)list);
-    printf("  is_reachable=%d\n", (int)list->is_reachable);
-    printf("  typename=%s\n", list->obj_typename);
-
-    if (print_roots) {
-      list = list->next_root;
-    } else {
-      list = list->next_obj;
+      obj = T::GetNext(obj);
     }
+    printf("%s end\n\n", T::ListName());
   }
-  printf("%s end\n\n", print_roots ? "gc roots" : "gc objs");
-}
+
+  void PushFront(GcObj* obj) { T::SetNext(obj, head_); }
+
+ private:
+  GcObj* head_ = nullptr;
+};
+
+class GcObjList {
+  static void SetNext(GcObj* obj, GcObj* next) { obj->next_obj = next; }
+  static GcObj* GetNext(GcObj* obj) { return obj->next_obj; }
+  static const char* ListName() { return "gc objs"; }
+};
+
+class GcRootList {
+  static void SetNext(GcObj* obj, GcObj* next) { obj->next_root = next; }
+  static GcObj* GetNext(GcObj* obj) { return obj->next_root; }
+  static const char* ListName() { return "gc roots"; }
+};
+
+GcList<GcObjList> gc_obj_list;
+GcList<GcRootList> gc_root_list;
 
 extern "C" void* gc_malloc(int size) {
-  // need to print before the new malloc because the new obj wont have typename set untill it's constructor is called
-  PrintList(false);
+  // need to print before the new malloc because the new obj wont have typename
+  // set untill it's constructor is called
+  gc_obj_list.PrintList();
 
   GcObj* obj = (GcObj*)malloc(size);
 
-  obj->next_obj = gc_obj_list;
+  obj->next_obj = nullptr;
   obj->next_root = nullptr;
   obj->is_reachable = false;
-  
-  gc_obj_list = obj;
+
+  gc_obj_list.PushFront(obj);
 
   return (void*)obj;
 }
 
 extern "C" void gc_add_root(GcObj* root) {
-  // need to print before the new malloc because the new obj wont have typename set untill it's constructor is called
-  PrintList(true);
+  // need to print before the new malloc because the new obj wont have typename
+  // set untill it's constructor is called
+  gc_root_list.PrintList();
 
-  // TODO handle root is null
-  root->next_root = gc_root_list;
-
-  gc_root_list = root;
+  // TODO handle root being added is null
+  gc_obj_list.PushFront(root);
 }
