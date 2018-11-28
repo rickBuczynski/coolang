@@ -30,19 +30,24 @@ class GcList {
     printf("%s end\n\n", T::ListName());
   }
 
-  void PushFront(GcObj* obj) { T::SetNext(obj, head_); }
+  void PushFront(GcObj* obj) {
+    T::SetNext(obj, head_);
+    head_ = obj;
+  }
 
  private:
   GcObj* head_ = nullptr;
 };
 
 class GcObjList {
+ public:
   static void SetNext(GcObj* obj, GcObj* next) { obj->next_obj = next; }
   static GcObj* GetNext(GcObj* obj) { return obj->next_obj; }
   static const char* ListName() { return "gc objs"; }
 };
 
 class GcRootList {
+ public:
   static void SetNext(GcObj* obj, GcObj* next) { obj->next_root = next; }
   static GcObj* GetNext(GcObj* obj) { return obj->next_root; }
   static const char* ListName() { return "gc roots"; }
@@ -53,10 +58,10 @@ GcList<GcRootList> gc_root_list;
 
 extern "C" void* gc_malloc(int size) {
   // need to print before the new malloc because the new obj wont have typename
-  // set untill it's constructor is called
+  // set until it's constructor is called
   gc_obj_list.PrintList();
 
-  GcObj* obj = (GcObj*)malloc(size);
+  auto* obj = static_cast<GcObj*>(malloc(size));
 
   obj->next_obj = nullptr;
   obj->next_root = nullptr;
@@ -64,14 +69,12 @@ extern "C" void* gc_malloc(int size) {
 
   gc_obj_list.PushFront(obj);
 
-  return (void*)obj;
+  return static_cast<void*>(obj);
 }
 
 extern "C" void gc_add_root(GcObj* root) {
-  // need to print before the new malloc because the new obj wont have typename
-  // set untill it's constructor is called
-  gc_root_list.PrintList();
-
   // TODO handle root being added is null
-  gc_obj_list.PushFront(root);
+  gc_root_list.PushFront(root);
+
+  gc_root_list.PrintList();
 }
