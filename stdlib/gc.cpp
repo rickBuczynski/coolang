@@ -56,11 +56,9 @@ class GcRootList {
 GcList<GcObjList> gc_obj_list;
 GcList<GcRootList> gc_root_list;
 
-extern "C" void* gc_malloc(int size) {
-  // need to print before the new malloc because the new obj wont have typename
-  // set until it's constructor is called
-  gc_obj_list.PrintList();
+extern "C" void print_gc_obj_list() { gc_obj_list.PrintList(); }
 
+extern "C" void* gc_malloc(int size) {
   auto* obj = static_cast<GcObj*>(malloc(size));
 
   obj->next_obj = nullptr;

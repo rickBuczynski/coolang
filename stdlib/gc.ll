@@ -52,29 +52,9 @@ $"\01??_C@_08NJAKNIEC@gc?5roots?$AA@" = comdat any
 @"\01??_C@_08NJAKNIEC@gc?5roots?$AA@" = linkonce_odr unnamed_addr constant [9 x i8] c"gc roots\00", comdat, align 1
 
 ; Function Attrs: noinline optnone
-define i8* @gc_malloc(i32) #0 {
-  %2 = alloca i32, align 4
-  %3 = alloca %struct.GcObj*, align 4
-  store i32 %0, i32* %2, align 4
+define void @print_gc_obj_list() #0 {
   call x86_thiscallcc void @"\01?PrintList@?$GcList@VGcObjList@@@@QAEXXZ"(%class.GcList* @"\01?gc_obj_list@@3V?$GcList@VGcObjList@@@@A")
-  %4 = load i32, i32* %2, align 4
-  %5 = call i8* @malloc(i32 %4)
-  %6 = bitcast i8* %5 to %struct.GcObj*
-  store %struct.GcObj* %6, %struct.GcObj** %3, align 4
-  %7 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %8 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %7, i32 0, i32 0
-  store %struct.GcObj* null, %struct.GcObj** %8, align 4
-  %9 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %10 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %9, i32 0, i32 1
-  store %struct.GcObj* null, %struct.GcObj** %10, align 4
-  %11 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %12 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %11, i32 0, i32 2
-  store i8 0, i8* %12, align 4
-  %13 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  call x86_thiscallcc void @"\01?PushFront@?$GcList@VGcObjList@@@@QAEXPAUGcObj@@@Z"(%class.GcList* @"\01?gc_obj_list@@3V?$GcList@VGcObjList@@@@A", %struct.GcObj* %13)
-  %14 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %15 = bitcast %struct.GcObj* %14 to i8*
-  ret i8* %15
+  ret void
 }
 
 ; Function Attrs: noinline optnone
@@ -118,6 +98,31 @@ define linkonce_odr x86_thiscallcc void @"\01?PrintList@?$GcList@VGcObjList@@@@Q
   %29 = call i8* @"\01?ListName@GcObjList@@SAPBDXZ"()
   %30 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @"\01??_C@_08BPFNJJP@?$CFs?5end?6?6?$AA@", i32 0, i32 0), i8* %29)
   ret void
+}
+
+; Function Attrs: noinline optnone
+define i8* @gc_malloc(i32) #0 {
+  %2 = alloca i32, align 4
+  %3 = alloca %struct.GcObj*, align 4
+  store i32 %0, i32* %2, align 4
+  %4 = load i32, i32* %2, align 4
+  %5 = call i8* @malloc(i32 %4)
+  %6 = bitcast i8* %5 to %struct.GcObj*
+  store %struct.GcObj* %6, %struct.GcObj** %3, align 4
+  %7 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %8 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %7, i32 0, i32 0
+  store %struct.GcObj* null, %struct.GcObj** %8, align 4
+  %9 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %10 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %9, i32 0, i32 1
+  store %struct.GcObj* null, %struct.GcObj** %10, align 4
+  %11 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %12 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %11, i32 0, i32 2
+  store i8 0, i8* %12, align 4
+  %13 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  call x86_thiscallcc void @"\01?PushFront@?$GcList@VGcObjList@@@@QAEXPAUGcObj@@@Z"(%class.GcList* @"\01?gc_obj_list@@3V?$GcList@VGcObjList@@@@A", %struct.GcObj* %13)
+  %14 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %15 = bitcast %struct.GcObj* %14 to i8*
+  ret i8* %15
 }
 
 declare i8* @malloc(i32) #1

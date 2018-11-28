@@ -832,6 +832,8 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
   args.push_back(new_val);
   builder_.CreateCall(ast_to_.GetConstructor(type_name), args);
 
+  builder_.CreateCall(c_std_.GetPrintGcObjListFunc(), {});
+
   return new_val;
 }
 

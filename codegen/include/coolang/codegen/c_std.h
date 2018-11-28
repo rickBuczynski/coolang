@@ -21,7 +21,11 @@ class CStd {
   llvm::Constant* GetStrCmpFunc() const { return strcmp_func_; }
   llvm::Constant* GetGetcharFunc() const { return getchar_func_; }
   llvm::Constant* GetAtoiFunc() const { return atoi_func_; }
+
   llvm::Constant* GetGcAddRootFunc() const { return gc_add_root_func_; }
+  llvm::Constant* GetPrintGcObjListFunc() const {
+    return print_gc_obj_list_func_;
+  }
 
  private:
   llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
@@ -78,6 +82,8 @@ class CStd {
   llvm::Constant* gc_add_root_func_ = CreateCStdFuncDecl(
       "gc_add_root", ast_to_code_map_->LlvmVoidType(),
       {ast_to_code_map_->LlvmClass("Object")->getPointerTo()}, false);
+  llvm::Constant* print_gc_obj_list_func_ =
+      CreateCStdFuncDecl("print_gc_obj_list", "Void", {});
 };
 
 }  // namespace coolang
