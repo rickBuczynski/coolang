@@ -15,6 +15,8 @@ $"?PushFront@?$GcList@VGcRootList@@@@QAEXPAUGcObj@@@Z" = comdat any
 
 $"?PrintList@?$GcList@VGcRootList@@@@QAEXXZ" = comdat any
 
+$"?Remove@?$GcList@VGcRootList@@@@QAEXPAUGcObj@@@Z" = comdat any
+
 $"?ListName@GcObjList@@SAPBDXZ" = comdat any
 
 $"?GetPrev@GcObjList@@SAPAUGcObj@@PAU2@@Z" = comdat any
@@ -51,6 +53,8 @@ $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 
 $"??_C@_08NJAKNIEC@gc?5roots?$AA@" = comdat any
 
+$"??_C@_0CP@HIJCJBBI@Tried?5to?5remove?5an?5obj?5that?8s?5no@" = comdat any
+
 @"?gc_obj_list@@3V?$GcList@VGcObjList@@@@A" = dso_local global %class.GcList zeroinitializer, align 4
 @"?gc_root_list@@3V?$GcList@VGcRootList@@@@A" = dso_local global %class.GcList.0 zeroinitializer, align 4
 @"??_C@_09EBJFJNG@?$CFs?5start?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [10 x i8] c"%s start\0A\00", comdat, align 1
@@ -61,6 +65,7 @@ $"??_C@_08NJAKNIEC@gc?5roots?$AA@" = comdat any
 @"??_C@_08BPFNJJP@?$CFs?5end?6?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [9 x i8] c"%s end\0A\0A\00", comdat, align 1
 @"??_C@_07DGBOGBKN@gc?5objs?$AA@" = linkonce_odr dso_local unnamed_addr constant [8 x i8] c"gc objs\00", comdat, align 1
 @"??_C@_08NJAKNIEC@gc?5roots?$AA@" = linkonce_odr dso_local unnamed_addr constant [9 x i8] c"gc roots\00", comdat, align 1
+@"??_C@_0CP@HIJCJBBI@Tried?5to?5remove?5an?5obj?5that?8s?5no@" = linkonce_odr dso_local unnamed_addr constant [47 x i8] c"Tried to remove an obj that's not in list: %s\0A\00", comdat, align 1
 
 ; Function Attrs: noinline optnone
 define dso_local void @print_gc_obj_list() #0 {
@@ -284,6 +289,87 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PrintList@?$GcList@VGcRootL
 ; <label>:37:                                     ; preds = %10
   %38 = call i8* @"?ListName@GcRootList@@SAPBDXZ"()
   %39 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @"??_C@_08BPFNJJP@?$CFs?5end?6?6?$AA@", i32 0, i32 0), i8* %38)
+  ret void
+}
+
+; Function Attrs: noinline optnone
+define dso_local void @gc_remove_root(%struct.GcObj*) #0 {
+  %2 = alloca %struct.GcObj*, align 4
+  store %struct.GcObj* %0, %struct.GcObj** %2, align 4
+  %3 = load %struct.GcObj*, %struct.GcObj** %2, align 4
+  call x86_thiscallcc void @"?Remove@?$GcList@VGcRootList@@@@QAEXPAUGcObj@@@Z"(%class.GcList.0* @"?gc_root_list@@3V?$GcList@VGcRootList@@@@A", %struct.GcObj* %3)
+  call x86_thiscallcc void @"?PrintList@?$GcList@VGcRootList@@@@QAEXXZ"(%class.GcList.0* @"?gc_root_list@@3V?$GcList@VGcRootList@@@@A")
+  ret void
+}
+
+; Function Attrs: noinline optnone
+define linkonce_odr dso_local x86_thiscallcc void @"?Remove@?$GcList@VGcRootList@@@@QAEXPAUGcObj@@@Z"(%class.GcList.0*, %struct.GcObj*) #0 comdat align 2 {
+  %3 = alloca %struct.GcObj*, align 4
+  %4 = alloca %class.GcList.0*, align 4
+  %5 = alloca %struct.GcObj*, align 4
+  %6 = alloca %struct.GcObj*, align 4
+  store %struct.GcObj* %1, %struct.GcObj** %3, align 4
+  store %class.GcList.0* %0, %class.GcList.0** %4, align 4
+  %7 = load %class.GcList.0*, %class.GcList.0** %4, align 4
+  %8 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %9 = call %struct.GcObj* @"?GetNext@GcRootList@@SAPAUGcObj@@PAU2@@Z"(%struct.GcObj* %8)
+  store %struct.GcObj* %9, %struct.GcObj** %5, align 4
+  %10 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %11 = call %struct.GcObj* @"?GetPrev@GcRootList@@SAPAUGcObj@@PAU2@@Z"(%struct.GcObj* %10)
+  store %struct.GcObj* %11, %struct.GcObj** %6, align 4
+  %12 = load %struct.GcObj*, %struct.GcObj** %5, align 4
+  %13 = icmp eq %struct.GcObj* %12, null
+  br i1 %13, label %14, label %22
+
+; <label>:14:                                     ; preds = %2
+  %15 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %16 = getelementptr inbounds %class.GcList.0, %class.GcList.0* %7, i32 0, i32 0
+  %17 = load %struct.GcObj*, %struct.GcObj** %16, align 4
+  %18 = icmp ne %struct.GcObj* %15, %17
+  br i1 %18, label %19, label %22
+
+; <label>:19:                                     ; preds = %14
+  %20 = call i8* @"?ListName@GcRootList@@SAPBDXZ"()
+  %21 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([47 x i8], [47 x i8]* @"??_C@_0CP@HIJCJBBI@Tried?5to?5remove?5an?5obj?5that?8s?5no@", i32 0, i32 0), i8* %20)
+  br label %43
+
+; <label>:22:                                     ; preds = %14, %2
+  %23 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %24 = getelementptr inbounds %class.GcList.0, %class.GcList.0* %7, i32 0, i32 0
+  %25 = load %struct.GcObj*, %struct.GcObj** %24, align 4
+  %26 = icmp eq %struct.GcObj* %23, %25
+  br i1 %26, label %27, label %31
+
+; <label>:27:                                     ; preds = %22
+  %28 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %29 = call %struct.GcObj* @"?GetNext@GcRootList@@SAPAUGcObj@@PAU2@@Z"(%struct.GcObj* %28)
+  %30 = getelementptr inbounds %class.GcList.0, %class.GcList.0* %7, i32 0, i32 0
+  store %struct.GcObj* %29, %struct.GcObj** %30, align 4
+  br label %31
+
+; <label>:31:                                     ; preds = %27, %22
+  %32 = load %struct.GcObj*, %struct.GcObj** %5, align 4
+  %33 = icmp ne %struct.GcObj* %32, null
+  br i1 %33, label %34, label %37
+
+; <label>:34:                                     ; preds = %31
+  %35 = load %struct.GcObj*, %struct.GcObj** %6, align 4
+  %36 = load %struct.GcObj*, %struct.GcObj** %5, align 4
+  call void @"?SetNext@GcRootList@@SAXPAUGcObj@@0@Z"(%struct.GcObj* %36, %struct.GcObj* %35)
+  br label %37
+
+; <label>:37:                                     ; preds = %34, %31
+  %38 = load %struct.GcObj*, %struct.GcObj** %6, align 4
+  %39 = icmp ne %struct.GcObj* %38, null
+  br i1 %39, label %40, label %43
+
+; <label>:40:                                     ; preds = %37
+  %41 = load %struct.GcObj*, %struct.GcObj** %5, align 4
+  %42 = load %struct.GcObj*, %struct.GcObj** %6, align 4
+  call void @"?SetPrev@GcRootList@@SAXPAUGcObj@@0@Z"(%struct.GcObj* %42, %struct.GcObj* %41)
+  br label %43
+
+; <label>:43:                                     ; preds = %19, %40, %37
   ret void
 }
 

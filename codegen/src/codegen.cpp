@@ -299,8 +299,17 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
   return convert_me;
 }
 
+struct LetBinding {
+  LetBinding(std::string id, std::string type, llvm::AllocaInst* alloca_inst)
+      : id(std::move(id)), type(std::move(type)), alloca_inst(alloca_inst) {}
+
+  std::string id;
+  std::string type;
+  llvm::AllocaInst* alloca_inst;
+};
+
 void CodegenVisitor::Visit(const LetExpr& let_expr) {
-  std::vector<std::pair<std::string, llvm::AllocaInst*>> bindings;
+  std::vector<LetBinding> bindings;
   const LetExpr* cur_let = &let_expr;
   const Expr* in_expr = nullptr;
 
@@ -333,10 +342,9 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
     builder_.CreateCall(c_std_.GetGcAddRootFunc(),
                         {ConvertType(builder_.CreateLoad(alloca_inst),
                                      cur_let->GetType(), "Object")});
-    // TODO remove the root at the end of the let
 
     AddToScope(cur_let->GetId(), alloca_inst);
-    bindings.emplace_back(cur_let->GetId(), alloca_inst);
+    bindings.emplace_back(cur_let->GetId(), cur_let->GetType(), alloca_inst);
 
     in_expr = cur_let->GetInExpr();
     cur_let = cur_let->GetChainedLet();
@@ -345,7 +353,11 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
   in_expr->Accept(*this);
 
   for (const auto& binding : bindings) {
-    RemoveFromScope(binding.first);
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(),
+                        {ConvertType(builder_.CreateLoad(binding.alloca_inst),
+                                     binding.type, "Object")});
+
+    RemoveFromScope(binding.id);
   }
 
   let_expr.SetLlvmValue(in_expr->LlvmValue());

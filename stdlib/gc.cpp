@@ -38,6 +38,28 @@ class GcList {
     printf("%s end\n\n", T::ListName());
   }
 
+  void Remove(GcObj* obj) {
+    GcObj* prev = T::GetNext(obj);
+    GcObj* next = T::GetPrev(obj);
+
+    if (prev == nullptr && obj != head_) {
+      printf("Tried to remove an obj that's not in list: %s\n", T::ListName());
+      return;
+    }
+
+    if (obj == head_) {
+      head_ = T::GetNext(obj);
+    }
+
+    if (prev != nullptr) {
+      T::SetNext(prev, next);
+    }
+
+    if (next != nullptr) {
+      T::SetPrev(next, prev);
+    }
+  }
+
   void PushFront(GcObj* obj) {
     T::SetNext(obj, head_);
     if (head_ != nullptr) {
@@ -90,6 +112,13 @@ extern "C" void* gc_malloc(int size) {
 extern "C" void gc_add_root(GcObj* root) {
   // TODO handle root being added is null
   gc_root_list.PushFront(root);
+
+  gc_root_list.PrintList();
+}
+
+extern "C" void gc_remove_root(GcObj* root) {
+  // TODO handle root being removed is null
+  gc_root_list.Remove(root);
 
   gc_root_list.PrintList();
 }
