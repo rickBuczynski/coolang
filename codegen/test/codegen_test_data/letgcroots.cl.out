@@ -1,0 +1,15 @@
+gc objs start
+obj
+  is_reachable=0
+  typename=A
+gc objs end
+
+gc objs start
+obj
+  is_reachable=0
+  typename=B
+obj
+  is_reachable=0
+  typename=A
+gc objs end
+

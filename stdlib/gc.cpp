@@ -1,5 +1,13 @@
+#include <cstdio>
+#include <cstdlib>
+
+/*
+class FILE;
+
 extern "C" int printf(const char*, ...);
+extern "C" int fprintf(FILE *stream, const char *format, ...);
 extern "C" void* malloc(int size);
+*/
 
 // TODO GCwont work for Cool Strings
 struct GcObj {
@@ -22,19 +30,25 @@ class GcList {
     GcObj* obj = head_;
     GcObj* prev = nullptr;
 
+    fprintf(stderr, "%s start\n", T::ListName());
     printf("%s start\n", T::ListName());
     while (obj != nullptr) {
-      printf("obj=%d\n", reinterpret_cast<int>(obj));
+      fprintf(stderr, "obj=%d\n", reinterpret_cast<int>(obj));
+      fprintf(stderr, "  is_reachable=%d\n",
+              static_cast<int>(obj->is_reachable));
+      fprintf(stderr, "  typename=%s\n", obj->obj_typename);
+      printf("obj\n");
       printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
       printf("  typename=%s\n", obj->obj_typename);
 
       if (prev != T::GetPrev(obj)) {
-        printf("  BADBADBADBADBADBADBADBADBADBADBADBADBADBAD\n");
+        fprintf(stderr, "  BADBADBADBADBADBADBADBADBADBADBADBADBADBAD\n");
       }
 
       prev = obj;
       obj = T::GetNext(obj);
     }
+    fprintf(stderr, "%s end\n\n", T::ListName());
     printf("%s end\n\n", T::ListName());
   }
 
@@ -43,7 +57,8 @@ class GcList {
     GcObj* next = T::GetPrev(obj);
 
     if (prev == nullptr && obj != head_) {
-      printf("Tried to remove an obj that's not in list: %s\n", T::ListName());
+      fprintf(stderr, "Tried to remove an obj that's not in list: %s\n",
+              T::ListName());
       return;
     }
 
