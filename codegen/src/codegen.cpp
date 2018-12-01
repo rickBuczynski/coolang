@@ -1078,7 +1078,7 @@ void OutputModuleToObjectFile(llvm::Module* module,
   llvm::legacy::PassManager pass;
   const auto file_type = llvm::TargetMachine::CGFT_ObjectFile;
 
-  if (the_target_machine->addPassesToEmitFile(pass, dest, file_type)) {
+  if (the_target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
     llvm::errs() << "TheTargetMachine can't emit a file of this type";
     return;
   }

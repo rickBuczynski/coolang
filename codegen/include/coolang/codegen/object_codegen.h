@@ -73,7 +73,7 @@ class ObjectCodegen {
 
     llvm::Value* copy =
         builder_->CreateCall(c_std_->GetMallocFunc(), {typesize});
-    builder_->CreateMemCpy(copy, func->arg_begin(), typesize, 0);
+    builder_->CreateMemCpy(copy, 0, func->arg_begin(), 0, typesize);
 
     builder_->CreateRet(copy);
   }
