@@ -20,6 +20,7 @@ class GcList {
  public:
   void PrintList() {
     GcObj* obj = head_;
+    GcObj* prev = nullptr;
 
     printf("%s start\n", T::ListName());
     while (obj != nullptr) {
@@ -27,6 +28,11 @@ class GcList {
       printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
       printf("  typename=%s\n", obj->obj_typename);
 
+      if (prev != T::GetPrev(obj)) {
+        printf("  BADBADBADBADBADBADBADBADBADBADBADBADBADBAD\n");
+      }
+
+      prev = obj;
       obj = T::GetNext(obj);
     }
     printf("%s end\n\n", T::ListName());
@@ -34,6 +40,9 @@ class GcList {
 
   void PushFront(GcObj* obj) {
     T::SetNext(obj, head_);
+    if (head_ != nullptr) {
+      T::SetPrev(head_, obj);
+    }
     head_ = obj;
   }
 
@@ -44,14 +53,18 @@ class GcList {
 class GcObjList {
  public:
   static void SetNext(GcObj* obj, GcObj* next) { obj->next_obj = next; }
+  static void SetPrev(GcObj* obj, GcObj* prev) { obj->prev_obj = prev; }
   static GcObj* GetNext(GcObj* obj) { return obj->next_obj; }
+  static GcObj* GetPrev(GcObj* obj) { return obj->prev_obj; }
   static const char* ListName() { return "gc objs"; }
 };
 
 class GcRootList {
  public:
   static void SetNext(GcObj* obj, GcObj* next) { obj->next_root = next; }
+  static void SetPrev(GcObj* obj, GcObj* prev) { obj->prev_root = prev; }
   static GcObj* GetNext(GcObj* obj) { return obj->next_root; }
+  static GcObj* GetPrev(GcObj* obj) { return obj->prev_root; }
   static const char* ListName() { return "gc roots"; }
 };
 
