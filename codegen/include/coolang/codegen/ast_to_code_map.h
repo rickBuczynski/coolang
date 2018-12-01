@@ -26,19 +26,21 @@ class AstToCodeMap {
   }
 
   static constexpr int obj_gc_next_obj_index = 0;
-  static constexpr int obj_gc_next_root_index = 1;
-  static constexpr int obj_gc_is_reachable_index = 2;
+  static constexpr int obj_gc_prev_obj_index = 1;
+  static constexpr int obj_gc_next_root_index = 2;
+  static constexpr int obj_gc_prev_root_index = 3;
+  static constexpr int obj_gc_is_reachable_index = 4;
 
-  static constexpr int obj_typename_index = 3;
+  static constexpr int obj_typename_index = 5;
 
-  static constexpr int obj_vtable_index = 4;
-  static constexpr int obj_typesize_index = 5;
+  static constexpr int obj_vtable_index = 6;
+  static constexpr int obj_typesize_index = 7;
   // need a pointer to constructor to handle "new SELF_TYPE"
-  static constexpr int obj_constructor_index = 6;
-  static constexpr int obj_boxed_data_index = 7;
+  static constexpr int obj_constructor_index = 8;
+  static constexpr int obj_boxed_data_index = 9;
 
   // attributes start after the things above
-  static constexpr int obj_attributes_offset = 8;
+  static constexpr int obj_attributes_offset = 10;
 
   void AddAttributes(const ClassAst* class_ast);
   void AddMethods(const ClassAst* class_ast);

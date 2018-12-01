@@ -6,7 +6,9 @@ struct GcObj {
   // initialize these during malloc
   // the cool program wont touch these so they will contain garbage
   GcObj* next_obj;
+  GcObj* prev_obj;
   GcObj* next_root;
+  GcObj* prev_root;
   bool is_reachable;
   // don't initialize this during malloc
   // the cool program itself handles initializing this
@@ -62,7 +64,9 @@ extern "C" void* gc_malloc(int size) {
   auto* obj = static_cast<GcObj*>(malloc(size));
 
   obj->next_obj = nullptr;
+  obj->prev_obj = nullptr;
   obj->next_root = nullptr;
+  obj->prev_root = nullptr;
   obj->is_reachable = false;
 
   gc_obj_list.PushFront(obj);
