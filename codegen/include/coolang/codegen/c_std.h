@@ -82,10 +82,12 @@ class CStd {
       CreateCStdFuncDecl("gc_malloc", "String", {"Int"});
   llvm::Constant* gc_add_root_func_ = CreateCStdFuncDecl(
       "gc_add_root", ast_to_code_map_->LlvmVoidType(),
-      {ast_to_code_map_->LlvmClass("Object")->getPointerTo()}, false);
+      {ast_to_code_map_->LlvmClass("Object")->getPointerTo()->getPointerTo()},
+      false);
   llvm::Constant* gc_remove_root_func_ = CreateCStdFuncDecl(
       "gc_remove_root", ast_to_code_map_->LlvmVoidType(),
-      {ast_to_code_map_->LlvmClass("Object")->getPointerTo()}, false);
+      {ast_to_code_map_->LlvmClass("Object")->getPointerTo()->getPointerTo()},
+      false);
   llvm::Constant* print_gc_obj_list_func_ =
       CreateCStdFuncDecl("print_gc_obj_list", "Void", {});
 };

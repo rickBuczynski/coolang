@@ -339,9 +339,12 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
           alloca_inst);
     }
 
-    builder_.CreateCall(c_std_.GetGcAddRootFunc(),
-                        {ConvertType(builder_.CreateLoad(alloca_inst),
-                                     cur_let->GetType(), "Object")});
+    llvm::Value* root = builder_.CreateBitCast(
+        alloca_inst,
+        ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+
+    // TODO only add a root if the let type is not a basic type
+    builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
 
     AddToScope(cur_let->GetId(), alloca_inst);
     bindings.emplace_back(cur_let->GetId(), cur_let->GetType(), alloca_inst);
@@ -352,12 +355,18 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
 
   in_expr->Accept(*this);
 
-  for (const auto& binding : bindings) {
-    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(),
-                        {ConvertType(builder_.CreateLoad(binding.alloca_inst),
-                                     binding.type, "Object")});
+  // remove roots in reverse order that we added them since roots are a stack
+  // shouldn't need to pass in the root but it allows sanity checking we are
+  // removing the correct root.
+  for (auto it = bindings.rbegin(); it != bindings.rend(); ++it) {
+    llvm::Value* root = builder_.CreateBitCast(
+        it->alloca_inst,
+        ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
 
-    RemoveFromScope(binding.id);
+    // TODO only remove a root if the let type is not a basic type
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+
+    RemoveFromScope(it->id);
   }
 
   let_expr.SetLlvmValue(in_expr->LlvmValue());

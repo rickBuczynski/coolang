@@ -23,6 +23,61 @@ struct GcObj {
   char* obj_typename;
 };
 
+void PrintObj(GcObj* obj) {
+  fprintf(stderr, "obj=%d\n", reinterpret_cast<int>(obj));
+  fprintf(stderr, "  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
+  fprintf(stderr, "  typename=%s\n", obj->obj_typename);
+  printf("obj\n");
+  printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
+  printf("  typename=%s\n", obj->obj_typename);
+}
+
+using GcRoot = GcObj**;
+
+struct GcRootStack {
+  static constexpr int init_capacity = 2;
+
+  GcRootStack() {
+    roots = static_cast<GcRoot*>(malloc(init_capacity * sizeof(GcRoot)));
+    capacity = init_capacity;
+    length = 0;
+  }
+
+  void PushRoot(GcRoot root) {
+    if (length == capacity) {
+      capacity *= 2;
+      roots = static_cast<GcRoot*>(realloc(roots, capacity));
+    }
+
+    roots[length] = root;
+    length++;
+  }
+
+  void PopRoot(GcRoot root) {
+    if (roots[length - 1] != root) {
+      fprintf(stderr, "BADBADBADBADBADBADBADBADBAD\n");
+      fprintf(stderr, "Root at top of stack points to:\n");
+      PrintObj(*roots[length]);
+      fprintf(stderr, "Root to remove points to:\n");
+      PrintObj(*root);
+    }
+    length--;
+  }
+
+  void PrintRoots() const {
+    fprintf(stderr, "\nCurrent GC roots:\n");
+    for (int i = 0; i < length; i++) {
+      fprintf(stderr, "Root that points to:\n");
+      PrintObj(*roots[i]);
+    }
+    fprintf(stderr, "End of current GC roots\n\n");
+  }
+
+  GcRoot* roots;
+  int capacity;
+  int length;
+};
+
 template <class T>
 class GcList {
  public:
@@ -33,13 +88,7 @@ class GcList {
     fprintf(stderr, "%s start\n", T::ListName());
     printf("%s start\n", T::ListName());
     while (obj != nullptr) {
-      fprintf(stderr, "obj=%d\n", reinterpret_cast<int>(obj));
-      fprintf(stderr, "  is_reachable=%d\n",
-              static_cast<int>(obj->is_reachable));
-      fprintf(stderr, "  typename=%s\n", obj->obj_typename);
-      printf("obj\n");
-      printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
-      printf("  typename=%s\n", obj->obj_typename);
+      PrintObj(obj);
 
       if (prev != T::GetPrev(obj)) {
         fprintf(stderr, "  BADBADBADBADBADBADBADBADBADBADBADBADBADBAD\n");
@@ -53,8 +102,8 @@ class GcList {
   }
 
   void Remove(GcObj* obj) {
-    GcObj* prev = T::GetNext(obj);
-    GcObj* next = T::GetPrev(obj);
+    GcObj* prev = T::GetPrev(obj);
+    GcObj* next = T::GetNext(obj);
 
     if (prev == nullptr && obj != head_) {
       fprintf(stderr, "Tried to remove an obj that's not in list: %s\n",
@@ -96,17 +145,8 @@ class GcObjList {
   static const char* ListName() { return "gc objs"; }
 };
 
-class GcRootList {
- public:
-  static void SetNext(GcObj* obj, GcObj* next) { obj->next_root = next; }
-  static void SetPrev(GcObj* obj, GcObj* prev) { obj->prev_root = prev; }
-  static GcObj* GetNext(GcObj* obj) { return obj->next_root; }
-  static GcObj* GetPrev(GcObj* obj) { return obj->prev_root; }
-  static const char* ListName() { return "gc roots"; }
-};
-
 GcList<GcObjList> gc_obj_list;
-GcList<GcRootList> gc_root_list;
+GcRootStack gc_roots;
 
 extern "C" void print_gc_obj_list() { gc_obj_list.PrintList(); }
 
@@ -124,16 +164,24 @@ extern "C" void* gc_malloc(int size) {
   return static_cast<void*>(obj);
 }
 
-extern "C" void gc_add_root(GcObj* root) {
-  // TODO handle root being added is null
-  gc_root_list.PushFront(root);
+extern "C" void gc_add_root(GcObj** root) {
+  fprintf(stderr, "Inserting a root that points to:\n");
+  PrintObj(*root);
+  fprintf(stderr, "\n");
 
-  gc_root_list.PrintList();
+  fprintf(stderr, "before insert\n");
+  gc_roots.PushRoot(root);
+  fprintf(stderr, "after insert\n");
+
+  gc_roots.PrintRoots();
 }
 
-extern "C" void gc_remove_root(GcObj* root) {
-  // TODO handle root being removed is null
-  gc_root_list.Remove(root);
+extern "C" void gc_remove_root(GcObj** root) {
+  fprintf(stderr, "Removing a root that points to:\n");
+  PrintObj(*root);
+  fprintf(stderr, "\n");
 
-  gc_root_list.PrintList();
+  gc_roots.PopRoot(root);
+
+  gc_roots.PrintRoots();
 }
