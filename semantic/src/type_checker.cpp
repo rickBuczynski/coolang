@@ -1,7 +1,7 @@
+#include "coolang/semantic/type_checker.h"
 #include <set>
 #include <stack>
 #include "coolang/parser/ast.h"
-#include "coolang/semantic/type_checker.h"
 
 namespace coolang {
 
@@ -343,18 +343,18 @@ void TypeCheckVisitor::Visit(const MethodCallExpr& node) {
             std::to_string(expected_args.size()) + " args but found " +
             std::to_string(args.size()) + " args.",
         program_ast_->GetFileName());
-  }
-
-  for (size_t i = 0; i < args.size(); i++) {
-    args[i]->Accept(*this);
-    if (!IsSubtype(args[i]->GetExprType(), expected_args[i].GetType())) {
-      errors_.emplace_back(node.GetLineRange().end_line_num,
-                           "In call of method " + node.GetMethodName() +
-                               ", type " + args[i]->GetExprType() +
-                               " of parameter " + expected_args[i].GetId() +
-                               " does not conform to declared type " +
-                               expected_args[i].GetType() + ".",
-                           program_ast_->GetFileName());
+  } else {
+    for (size_t i = 0; i < args.size(); i++) {
+      args[i]->Accept(*this);
+      if (!IsSubtype(args[i]->GetExprType(), expected_args[i].GetType())) {
+        errors_.emplace_back(node.GetLineRange().end_line_num,
+                             "In call of method " + node.GetMethodName() +
+                                 ", type " + args[i]->GetExprType() +
+                                 " of parameter " + expected_args[i].GetId() +
+                                 " does not conform to declared type " +
+                                 expected_args[i].GetType() + ".",
+                             program_ast_->GetFileName());
+      }
     }
   }
 
