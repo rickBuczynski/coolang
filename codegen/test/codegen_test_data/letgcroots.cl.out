@@ -13,3 +13,165 @@ obj
   typename=A
 gc objs end
 
+gc objs start
+obj
+  is_reachable=0
+  typename=A
+obj
+  is_reachable=0
+  typename=B
+obj
+  is_reachable=0
+  typename=A
+gc objs end
+
+Inserting a root that points to:
+obj
+  is_reachable=0
+  typename=A
+
+before insert
+after insert
+
+Current GC roots:
+Root that points to:
+obj
+  is_reachable=0
+  typename=A
+End of current GC roots
+
+gc objs start
+obj
+  is_reachable=0
+  typename=B
+obj
+  is_reachable=0
+  typename=A
+obj
+  is_reachable=0
+  typename=B
+obj
+  is_reachable=0
+  typename=A
+gc objs end
+
+Inserting a root that points to:
+obj
+  is_reachable=0
+  typename=B
+
+before insert
+after insert
+
+Current GC roots:
+Root that points to:
+obj
+  is_reachable=0
+  typename=A
+Root that points to:
+obj
+  is_reachable=0
+  typename=B
+End of current GC roots
+
+gc objs start
+obj
+  is_reachable=0
+  typename=C
+obj
+  is_reachable=0
+  typename=B
+obj
+  is_reachable=0
+  typename=A
+obj
+  is_reachable=0
+  typename=B
+obj
+  is_reachable=0
+  typename=A
+gc objs end
+
+Inserting a root that points to:
+obj
+  is_reachable=0
+  typename=C
+
+before insert
+after insert
+
+Current GC roots:
+Root that points to:
+obj
+  is_reachable=0
+  typename=A
+Root that points to:
+obj
+  is_reachable=0
+  typename=B
+Root that points to:
+obj
+  is_reachable=0
+  typename=C
+End of current GC roots
+
+Removing a root that points to:
+obj
+  is_reachable=0
+  typename=C
+
+
+Current GC roots:
+Root that points to:
+obj
+  is_reachable=0
+  typename=A
+Root that points to:
+obj
+  is_reachable=0
+  typename=B
+End of current GC roots
+
+Removing a root that points to:
+obj
+  is_reachable=0
+  typename=B
+
+
+Current GC roots:
+Root that points to:
+obj
+  is_reachable=0
+  typename=A
+End of current GC roots
+
+Removing a root that points to:
+obj
+  is_reachable=0
+  typename=A
+
+
+Current GC roots:
+End of current GC roots
+
+gc objs start
+obj
+  is_reachable=0
+  typename=Object
+obj
+  is_reachable=0
+  typename=C
+obj
+  is_reachable=0
+  typename=B
+obj
+  is_reachable=0
+  typename=A
+obj
+  is_reachable=0
+  typename=B
+obj
+  is_reachable=0
+  typename=A
+gc objs end
+
