@@ -987,6 +987,8 @@ void CodegenVisitor::GenMainFunc() {
       llvm::BasicBlock::Create(context_, "entrypoint", func);
   builder_.SetInsertPoint(entry);
 
+  builder_.CreateCall(c_std_.GetGcSystemInitFunc(), {});
+
   llvm::AllocaInst* main_class =
       builder_.CreateAlloca(ast_to_.LlvmClass("Main"));
   std::vector<llvm::Value*> args;
@@ -994,6 +996,9 @@ void CodegenVisitor::GenMainFunc() {
 
   builder_.CreateCall(ast_to_.GetConstructor("Main"), args);
   builder_.CreateCall(ast_to_.LlvmFunc("Main", "main"), args);
+
+  builder_.CreateCall(c_std_.GetGcSystemDestroyFunc(), {});
+
   builder_.CreateRetVoid();
 }
 

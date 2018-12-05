@@ -43,6 +43,8 @@ struct GcRootStack {
     length = 0;
   }
 
+  ~GcRootStack() { free(roots); }
+
   void PushRoot(GcRoot root) {
     if (length == capacity) {
       capacity *= 2;
@@ -145,10 +147,20 @@ class GcObjList {
   static const char* ListName() { return "gc objs"; }
 };
 
-GcList<GcObjList> gc_obj_list;
-GcRootStack gc_roots;
+GcList<GcObjList>* gc_obj_list;
+GcRootStack* gc_roots;
 
-extern "C" void print_gc_obj_list() { gc_obj_list.PrintList(); }
+extern "C" void gc_system_init() {
+  gc_obj_list = new GcList<GcObjList>;
+  gc_roots = new GcRootStack;
+}
+
+extern "C" void gc_system_destroy() {
+  delete gc_roots;
+  delete gc_obj_list;
+}
+
+extern "C" void print_gc_obj_list() { gc_obj_list->PrintList(); }
 
 extern "C" void* gc_malloc(int size) {
   auto* obj = static_cast<GcObj*>(malloc(size));
@@ -159,7 +171,7 @@ extern "C" void* gc_malloc(int size) {
   obj->prev_root = nullptr;
   obj->is_reachable = false;
 
-  gc_obj_list.PushFront(obj);
+  gc_obj_list->PushFront(obj);
 
   return static_cast<void*>(obj);
 }
@@ -170,10 +182,10 @@ extern "C" void gc_add_root(GcObj** root) {
   fprintf(stderr, "\n");
 
   fprintf(stderr, "before insert\n");
-  gc_roots.PushRoot(root);
+  gc_roots->PushRoot(root);
   fprintf(stderr, "after insert\n");
 
-  gc_roots.PrintRoots();
+  gc_roots->PrintRoots();
 }
 
 extern "C" void gc_remove_root(GcObj** root) {
@@ -181,7 +193,7 @@ extern "C" void gc_remove_root(GcObj** root) {
   PrintObj(*root);
   fprintf(stderr, "\n");
 
-  gc_roots.PopRoot(root);
+  gc_roots->PopRoot(root);
 
-  gc_roots.PrintRoots();
+  gc_roots->PrintRoots();
 }

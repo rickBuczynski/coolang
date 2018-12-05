@@ -27,6 +27,12 @@ class CStd {
   llvm::Constant* GetPrintGcObjListFunc() const {
     return print_gc_obj_list_func_;
   }
+  llvm::Constant* GetGcSystemInitFunc() const {
+    return gc_system_init_func_;
+  }
+  llvm::Constant* GetGcSystemDestroyFunc() const {
+    return gc_system_destroy_func_;
+  }
 
  private:
   llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
@@ -90,6 +96,10 @@ class CStd {
       false);
   llvm::Constant* print_gc_obj_list_func_ =
       CreateCStdFuncDecl("print_gc_obj_list", "Void", {});
+  llvm::Constant* gc_system_init_func_ =
+      CreateCStdFuncDecl("gc_system_init", "Void", {});
+  llvm::Constant* gc_system_destroy_func_ =
+      CreateCStdFuncDecl("gc_system_destroy", "Void", {});
 };
 
 }  // namespace coolang
