@@ -65,7 +65,7 @@ struct GcRootStack {
   }
 
   void PrintRoots() const {
-    printf("\nCurrent GC roots:\n");
+    printf("Current GC roots:\n");
     for (int i = 0; i < length; i++) {
       printf("Root that points to:\n");
       PrintObj(*roots[i]);
@@ -184,10 +184,7 @@ extern "C" void gc_add_root(GcObj** root) {
   PrintObj(*root);
   printf("\n");
 
-  printf("before insert\n");
   gc_roots->PushRoot(root);
-  printf("after insert\n");
-
   gc_roots->PrintRoots();
 }
 
@@ -197,6 +194,5 @@ extern "C" void gc_remove_root(GcObj** root) {
   printf("\n");
 
   gc_roots->PopRoot(root);
-
   gc_roots->PrintRoots();
 }

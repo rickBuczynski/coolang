@@ -53,15 +53,11 @@ $"??_C@_0CC@HKCJKJMI@Inserting?5a?5root?5that?5points?5to?3@" = comdat any
 
 $"??_C@_01EEMJAFIK@?6?$AA@" = comdat any
 
-$"??_C@_0P@INCDPCBK@before?5insert?6?$AA@" = comdat any
-
-$"??_C@_0O@EHGKPBHI@after?5insert?6?$AA@" = comdat any
-
 $"??_C@_0CB@GKEBEHJL@Removing?5a?5root?5that?5points?5to?3?6@" = comdat any
 
 $"?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA" = comdat any
 
-$"??_C@_0BE@BMNDJLDE@?6Current?5GC?5roots?3?6?$AA@" = comdat any
+$"??_C@_0BD@JOBLGJOI@Current?5GC?5roots?3?6?$AA@" = comdat any
 
 $"??_C@_0BG@FMOJGAOI@Root?5that?5points?5to?3?6?$AA@" = comdat any
 
@@ -89,11 +85,9 @@ $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 @"?gc_is_allowed@@3_NA" = dso_local global i8 0, align 1
 @"??_C@_0CC@HKCJKJMI@Inserting?5a?5root?5that?5points?5to?3@" = linkonce_odr dso_local unnamed_addr constant [34 x i8] c"Inserting a root that points to:\0A\00", comdat, align 1
 @"??_C@_01EEMJAFIK@?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [2 x i8] c"\0A\00", comdat, align 1
-@"??_C@_0P@INCDPCBK@before?5insert?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [15 x i8] c"before insert\0A\00", comdat, align 1
-@"??_C@_0O@EHGKPBHI@after?5insert?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [14 x i8] c"after insert\0A\00", comdat, align 1
 @"??_C@_0CB@GKEBEHJL@Removing?5a?5root?5that?5points?5to?3?6@" = linkonce_odr dso_local unnamed_addr constant [33 x i8] c"Removing a root that points to:\0A\00", comdat, align 1
 @"?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA" = linkonce_odr dso_local global i64 0, comdat, align 8
-@"??_C@_0BE@BMNDJLDE@?6Current?5GC?5roots?3?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [20 x i8] c"\0ACurrent GC roots:\0A\00", comdat, align 1
+@"??_C@_0BD@JOBLGJOI@Current?5GC?5roots?3?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [19 x i8] c"Current GC roots:\0A\00", comdat, align 1
 @"??_C@_0BG@FMOJGAOI@Root?5that?5points?5to?3?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [22 x i8] c"Root that points to:\0A\00", comdat, align 1
 @"??_C@_0BK@ONKPCMH@End?5of?5current?5GC?5roots?6?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [26 x i8] c"End of current GC roots\0A\0A\00", comdat, align 1
 @"??_C@_0BN@DLIALJMC@BADBADBADBADBADBADBADBADBAD?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [29 x i8] c"BADBADBADBADBADBADBADBADBAD\0A\00", comdat, align 1
@@ -353,13 +347,11 @@ define dso_local void @gc_add_root(%struct.GcObj**) #0 {
   %5 = load %struct.GcObj*, %struct.GcObj** %4, align 4
   call void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %5)
   %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
-  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @"??_C@_0P@INCDPCBK@before?5insert?6?$AA@", i32 0, i32 0))
-  %8 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
-  %9 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
-  call x86_thiscallcc void @"?PushRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z"(%struct.GcRootStack* %8, %struct.GcObj** %9)
-  %10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @"??_C@_0O@EHGKPBHI@after?5insert?6?$AA@", i32 0, i32 0))
-  %11 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
-  call x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBEXXZ"(%struct.GcRootStack* %11)
+  %7 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+  %8 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
+  call x86_thiscallcc void @"?PushRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z"(%struct.GcRootStack* %7, %struct.GcObj** %8)
+  %9 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+  call x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBEXXZ"(%struct.GcRootStack* %9)
   ret void
 }
 
@@ -415,7 +407,7 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBE
   %3 = alloca i32, align 4
   store %struct.GcRootStack* %0, %struct.GcRootStack** %2, align 4
   %4 = load %struct.GcRootStack*, %struct.GcRootStack** %2, align 4
-  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([20 x i8], [20 x i8]* @"??_C@_0BE@BMNDJLDE@?6Current?5GC?5roots?3?6?$AA@", i32 0, i32 0))
+  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @"??_C@_0BD@JOBLGJOI@Current?5GC?5roots?3?6?$AA@", i32 0, i32 0))
   store i32 0, i32* %3, align 4
   br label %6
 
