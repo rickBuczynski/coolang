@@ -9,6 +9,12 @@ extern "C" int fprintf(FILE *stream, const char *format, ...);
 extern "C" void* malloc(int size);
 */
 
+// TODO refactor extern api to just:
+// gc_malloc(int size)
+// print_malloc() maybe takes in the malloced obj, or maybe gc system keeps track of it
+// similar api for roots
+// only call printing apis from codegen if verbose flag is set       
+
 // TODO GCwont work for Cool Strings
 struct GcObj {
   // initialize these during malloc
