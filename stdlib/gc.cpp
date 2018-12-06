@@ -23,7 +23,7 @@ struct GcObj {
   char* obj_typename;
 };
 
-void PrintObj(GcObj* obj) {
+extern "C" void gc_print_obj(GcObj* obj) {
   printf("obj\n");
   // fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
   printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
@@ -57,9 +57,9 @@ struct GcRootStack {
     if (roots[length - 1] != root) {
       printf("BADBADBADBADBADBADBADBADBAD\n");
       printf("Root at top of stack points to:\n");
-      PrintObj(*roots[length]);
+      gc_print_obj(*roots[length]);
       printf("Root to remove points to:\n");
-      PrintObj(*root);
+      gc_print_obj(*root);
     }
     length--;
   }
@@ -68,7 +68,7 @@ struct GcRootStack {
     printf("Current GC roots:\n");
     for (int i = 0; i < length; i++) {
       printf("Root that points to:\n");
-      PrintObj(*roots[i]);
+      gc_print_obj(*roots[i]);
     }
     printf("End of current GC roots\n\n");
   }
@@ -87,7 +87,7 @@ class GcList {
 
     printf("%s start\n", T::ListName());
     while (obj != nullptr) {
-      PrintObj(obj);
+      gc_print_obj(obj);
 
       if (prev != T::GetPrev(obj)) {
         printf("  BADBADBADBADBADBADBADBADBADBADBADBADBADBAD\n");
@@ -181,7 +181,7 @@ extern "C" void* gc_malloc(int size) {
 
 extern "C" void gc_add_root(GcObj** root) {
   printf("Inserting a root that points to:\n");
-  PrintObj(*root);
+  gc_print_obj(*root);
   printf("\n");
 
   gc_roots->PushRoot(root);
@@ -190,7 +190,7 @@ extern "C" void gc_add_root(GcObj** root) {
 
 extern "C" void gc_remove_root(GcObj** root) {
   printf("Removing a root that points to:\n");
-  PrintObj(*root);
+  gc_print_obj(*root);
   printf("\n");
 
   gc_roots->PopRoot(root);

@@ -99,7 +99,7 @@ $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 @"??_C@_07DGBOGBKN@gc?5objs?$AA@" = linkonce_odr dso_local unnamed_addr constant [8 x i8] c"gc objs\00", comdat, align 1
 
 ; Function Attrs: noinline nounwind optnone
-define dso_local void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj*) #0 {
+define dso_local void @gc_print_obj(%struct.GcObj*) #0 {
   %2 = alloca %struct.GcObj*, align 4
   store %struct.GcObj* %0, %struct.GcObj** %2, align 4
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @"??_C@_04MDPHBIK@obj?6?$AA@", i32 0, i32 0))
@@ -249,7 +249,7 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PrintList@?$GcList@VGcObjLi
 
 ; <label>:13:                                     ; preds = %10
   %14 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  call void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %14)
+  call void @gc_print_obj(%struct.GcObj* %14)
   %15 = load %struct.GcObj*, %struct.GcObj** %4, align 4
   %16 = load %struct.GcObj*, %struct.GcObj** %3, align 4
   %17 = call %struct.GcObj* @"?GetPrev@GcObjList@@SAPAUGcObj@@PAU2@@Z"(%struct.GcObj* %16)
@@ -345,7 +345,7 @@ define dso_local void @gc_add_root(%struct.GcObj**) #0 {
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @"??_C@_0CC@HKCJKJMI@Inserting?5a?5root?5that?5points?5to?3@", i32 0, i32 0))
   %4 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
   %5 = load %struct.GcObj*, %struct.GcObj** %4, align 4
-  call void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %5)
+  call void @gc_print_obj(%struct.GcObj* %5)
   %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
   %7 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
   %8 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
@@ -426,7 +426,7 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBE
   %16 = getelementptr inbounds %struct.GcObj**, %struct.GcObj*** %14, i32 %15
   %17 = load %struct.GcObj**, %struct.GcObj*** %16, align 4
   %18 = load %struct.GcObj*, %struct.GcObj** %17, align 4
-  call void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %18)
+  call void @gc_print_obj(%struct.GcObj* %18)
   br label %19
 
 ; <label>:19:                                     ; preds = %11
@@ -447,7 +447,7 @@ define dso_local void @gc_remove_root(%struct.GcObj**) #0 {
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @"??_C@_0CB@GKEBEHJL@Removing?5a?5root?5that?5points?5to?3?6@", i32 0, i32 0))
   %4 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
   %5 = load %struct.GcObj*, %struct.GcObj** %4, align 4
-  call void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %5)
+  call void @gc_print_obj(%struct.GcObj* %5)
   %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
   %7 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
   %8 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
@@ -485,11 +485,11 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PopRoot@GcRootStack@@QAEXPA
   %22 = getelementptr inbounds %struct.GcObj**, %struct.GcObj*** %19, i32 %21
   %23 = load %struct.GcObj**, %struct.GcObj*** %22, align 4
   %24 = load %struct.GcObj*, %struct.GcObj** %23, align 4
-  call void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %24)
+  call void @gc_print_obj(%struct.GcObj* %24)
   %25 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([27 x i8], [27 x i8]* @"??_C@_0BL@PDCIMNAE@Root?5to?5remove?5points?5to?3?6?$AA@", i32 0, i32 0))
   %26 = load %struct.GcObj**, %struct.GcObj*** %3, align 4
   %27 = load %struct.GcObj*, %struct.GcObj** %26, align 4
-  call void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %27)
+  call void @gc_print_obj(%struct.GcObj* %27)
   br label %28
 
 ; <label>:28:                                     ; preds = %15, %2

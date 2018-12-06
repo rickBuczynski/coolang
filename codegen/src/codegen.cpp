@@ -37,14 +37,16 @@ namespace coolang {
 class CodegenVisitor : public AstVisitor {
  public:
   explicit CodegenVisitor(const ProgramAst& program_ast,
-                          llvm::LLVMContext* context, llvm::Module* module)
+                          llvm::LLVMContext* context, llvm::Module* module,
+                          bool gc_verbose)
       : context_(*context),
         module_(module),
         data_layout_(module_),
         builder_(context_),
         ast_to_(&context_, module_, &builder_, &data_layout_, &program_ast),
         c_std_(module_, &ast_to_),
-        object_codegen_(&context_, &builder_, &ast_to_, &c_std_) {}
+        object_codegen_(&context_, &builder_, &ast_to_, &c_std_),
+        gc_verbose_(gc_verbose) {}
 
   void Visit(const CaseExpr& case_expr) override;
   void Visit(const StrExpr& str) override;
@@ -124,6 +126,8 @@ class CodegenVisitor : public AstVisitor {
   AstToCodeMap ast_to_;
   CStd c_std_;
   ObjectCodegen object_codegen_;
+
+  bool gc_verbose_;
 };
 
 int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
@@ -853,7 +857,13 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
   args.push_back(new_val);
   builder_.CreateCall(ast_to_.GetConstructor(type_name), args);
 
-  builder_.CreateCall(c_std_.GetPrintGcObjListFunc(), {});
+  if (gc_verbose_) {
+    builder_.CreateCall(
+        c_std_.GetGcPrintObjFunc(),
+        {builder_.CreateBitCast(new_val,
+                                ast_to_.LlvmClass("Object")->getPointerTo())});
+    builder_.CreateCall(c_std_.GetPrintGcObjListFunc(), {});
+  }
 
   return new_val;
 }
@@ -1113,8 +1123,9 @@ void OutputModuleToObjectFile(llvm::Module* module,
   dest.flush();
 }
 
-void Codegen::GenerateCode() const {
-  CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get());
+void Codegen::GenerateCode(bool gc_verbose) const {
+  CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get(),
+                                 gc_verbose);
   ast_->Accept(codegen_visitor);
 
   // module_->print(llvm::errs(), nullptr);

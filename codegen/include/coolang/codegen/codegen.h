@@ -21,7 +21,8 @@ class Codegen {
   Codegen& operator=(const Codegen& other) = delete;
   Codegen& operator=(Codegen&& other) noexcept = delete;
 
-  void GenerateCode() const;
+  // gc_verbose is used for testing GC, not intended for public use
+  void GenerateCode(bool gc_verbose = false) const;
   void Link() const;
 
  private:
