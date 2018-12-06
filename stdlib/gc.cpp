@@ -25,7 +25,7 @@ struct GcObj {
 
 void PrintObj(GcObj* obj) {
   printf("obj\n");
-  //fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
+  // fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
   printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
   printf("  typename=%s\n", obj->obj_typename);
 }
@@ -145,12 +145,20 @@ class GcObjList {
 GcList<GcObjList>* gc_obj_list;
 GcRootStack* gc_roots;
 
+// TODO use gc_is_allowed to block GC while evaluating function args
+// e.g. f(new A, 3, new B)
+// we don't want "new B" to trigger GC of "new A" before we go into the function
+// and add the function args as GC roots
+bool gc_is_allowed = false;
+
 extern "C" void gc_system_init() {
   gc_obj_list = new GcList<GcObjList>;
   gc_roots = new GcRootStack;
+  gc_is_allowed = true;
 }
 
 extern "C" void gc_system_destroy() {
+  gc_is_allowed = false;
   delete gc_roots;
   delete gc_obj_list;
 }

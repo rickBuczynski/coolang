@@ -86,6 +86,7 @@ $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 @"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [15 x i8] c"  typename=%s\0A\00", comdat, align 1
 @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A" = dso_local global %class.GcList* null, align 4
 @"?gc_roots@@3PAUGcRootStack@@A" = dso_local global %struct.GcRootStack* null, align 4
+@"?gc_is_allowed@@3_NA" = dso_local global i8 0, align 1
 @"??_C@_0CC@HKCJKJMI@Inserting?5a?5root?5that?5points?5to?3@" = linkonce_odr dso_local unnamed_addr constant [34 x i8] c"Inserting a root that points to:\0A\00", comdat, align 1
 @"??_C@_01EEMJAFIK@?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [2 x i8] c"\0A\00", comdat, align 1
 @"??_C@_0P@INCDPCBK@before?5insert?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [15 x i8] c"before insert\0A\00", comdat, align 1
@@ -150,6 +151,7 @@ define dso_local void @gc_system_init() #0 {
   %5 = bitcast i8* %4 to %struct.GcRootStack*
   %6 = call x86_thiscallcc %struct.GcRootStack* @"??0GcRootStack@@QAE@XZ"(%struct.GcRootStack* %5)
   store %struct.GcRootStack* %5, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+  store i8 1, i8* @"?gc_is_allowed@@3_NA", align 1
   ret void
 }
 
@@ -184,6 +186,7 @@ define linkonce_odr dso_local x86_thiscallcc %struct.GcRootStack* @"??0GcRootSta
 
 ; Function Attrs: noinline nounwind optnone
 define dso_local void @gc_system_destroy() #0 {
+  store i8 0, i8* @"?gc_is_allowed@@3_NA", align 1
   %1 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
   %2 = icmp eq %struct.GcRootStack* %1, null
   br i1 %2, label %5, label %3
