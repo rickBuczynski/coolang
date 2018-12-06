@@ -103,7 +103,7 @@ $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 @"??_C@_08BPFNJJP@?$CFs?5end?6?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [9 x i8] c"%s end\0A\0A\00", comdat, align 1
 @"??_C@_07DGBOGBKN@gc?5objs?$AA@" = linkonce_odr dso_local unnamed_addr constant [8 x i8] c"gc objs\00", comdat, align 1
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define dso_local void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj*) #0 {
   %2 = alloca %struct.GcObj*, align 4
   store %struct.GcObj* %0, %struct.GcObj** %2, align 4
@@ -121,7 +121,7 @@ define dso_local void @"?PrintObj@@YAXPAUGcObj@@@Z"(%struct.GcObj*) #0 {
   ret void
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define linkonce_odr dso_local i32 @printf(i8*, ...) #0 comdat {
   %2 = alloca i8*, align 4
   %3 = alloca i32, align 4
@@ -140,32 +140,24 @@ define linkonce_odr dso_local i32 @printf(i8*, ...) #0 comdat {
   ret i32 %11
 }
 
-; Function Attrs: noinline optnone
-define dso_local void @gc_system_init() #0 personality i8* bitcast (i32 (...)* @__CxxFrameHandler3 to i8*) {
-  %1 = call i8* @"??2@YAPAXI@Z"(i32 4) #6
+; Function Attrs: noinline nounwind optnone
+define dso_local void @gc_system_init() #0 {
+  %1 = call i8* @"??2@YAPAXI@Z"(i32 4) #5
   %2 = bitcast i8* %1 to %class.GcList*
-  %3 = call x86_thiscallcc %class.GcList* @"??0?$GcList@VGcObjList@@@@QAE@XZ"(%class.GcList* %2) #5
+  %3 = call x86_thiscallcc %class.GcList* @"??0?$GcList@VGcObjList@@@@QAE@XZ"(%class.GcList* %2) #4
   store %class.GcList* %2, %class.GcList** @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A", align 4
-  %4 = call i8* @"??2@YAPAXI@Z"(i32 12) #6
+  %4 = call i8* @"??2@YAPAXI@Z"(i32 12) #5
   %5 = bitcast i8* %4 to %struct.GcRootStack*
-  %6 = invoke x86_thiscallcc %struct.GcRootStack* @"??0GcRootStack@@QAE@XZ"(%struct.GcRootStack* %5)
-          to label %7 unwind label %8
-
-; <label>:7:                                      ; preds = %0
+  %6 = call x86_thiscallcc %struct.GcRootStack* @"??0GcRootStack@@QAE@XZ"(%struct.GcRootStack* %5)
   store %struct.GcRootStack* %5, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
   ret void
-
-; <label>:8:                                      ; preds = %0
-  %9 = cleanuppad within none []
-  call void @"??3@YAXPAX@Z"(i8* %4) #7 [ "funclet"(token %9) ]
-  cleanupret from %9 unwind to caller
 }
 
 ; Function Attrs: nobuiltin
 declare dso_local noalias i8* @"??2@YAPAXI@Z"(i32) #1
 
 ; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local x86_thiscallcc %class.GcList* @"??0?$GcList@VGcObjList@@@@QAE@XZ"(%class.GcList* returned) unnamed_addr #2 comdat align 2 {
+define linkonce_odr dso_local x86_thiscallcc %class.GcList* @"??0?$GcList@VGcObjList@@@@QAE@XZ"(%class.GcList* returned) unnamed_addr #0 comdat align 2 {
   %2 = alloca %class.GcList*, align 4
   store %class.GcList* %0, %class.GcList** %2, align 4
   %3 = load %class.GcList*, %class.GcList** %2, align 4
@@ -174,7 +166,7 @@ define linkonce_odr dso_local x86_thiscallcc %class.GcList* @"??0?$GcList@VGcObj
   ret %class.GcList* %3
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define linkonce_odr dso_local x86_thiscallcc %struct.GcRootStack* @"??0GcRootStack@@QAE@XZ"(%struct.GcRootStack* returned) unnamed_addr #0 comdat align 2 {
   %2 = alloca %struct.GcRootStack*, align 4
   store %struct.GcRootStack* %0, %struct.GcRootStack** %2, align 4
@@ -190,21 +182,16 @@ define linkonce_odr dso_local x86_thiscallcc %struct.GcRootStack* @"??0GcRootSta
   ret %struct.GcRootStack* %3
 }
 
-declare dso_local i32 @__CxxFrameHandler3(...)
-
-; Function Attrs: nobuiltin nounwind
-declare dso_local void @"??3@YAXPAX@Z"(i8*) #3
-
 ; Function Attrs: noinline nounwind optnone
-define dso_local void @gc_system_destroy() #2 {
+define dso_local void @gc_system_destroy() #0 {
   %1 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
   %2 = icmp eq %struct.GcRootStack* %1, null
   br i1 %2, label %5, label %3
 
 ; <label>:3:                                      ; preds = %0
-  call x86_thiscallcc void @"??1GcRootStack@@QAE@XZ"(%struct.GcRootStack* %1) #5
+  call x86_thiscallcc void @"??1GcRootStack@@QAE@XZ"(%struct.GcRootStack* %1) #4
   %4 = bitcast %struct.GcRootStack* %1 to i8*
-  call void @"??3@YAXPAX@Z"(i8* %4) #7
+  call void @"??3@YAXPAX@Z"(i8* %4) #6
   br label %5
 
 ; <label>:5:                                      ; preds = %3, %0
@@ -214,7 +201,7 @@ define dso_local void @gc_system_destroy() #2 {
 
 ; <label>:8:                                      ; preds = %5
   %9 = bitcast %class.GcList* %6 to i8*
-  call void @"??3@YAXPAX@Z"(i8* %9) #7
+  call void @"??3@YAXPAX@Z"(i8* %9) #6
   br label %10
 
 ; <label>:10:                                     ; preds = %8, %5
@@ -222,33 +209,28 @@ define dso_local void @gc_system_destroy() #2 {
 }
 
 ; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local x86_thiscallcc void @"??1GcRootStack@@QAE@XZ"(%struct.GcRootStack*) unnamed_addr #2 comdat align 2 personality i8* bitcast (i32 (...)* @__CxxFrameHandler3 to i8*) {
+define linkonce_odr dso_local x86_thiscallcc void @"??1GcRootStack@@QAE@XZ"(%struct.GcRootStack*) unnamed_addr #0 comdat align 2 {
   %2 = alloca %struct.GcRootStack*, align 4
   store %struct.GcRootStack* %0, %struct.GcRootStack** %2, align 4
   %3 = load %struct.GcRootStack*, %struct.GcRootStack** %2, align 4
   %4 = getelementptr inbounds %struct.GcRootStack, %struct.GcRootStack* %3, i32 0, i32 0
   %5 = load %struct.GcObj***, %struct.GcObj**** %4, align 4
   %6 = bitcast %struct.GcObj*** %5 to i8*
-  invoke void @free(i8* %6)
-          to label %7 unwind label %8
-
-; <label>:7:                                      ; preds = %1
+  call void @free(i8* %6)
   ret void
-
-; <label>:8:                                      ; preds = %1
-  %9 = cleanuppad within none []
-  call void @__std_terminate() #8 [ "funclet"(token %9) ]
-  unreachable
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: nobuiltin nounwind
+declare dso_local void @"??3@YAXPAX@Z"(i8*) #2
+
+; Function Attrs: noinline nounwind optnone
 define dso_local void @print_gc_obj_list() #0 {
   %1 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A", align 4
   call x86_thiscallcc void @"?PrintList@?$GcList@VGcObjList@@@@QAEXXZ"(%class.GcList* %1)
   ret void
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define linkonce_odr dso_local x86_thiscallcc void @"?PrintList@?$GcList@VGcObjList@@@@QAEXXZ"(%class.GcList*) #0 comdat align 2 {
   %2 = alloca %class.GcList*, align 4
   %3 = alloca %struct.GcObj*, align 4
@@ -295,7 +277,7 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PrintList@?$GcList@VGcObjLi
   ret void
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define dso_local i8* @gc_malloc(i32) #0 {
   %2 = alloca i32, align 4
   %3 = alloca %struct.GcObj*, align 4
@@ -327,9 +309,9 @@ define dso_local i8* @gc_malloc(i32) #0 {
   ret i8* %20
 }
 
-declare dso_local noalias i8* @malloc(i32) #4
+declare dso_local noalias i8* @malloc(i32) #3
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define linkonce_odr dso_local x86_thiscallcc void @"?PushFront@?$GcList@VGcObjList@@@@QAEXPAUGcObj@@@Z"(%class.GcList*, %struct.GcObj*) #0 comdat align 2 {
   %3 = alloca %struct.GcObj*, align 4
   %4 = alloca %class.GcList*, align 4
@@ -359,7 +341,7 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PushFront@?$GcList@VGcObjLi
   ret void
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define dso_local void @gc_add_root(%struct.GcObj**) #0 {
   %2 = alloca %struct.GcObj**, align 4
   store %struct.GcObj** %0, %struct.GcObj*** %2, align 4
@@ -378,7 +360,7 @@ define dso_local void @gc_add_root(%struct.GcObj**) #0 {
   ret void
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define linkonce_odr dso_local x86_thiscallcc void @"?PushRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z"(%struct.GcRootStack*, %struct.GcObj**) #0 comdat align 2 {
   %3 = alloca %struct.GcObj**, align 4
   %4 = alloca %struct.GcRootStack*, align 4
@@ -424,7 +406,7 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PushRoot@GcRootStack@@QAEXP
   ret void
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define linkonce_odr dso_local x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBEXXZ"(%struct.GcRootStack*) #0 comdat align 2 {
   %2 = alloca %struct.GcRootStack*, align 4
   %3 = alloca i32, align 4
@@ -463,7 +445,7 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBE
   ret void
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define dso_local void @gc_remove_root(%struct.GcObj**) #0 {
   %2 = alloca %struct.GcObj**, align 4
   store %struct.GcObj** %0, %struct.GcObj*** %2, align 4
@@ -480,7 +462,7 @@ define dso_local void @gc_remove_root(%struct.GcObj**) #0 {
   ret void
 }
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define linkonce_odr dso_local x86_thiscallcc void @"?PopRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z"(%struct.GcRootStack*, %struct.GcObj**) #0 comdat align 2 {
   %3 = alloca %struct.GcObj**, align 4
   %4 = alloca %struct.GcRootStack*, align 4
@@ -524,9 +506,9 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PopRoot@GcRootStack@@QAEXPA
 }
 
 ; Function Attrs: nounwind
-declare void @llvm.va_start(i8*) #5
+declare void @llvm.va_start(i8*) #4
 
-; Function Attrs: noinline optnone
+; Function Attrs: noinline nounwind optnone
 define linkonce_odr dso_local i32 @_vfprintf_l(%struct._iobuf*, i8*, %struct.__crt_locale_pointers*, i8*) #0 comdat {
   %5 = alloca i8*, align 4
   %6 = alloca %struct.__crt_locale_pointers*, align 4
@@ -546,31 +528,29 @@ define linkonce_odr dso_local i32 @_vfprintf_l(%struct._iobuf*, i8*, %struct.__c
   ret i32 %15
 }
 
-declare dso_local %struct._iobuf* @__acrt_iob_func(i32) #4
+declare dso_local %struct._iobuf* @__acrt_iob_func(i32) #3
 
 ; Function Attrs: nounwind
-declare void @llvm.va_end(i8*) #5
+declare void @llvm.va_end(i8*) #4
 
-declare dso_local i32 @__stdio_common_vfprintf(i64, %struct._iobuf*, i8*, %struct.__crt_locale_pointers*, i8*) #4
+declare dso_local i32 @__stdio_common_vfprintf(i64, %struct._iobuf*, i8*, %struct.__crt_locale_pointers*, i8*) #3
 
 ; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local i64* @__local_stdio_printf_options() #2 comdat {
+define linkonce_odr dso_local i64* @__local_stdio_printf_options() #0 comdat {
   ret i64* @"?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA"
 }
 
-declare dso_local void @free(i8*) #4
+declare dso_local void @free(i8*) #3
 
-declare dllimport void @__std_terminate()
-
-declare dso_local noalias i8* @realloc(i8*, i32) #4
+declare dso_local noalias i8* @realloc(i8*, i32) #3
 
 ; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local i8* @"?ListName@GcObjList@@SAPBDXZ"() #2 comdat align 2 {
+define linkonce_odr dso_local i8* @"?ListName@GcObjList@@SAPBDXZ"() #0 comdat align 2 {
   ret i8* getelementptr inbounds ([8 x i8], [8 x i8]* @"??_C@_07DGBOGBKN@gc?5objs?$AA@", i32 0, i32 0)
 }
 
 ; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local %struct.GcObj* @"?GetPrev@GcObjList@@SAPAUGcObj@@PAU2@@Z"(%struct.GcObj*) #2 comdat align 2 {
+define linkonce_odr dso_local %struct.GcObj* @"?GetPrev@GcObjList@@SAPAUGcObj@@PAU2@@Z"(%struct.GcObj*) #0 comdat align 2 {
   %2 = alloca %struct.GcObj*, align 4
   store %struct.GcObj* %0, %struct.GcObj** %2, align 4
   %3 = load %struct.GcObj*, %struct.GcObj** %2, align 4
@@ -580,7 +560,7 @@ define linkonce_odr dso_local %struct.GcObj* @"?GetPrev@GcObjList@@SAPAUGcObj@@P
 }
 
 ; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local %struct.GcObj* @"?GetNext@GcObjList@@SAPAUGcObj@@PAU2@@Z"(%struct.GcObj*) #2 comdat align 2 {
+define linkonce_odr dso_local %struct.GcObj* @"?GetNext@GcObjList@@SAPAUGcObj@@PAU2@@Z"(%struct.GcObj*) #0 comdat align 2 {
   %2 = alloca %struct.GcObj*, align 4
   store %struct.GcObj* %0, %struct.GcObj** %2, align 4
   %3 = load %struct.GcObj*, %struct.GcObj** %2, align 4
@@ -590,7 +570,7 @@ define linkonce_odr dso_local %struct.GcObj* @"?GetNext@GcObjList@@SAPAUGcObj@@P
 }
 
 ; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local void @"?SetNext@GcObjList@@SAXPAUGcObj@@0@Z"(%struct.GcObj*, %struct.GcObj*) #2 comdat align 2 {
+define linkonce_odr dso_local void @"?SetNext@GcObjList@@SAXPAUGcObj@@0@Z"(%struct.GcObj*, %struct.GcObj*) #0 comdat align 2 {
   %3 = alloca %struct.GcObj*, align 4
   %4 = alloca %struct.GcObj*, align 4
   store %struct.GcObj* %1, %struct.GcObj** %3, align 4
@@ -603,7 +583,7 @@ define linkonce_odr dso_local void @"?SetNext@GcObjList@@SAXPAUGcObj@@0@Z"(%stru
 }
 
 ; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local void @"?SetPrev@GcObjList@@SAXPAUGcObj@@0@Z"(%struct.GcObj*, %struct.GcObj*) #2 comdat align 2 {
+define linkonce_odr dso_local void @"?SetPrev@GcObjList@@SAXPAUGcObj@@0@Z"(%struct.GcObj*, %struct.GcObj*) #0 comdat align 2 {
   %3 = alloca %struct.GcObj*, align 4
   %4 = alloca %struct.GcObj*, align 4
   store %struct.GcObj* %1, %struct.GcObj** %3, align 4
@@ -615,15 +595,13 @@ define linkonce_odr dso_local void @"?SetPrev@GcObjList@@SAXPAUGcObj@@0@Z"(%stru
   ret void
 }
 
-attributes #0 = { noinline optnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="pentium4" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind optnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="pentium4" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nobuiltin "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="pentium4" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { noinline nounwind optnone "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="pentium4" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { nobuiltin nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="pentium4" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="pentium4" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #5 = { nounwind }
-attributes #6 = { builtin }
-attributes #7 = { builtin nounwind }
-attributes #8 = { noreturn nounwind }
+attributes #2 = { nobuiltin nounwind "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="pentium4" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="pentium4" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { nounwind }
+attributes #5 = { builtin }
+attributes #6 = { builtin nounwind }
 
 !llvm.linker.options = !{!0, !1, !2, !3, !4}
 !llvm.module.flags = !{!5, !6}
