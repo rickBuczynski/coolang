@@ -1,3 +1,7 @@
+Gc Objs after marking reachable:
+gc objs start
+gc objs end
+
 Allocated:
 obj
   is_reachable=0
@@ -11,12 +15,32 @@ obj
   typename=A
 gc objs end
 
+Gc Objs after marking reachable:
+gc objs start
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+gc objs end
+
 Allocated:
 obj
   is_reachable=0
   gc_pointer_count=0
   typename=B
 
+gc objs start
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+gc objs end
+
+Gc Objs after marking reachable:
 gc objs start
 obj
   is_reachable=0
@@ -63,6 +87,22 @@ obj
   typename=A
 End of current GC roots
 
+Gc Objs after marking reachable:
+gc objs start
+obj
+  is_reachable=1
+  gc_pointer_count=2
+  typename=A
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+gc objs end
+
 Allocated:
 obj
   is_reachable=0
@@ -75,7 +115,7 @@ obj
   gc_pointer_count=0
   typename=B
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 obj
@@ -97,7 +137,7 @@ obj
 Current GC roots:
 Root that points to:
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 Root that points to:
@@ -107,6 +147,26 @@ obj
   typename=B
 End of current GC roots
 
+Gc Objs after marking reachable:
+gc objs start
+obj
+  is_reachable=1
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=1
+  gc_pointer_count=2
+  typename=A
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+gc objs end
+
 Allocated:
 obj
   is_reachable=0
@@ -119,11 +179,11 @@ obj
   gc_pointer_count=1
   typename=C
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=0
   typename=B
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 obj
@@ -145,12 +205,12 @@ obj
 Current GC roots:
 Root that points to:
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 Root that points to:
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=0
   typename=B
 Root that points to:
@@ -169,33 +229,33 @@ obj
 Current GC roots:
 Root that points to:
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 Root that points to:
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=0
   typename=B
 End of current GC roots
 
 Removing a root that points to:
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=0
   typename=B
 
 Current GC roots:
 Root that points to:
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 End of current GC roots
 
 Removing a root that points to:
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 

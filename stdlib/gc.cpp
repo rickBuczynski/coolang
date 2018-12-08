@@ -26,16 +26,42 @@ struct GcObj {
   bool is_reachable;
   // don't initialize this during malloc
   // the cool program itself handles initializing this
-  int gc_pointer_count;
+  int gc_ptr_count;
   char* obj_typename;
+  void* vtable;
+  int typesize;
+  void* constructor;
+  char* boxed_data;
+
+  GcObj* first_gc_ptr;
 };
 
 void PrintObj(const GcObj* obj) {
   printf("obj\n");
   // fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
   printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
-  printf("  gc_pointer_count=%d\n", obj->gc_pointer_count);
+  printf("  gc_pointer_count=%d\n", obj->gc_ptr_count);
   printf("  typename=%s\n", obj->obj_typename);
+}
+
+void SetNext(GcObj* obj, GcObj* next) { obj->next_obj = next; }
+void SetPrev(GcObj* obj, GcObj* prev) { obj->prev_obj = prev; }
+GcObj* GetNext(GcObj* obj) { return obj->next_obj; }
+GcObj* GetPrev(GcObj* obj) { return obj->prev_obj; }
+const char* ListName() { return "gc objs"; }
+
+void MarkObj(GcObj* obj) {
+  if (obj == nullptr || obj->is_reachable) {
+    return;
+  }
+
+  obj->is_reachable = true;
+
+  GcObj** gc_ptrs = &obj->first_gc_ptr;
+
+  for (int i = 0; i < obj->gc_ptr_count; i++) {
+    MarkObj(gc_ptrs[i]);
+  }
 }
 
 using GcRoot = GcObj**;
@@ -81,58 +107,71 @@ struct GcRootStack {
     printf("End of current GC roots\n\n");
   }
 
+  void MarkReachable() const {
+    for (int i = 0; i < length; i++) {
+      MarkObj(*roots[i]);
+    }
+  }
+
   GcRoot* roots;
   int capacity;
   int length;
 };
 
-template <class T>
 class GcList {
  public:
-  void PrintList() {
+  void PrintList() const {
     GcObj* obj = head_;
     GcObj* prev = nullptr;
 
-    printf("%s start\n", T::ListName());
+    printf("%s start\n", ListName());
     while (obj != nullptr) {
       PrintObj(obj);
 
-      if (prev != T::GetPrev(obj)) {
+      if (prev != GetPrev(obj)) {
         printf("  BADBADBADBADBADBADBADBADBADBADBADBADBADBAD\n");
       }
 
       prev = obj;
-      obj = T::GetNext(obj);
+      obj = GetNext(obj);
     }
-    printf("%s end\n\n", T::ListName());
+    printf("%s end\n\n", ListName());
+  }
+
+  void UnmarkList() const {
+    GcObj* obj = head_;
+    while (obj != nullptr) {
+      obj->is_reachable = false;
+      obj = GetNext(obj);
+    }
   }
 
   void Remove(GcObj* obj) {
-    GcObj* prev = T::GetPrev(obj);
-    GcObj* next = T::GetNext(obj);
+    GcObj* prev = GetPrev(obj);
+    GcObj* next = GetNext(obj);
 
     if (prev == nullptr && obj != head_) {
-      printf("Tried to remove an obj that's not in list: %s\n", T::ListName());
+      printf("Tried to remove an obj that's not in list: %s\n", ListName());
       return;
     }
 
     if (obj == head_) {
-      head_ = T::GetNext(obj);
+      head_ = GetNext(obj);
     }
 
     if (prev != nullptr) {
-      T::SetNext(prev, next);
+      SetNext(prev, next);
     }
 
     if (next != nullptr) {
-      T::SetPrev(next, prev);
+      SetPrev(next, prev);
     }
   }
 
   void PushFront(GcObj* obj) {
-    T::SetNext(obj, head_);
+    SetNext(obj, head_);
     if (head_ != nullptr) {
-      T::SetPrev(head_, obj);
+      SetPrev(head_, obj);
     }
     head_ = obj;
   }
@@ -143,16 +182,7 @@ class GcList {
   GcObj* head_ = nullptr;
 };
 
-class GcObjList {
- public:
-  static void SetNext(GcObj* obj, GcObj* next) { obj->next_obj = next; }
-  static void SetPrev(GcObj* obj, GcObj* prev) { obj->prev_obj = prev; }
-  static GcObj* GetNext(GcObj* obj) { return obj->next_obj; }
-  static GcObj* GetPrev(GcObj* obj) { return obj->prev_obj; }
-  static const char* ListName() { return "gc objs"; }
-};
-
-GcList<GcObjList>* gc_obj_list;
+GcList* gc_obj_list;
 GcRootStack* gc_roots;
 
 // TODO use gc_is_allowed to block GC while evaluating function args
@@ -164,7 +194,7 @@ bool gc_is_allowed = false;
 bool gc_is_verbose = false;
 
 extern "C" void gc_system_init(int is_verbose) {
-  gc_obj_list = new GcList<GcObjList>;
+  gc_obj_list = new GcList;
   gc_roots = new GcRootStack;
   gc_is_allowed = true;
   gc_is_verbose = is_verbose;
@@ -177,6 +207,15 @@ extern "C" void gc_system_destroy() {
 }
 
 extern "C" void* gc_malloc(int size) {
+  if (gc_is_allowed) {
+    gc_obj_list->UnmarkList();
+    gc_roots->MarkReachable();
+    if (gc_is_verbose) {
+      printf("Gc Objs after marking reachable:\n");
+      gc_obj_list->PrintList();
+    }
+  }
+
   auto* obj = static_cast<GcObj*>(malloc(size));
 
   obj->next_obj = nullptr;
