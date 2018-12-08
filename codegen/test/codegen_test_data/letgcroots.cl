@@ -25,6 +25,10 @@ class C {
   };
 };
 
+class D {
+ foo:Int;
+};
+
 class Main inherits IO {
   main() : Object { {
     new A;
@@ -38,6 +42,8 @@ class Main inherits IO {
 	    c.setA(a);
 	    a.setC1(c);
 	  };
+	  new D; -- a and c still alive here
     };
+	new D; -- a and c dead here
   } };
 };

@@ -239,6 +239,63 @@ obj
   typename=B
 End of current GC roots
 
+Gc Objs after marking reachable:
+gc objs start
+obj
+  is_reachable=1
+  gc_pointer_count=1
+  typename=C
+obj
+  is_reachable=1
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=1
+  gc_pointer_count=2
+  typename=A
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+gc objs end
+
+Allocated:
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=D
+
+gc objs start
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=D
+obj
+  is_reachable=1
+  gc_pointer_count=1
+  typename=C
+obj
+  is_reachable=1
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=1
+  gc_pointer_count=2
+  typename=A
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+gc objs end
+
 Removing a root that points to:
 obj
   is_reachable=1
@@ -261,4 +318,69 @@ obj
 
 Current GC roots:
 End of current GC roots
+
+Gc Objs after marking reachable:
+gc objs start
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=D
+obj
+  is_reachable=0
+  gc_pointer_count=1
+  typename=C
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+gc objs end
+
+Allocated:
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=D
+
+gc objs start
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=D
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=D
+obj
+  is_reachable=0
+  gc_pointer_count=1
+  typename=C
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+obj
+  is_reachable=0
+  gc_pointer_count=0
+  typename=B
+obj
+  is_reachable=0
+  gc_pointer_count=2
+  typename=A
+gc objs end
 
