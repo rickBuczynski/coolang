@@ -202,36 +202,3 @@ obj
 Current GC roots:
 End of current GC roots
 
-Allocated:
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=Object
-
-gc objs start
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=Object
-obj
-  is_reachable=0
-  gc_pointer_count=1
-  typename=C
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
-  gc_pointer_count=2
-  typename=A
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
-  gc_pointer_count=2
-  typename=A
-gc objs end
-

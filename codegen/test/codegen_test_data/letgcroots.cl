@@ -37,7 +37,6 @@ class Main inherits IO {
       let c:C <- new C in {
 	    c.setA(a);
 	    a.setC1(c);
-		1;
 	  };
     };
   } };
