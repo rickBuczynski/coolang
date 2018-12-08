@@ -146,6 +146,20 @@ class GcList {
     }
   }
 
+  void Sweep() {
+    GcObj* obj = head_;
+    while (obj != nullptr) {
+      GcObj* next = GetNext(obj);
+
+      if (!obj->is_reachable) {
+        Remove(obj);
+        free(obj);
+      }
+
+      obj = next;
+    }
+  }
+
   void Remove(GcObj* obj) {
     GcObj* prev = GetPrev(obj);
     GcObj* next = GetNext(obj);
@@ -212,6 +226,11 @@ extern "C" void* gc_malloc(int size) {
     gc_roots->MarkReachable();
     if (gc_is_verbose) {
       printf("Gc Objs after marking reachable:\n");
+      gc_obj_list->PrintList();
+    }
+    gc_obj_list->Sweep();
+    if (gc_is_verbose) {
+      printf("Gc Objs after sweep:\n");
       gc_obj_list->PrintList();
     }
   }

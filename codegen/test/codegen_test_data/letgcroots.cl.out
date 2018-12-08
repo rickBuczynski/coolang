@@ -2,6 +2,10 @@ Gc Objs after marking reachable:
 gc objs start
 gc objs end
 
+Gc Objs after sweep:
+gc objs start
+gc objs end
+
 Allocated:
 obj
   is_reachable=0
@@ -23,6 +27,10 @@ obj
   typename=A
 gc objs end
 
+Gc Objs after sweep:
+gc objs start
+gc objs end
+
 Allocated:
 obj
   is_reachable=0
@@ -34,10 +42,6 @@ obj
   is_reachable=0
   gc_pointer_count=0
   typename=B
-obj
-  is_reachable=0
-  gc_pointer_count=2
-  typename=A
 gc objs end
 
 Gc Objs after marking reachable:
@@ -46,10 +50,10 @@ obj
   is_reachable=0
   gc_pointer_count=0
   typename=B
-obj
-  is_reachable=0
-  gc_pointer_count=2
-  typename=A
+gc objs end
+
+Gc Objs after sweep:
+gc objs start
 gc objs end
 
 Allocated:
@@ -59,14 +63,6 @@ obj
   typename=A
 
 gc objs start
-obj
-  is_reachable=0
-  gc_pointer_count=2
-  typename=A
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
 obj
   is_reachable=0
   gc_pointer_count=2
@@ -93,12 +89,12 @@ obj
   is_reachable=1
   gc_pointer_count=2
   typename=A
+gc objs end
+
+Gc Objs after sweep:
+gc objs start
 obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 gc objs end
@@ -116,14 +112,6 @@ obj
   typename=B
 obj
   is_reachable=1
-  gc_pointer_count=2
-  typename=A
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
   gc_pointer_count=2
   typename=A
 gc objs end
@@ -157,12 +145,16 @@ obj
   is_reachable=1
   gc_pointer_count=2
   typename=A
+gc objs end
+
+Gc Objs after sweep:
+gc objs start
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=0
   typename=B
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 gc objs end
@@ -184,14 +176,6 @@ obj
   typename=B
 obj
   is_reachable=1
-  gc_pointer_count=2
-  typename=A
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
   gc_pointer_count=2
   typename=A
 gc objs end
@@ -253,12 +237,20 @@ obj
   is_reachable=1
   gc_pointer_count=2
   typename=A
+gc objs end
+
+Gc Objs after sweep:
+gc objs start
 obj
-  is_reachable=0
+  is_reachable=1
+  gc_pointer_count=1
+  typename=C
+obj
+  is_reachable=1
   gc_pointer_count=0
   typename=B
 obj
-  is_reachable=0
+  is_reachable=1
   gc_pointer_count=2
   typename=A
 gc objs end
@@ -284,14 +276,6 @@ obj
   typename=B
 obj
   is_reachable=1
-  gc_pointer_count=2
-  typename=A
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
   gc_pointer_count=2
   typename=A
 gc objs end
@@ -337,14 +321,10 @@ obj
   is_reachable=0
   gc_pointer_count=2
   typename=A
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
-  gc_pointer_count=2
-  typename=A
+gc objs end
+
+Gc Objs after sweep:
+gc objs start
 gc objs end
 
 Allocated:
@@ -358,29 +338,5 @@ obj
   is_reachable=0
   gc_pointer_count=0
   typename=D
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=D
-obj
-  is_reachable=0
-  gc_pointer_count=1
-  typename=C
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
-  gc_pointer_count=2
-  typename=A
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=B
-obj
-  is_reachable=0
-  gc_pointer_count=2
-  typename=A
 gc objs end
 
