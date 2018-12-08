@@ -305,8 +305,8 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
   return convert_me;
 }
 
-struct LetBinding {
-  LetBinding(std::string id, std::string type, llvm::AllocaInst* alloca_inst)
+struct Binding {
+  Binding(std::string id, std::string type, llvm::AllocaInst* alloca_inst)
       : id(std::move(id)), type(std::move(type)), alloca_inst(alloca_inst) {}
 
   std::string id;
@@ -315,7 +315,7 @@ struct LetBinding {
 };
 
 void CodegenVisitor::Visit(const LetExpr& let_expr) {
-  std::vector<LetBinding> bindings;
+  std::vector<Binding> bindings;
   const LetExpr* cur_let = &let_expr;
   const Expr* in_expr = nullptr;
 
@@ -782,12 +782,21 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
         llvm::BasicBlock::Create(context_, "entrypoint", func);
     builder_.SetInsertPoint(entry);
 
+
+    std::vector<Binding> gc_root_bindings;
+    // add a gc_root_bindings for implicit self param
+    llvm::AllocaInst* self_alloca = builder_.CreateAlloca(
+        ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
+    builder_.CreateStore(func->arg_begin(), self_alloca);
+    gc_root_bindings.emplace_back("self", class_ast.GetName(), self_alloca);
+
     auto arg_iter = func->arg_begin();
     arg_iter++;  // skip implicit self param
     for (const auto& arg : method->GetArgs()) {
       llvm::AllocaInst* alloca_inst =
           builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(arg.GetType()));
       builder_.CreateStore(arg_iter, alloca_inst);
+      gc_root_bindings.emplace_back(arg.GetId(), arg.GetType(), alloca_inst);
       AddToScope(arg.GetId(), alloca_inst);
       arg_iter++;
     }

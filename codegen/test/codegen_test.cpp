@@ -107,7 +107,7 @@ void TestCodegen(const std::string& input_file,
 }
 
 TEST(CodegenTest, letgcroots) { TestCodegen("letgcroots.cl", false, true); }
-/*
+
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
@@ -214,5 +214,5 @@ TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
 TEST(CodegenTest, typenameobject) { TestCodegen("typename-object-io.cl"); }
 TEST(CodegenTest, whileloop) { TestCodegen("whileloop.cl"); }
 TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
-*/
+
 }  // namespace
