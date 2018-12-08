@@ -204,6 +204,7 @@ obj
   typename=C
 End of current GC roots
 
+7
 Removing a root that points to:
 obj
   is_reachable=0

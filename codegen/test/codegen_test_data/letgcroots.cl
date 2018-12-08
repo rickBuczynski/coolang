@@ -36,10 +36,13 @@ class Main inherits IO {
 
     let
       a:A <- new A,
+	  i:Int <- 7, -- make sure this doesnt add a gc root
       b:B <- new B,
     in {
       let c:C <- new C in {
 	    c.setA(a);
+		out_int(i);
+		out_string("\n");
 	    a.setC1(c);
 	  };
 	  new D; -- a and c still alive here

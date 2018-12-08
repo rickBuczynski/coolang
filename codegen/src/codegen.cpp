@@ -348,8 +348,9 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
         alloca_inst,
         ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
 
-    // TODO only add a root if the let type is not a basic type
-    builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+    if (!IsBasicType(cur_let->GetType())) {
+      builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+    }
 
     AddToScope(cur_let->GetId(), alloca_inst);
     bindings.emplace_back(cur_let->GetId(), cur_let->GetType(), alloca_inst);
@@ -368,8 +369,9 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
         it->alloca_inst,
         ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
 
-    // TODO only remove a root if the let type is not a basic type
-    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+    if (!IsBasicType(it->type)) {
+      builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+    }
 
     RemoveFromScope(it->id);
   }
@@ -781,7 +783,6 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(context_, "entrypoint", func);
     builder_.SetInsertPoint(entry);
-
 
     std::vector<Binding> gc_root_bindings;
     // add a gc_root_bindings for implicit self param
