@@ -93,7 +93,7 @@ class CStd {
   llvm::Constant* gc_malloc_print_func_ =
       CreateCStdFuncDecl("gc_malloc_print", "Void", {});
   llvm::Constant* gc_system_init_func_ =
-      CreateCStdFuncDecl("gc_system_init", "Void", {});
+      CreateCStdFuncDecl("gc_system_init", "Void", {"Int"});
   llvm::Constant* gc_system_destroy_func_ =
       CreateCStdFuncDecl("gc_system_destroy", "Void", {});
 };

@@ -852,9 +852,7 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
   args.push_back(new_val);
   builder_.CreateCall(ast_to_.GetConstructor(type_name), args);
 
-  if (gc_verbose_) {
-    builder_.CreateCall(c_std_.GetGcMallocPrintFunc(), {});
-  }
+  builder_.CreateCall(c_std_.GetGcMallocPrintFunc(), {});
 
   return new_val;
 }
@@ -986,7 +984,8 @@ void CodegenVisitor::GenMainFunc() {
       llvm::BasicBlock::Create(context_, "entrypoint", func);
   builder_.SetInsertPoint(entry);
 
-  builder_.CreateCall(c_std_.GetGcSystemInitFunc(), {});
+  builder_.CreateCall(c_std_.GetGcSystemInitFunc(),
+                      {ast_to_.LlvmConstInt32(gc_verbose_)});
 
   llvm::AllocaInst* main_class =
       builder_.CreateAlloca(ast_to_.LlvmClass("Main"));

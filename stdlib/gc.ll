@@ -87,6 +87,7 @@ $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A" = dso_local global %class.GcList* null, align 4
 @"?gc_roots@@3PAUGcRootStack@@A" = dso_local global %struct.GcRootStack* null, align 4
 @"?gc_is_allowed@@3_NA" = dso_local global i8 0, align 1
+@"?gc_is_verbose@@3_NA" = dso_local global i8 0, align 1
 @"??_C@_0M@OILANDAA@Allocated?3?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [12 x i8] c"Allocated:\0A\00", comdat, align 1
 @"??_C@_01EEMJAFIK@?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [2 x i8] c"\0A\00", comdat, align 1
 @"??_C@_0CC@HKCJKJMI@Inserting?5a?5root?5that?5points?5to?3@" = linkonce_odr dso_local unnamed_addr constant [34 x i8] c"Inserting a root that points to:\0A\00", comdat, align 1
@@ -141,16 +142,22 @@ define linkonce_odr dso_local i32 @printf(i8*, ...) #0 comdat {
 }
 
 ; Function Attrs: noinline nounwind optnone
-define dso_local void @gc_system_init() #0 {
-  %1 = call i8* @"??2@YAPAXI@Z"(i32 4) #5
-  %2 = bitcast i8* %1 to %class.GcList*
-  %3 = call x86_thiscallcc %class.GcList* @"??0?$GcList@VGcObjList@@@@QAE@XZ"(%class.GcList* %2) #4
-  store %class.GcList* %2, %class.GcList** @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A", align 4
-  %4 = call i8* @"??2@YAPAXI@Z"(i32 12) #5
-  %5 = bitcast i8* %4 to %struct.GcRootStack*
-  %6 = call x86_thiscallcc %struct.GcRootStack* @"??0GcRootStack@@QAE@XZ"(%struct.GcRootStack* %5)
-  store %struct.GcRootStack* %5, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+define dso_local void @gc_system_init(i32) #0 {
+  %2 = alloca i32, align 4
+  store i32 %0, i32* %2, align 4
+  %3 = call i8* @"??2@YAPAXI@Z"(i32 4) #5
+  %4 = bitcast i8* %3 to %class.GcList*
+  %5 = call x86_thiscallcc %class.GcList* @"??0?$GcList@VGcObjList@@@@QAE@XZ"(%class.GcList* %4) #4
+  store %class.GcList* %4, %class.GcList** @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A", align 4
+  %6 = call i8* @"??2@YAPAXI@Z"(i32 12) #5
+  %7 = bitcast i8* %6 to %struct.GcRootStack*
+  %8 = call x86_thiscallcc %struct.GcRootStack* @"??0GcRootStack@@QAE@XZ"(%struct.GcRootStack* %7)
+  store %struct.GcRootStack* %7, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
   store i8 1, i8* @"?gc_is_allowed@@3_NA", align 1
+  %9 = load i32, i32* %2, align 4
+  %10 = icmp ne i32 %9, 0
+  %11 = zext i1 %10 to i8
+  store i8 %11, i8* @"?gc_is_verbose@@3_NA", align 1
   ret void
 }
 
@@ -291,13 +298,21 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PushFront@?$GcList@VGcObjLi
 
 ; Function Attrs: noinline nounwind optnone
 define dso_local void @gc_malloc_print() #0 {
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @"??_C@_0M@OILANDAA@Allocated?3?6?$AA@", i32 0, i32 0))
-  %2 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A", align 4
-  %3 = call x86_thiscallcc %struct.GcObj* @"?GetHead@?$GcList@VGcObjList@@@@QBEPBUGcObj@@XZ"(%class.GcList* %2)
-  call void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj* %3)
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
+  %1 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
+  %2 = trunc i8 %1 to i1
+  br i1 %2, label %3, label %9
+
+; <label>:3:                                      ; preds = %0
+  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @"??_C@_0M@OILANDAA@Allocated?3?6?$AA@", i32 0, i32 0))
   %5 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A", align 4
-  call x86_thiscallcc void @"?PrintList@?$GcList@VGcObjList@@@@QAEXXZ"(%class.GcList* %5)
+  %6 = call x86_thiscallcc %struct.GcObj* @"?GetHead@?$GcList@VGcObjList@@@@QBEPBUGcObj@@XZ"(%class.GcList* %5)
+  call void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj* %6)
+  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
+  %8 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A", align 4
+  call x86_thiscallcc void @"?PrintList@?$GcList@VGcObjList@@@@QAEXXZ"(%class.GcList* %8)
+  br label %9
+
+; <label>:9:                                      ; preds = %3, %0
   ret void
 }
 
@@ -362,16 +377,32 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PrintList@?$GcList@VGcObjLi
 define dso_local void @gc_add_root(%struct.GcObj**) #0 {
   %2 = alloca %struct.GcObj**, align 4
   store %struct.GcObj** %0, %struct.GcObj*** %2, align 4
-  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @"??_C@_0CC@HKCJKJMI@Inserting?5a?5root?5that?5points?5to?3@", i32 0, i32 0))
-  %4 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
-  %5 = load %struct.GcObj*, %struct.GcObj** %4, align 4
-  call void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj* %5)
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
-  %7 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
-  %8 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
-  call x86_thiscallcc void @"?PushRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z"(%struct.GcRootStack* %7, %struct.GcObj** %8)
-  %9 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
-  call x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBEXXZ"(%struct.GcRootStack* %9)
+  %3 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
+  %4 = trunc i8 %3 to i1
+  br i1 %4, label %5, label %10
+
+; <label>:5:                                      ; preds = %1
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @"??_C@_0CC@HKCJKJMI@Inserting?5a?5root?5that?5points?5to?3@", i32 0, i32 0))
+  %7 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
+  %8 = load %struct.GcObj*, %struct.GcObj** %7, align 4
+  call void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj* %8)
+  %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
+  br label %10
+
+; <label>:10:                                     ; preds = %5, %1
+  %11 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+  %12 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
+  call x86_thiscallcc void @"?PushRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z"(%struct.GcRootStack* %11, %struct.GcObj** %12)
+  %13 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
+  %14 = trunc i8 %13 to i1
+  br i1 %14, label %15, label %17
+
+; <label>:15:                                     ; preds = %10
+  %16 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+  call x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBEXXZ"(%struct.GcRootStack* %16)
+  br label %17
+
+; <label>:17:                                     ; preds = %15, %10
   ret void
 }
 
@@ -464,16 +495,32 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBE
 define dso_local void @gc_remove_root(%struct.GcObj**) #0 {
   %2 = alloca %struct.GcObj**, align 4
   store %struct.GcObj** %0, %struct.GcObj*** %2, align 4
-  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @"??_C@_0CB@GKEBEHJL@Removing?5a?5root?5that?5points?5to?3?6@", i32 0, i32 0))
-  %4 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
-  %5 = load %struct.GcObj*, %struct.GcObj** %4, align 4
-  call void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj* %5)
-  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
-  %7 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
-  %8 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
-  call x86_thiscallcc void @"?PopRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z"(%struct.GcRootStack* %7, %struct.GcObj** %8)
-  %9 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
-  call x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBEXXZ"(%struct.GcRootStack* %9)
+  %3 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
+  %4 = trunc i8 %3 to i1
+  br i1 %4, label %5, label %10
+
+; <label>:5:                                      ; preds = %1
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([33 x i8], [33 x i8]* @"??_C@_0CB@GKEBEHJL@Removing?5a?5root?5that?5points?5to?3?6@", i32 0, i32 0))
+  %7 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
+  %8 = load %struct.GcObj*, %struct.GcObj** %7, align 4
+  call void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj* %8)
+  %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
+  br label %10
+
+; <label>:10:                                     ; preds = %5, %1
+  %11 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+  %12 = load %struct.GcObj**, %struct.GcObj*** %2, align 4
+  call x86_thiscallcc void @"?PopRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z"(%struct.GcRootStack* %11, %struct.GcObj** %12)
+  %13 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
+  %14 = trunc i8 %13 to i1
+  br i1 %14, label %15, label %17
+
+; <label>:15:                                     ; preds = %10
+  %16 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+  call x86_thiscallcc void @"?PrintRoots@GcRootStack@@QBEXXZ"(%struct.GcRootStack* %16)
+  br label %17
+
+; <label>:17:                                     ; preds = %15, %10
   ret void
 }
 

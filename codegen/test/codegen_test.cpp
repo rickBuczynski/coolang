@@ -88,7 +88,7 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
   const auto codegen =
       std::make_unique<coolang::Codegen>(ast, obj_path, exe_path);
   // TODO set gc_verbose per test (only true for gc tests)
-  codegen->GenerateCode(/*gc_verbose=*/true);
+  codegen->GenerateCode(/*gc_verbose=*/false);
   codegen->Link();
 
   RunProgram(in_path, out_path, exe_path, use_stdin_redirection);

@@ -159,10 +159,13 @@ GcRootStack* gc_roots;
 // and add the function args as GC roots
 bool gc_is_allowed = false;
 
-extern "C" void gc_system_init() {
+bool gc_is_verbose = false;
+
+extern "C" void gc_system_init(int is_verbose) {
   gc_obj_list = new GcList<GcObjList>;
   gc_roots = new GcRootStack;
   gc_is_allowed = true;
+  gc_is_verbose = is_verbose;
 }
 
 extern "C" void gc_system_destroy() {
@@ -186,27 +189,39 @@ extern "C" void* gc_malloc(int size) {
 }
 
 extern "C" void gc_malloc_print() {
-  printf("Allocated:\n");
-  PrintObj(gc_obj_list->GetHead());
-  printf("\n");
+  if (gc_is_verbose) {
+    printf("Allocated:\n");
+    PrintObj(gc_obj_list->GetHead());
+    printf("\n");
 
-  gc_obj_list->PrintList();
+    gc_obj_list->PrintList();
+  }
 }
 
 extern "C" void gc_add_root(GcObj** root) {
-  printf("Inserting a root that points to:\n");
-  PrintObj(*root);
-  printf("\n");
+  if (gc_is_verbose) {
+    printf("Inserting a root that points to:\n");
+    PrintObj(*root);
+    printf("\n");
+  }
 
   gc_roots->PushRoot(root);
-  gc_roots->PrintRoots();
+
+  if (gc_is_verbose) {
+    gc_roots->PrintRoots();
+  }
 }
 
 extern "C" void gc_remove_root(GcObj** root) {
-  printf("Removing a root that points to:\n");
-  PrintObj(*root);
-  printf("\n");
+  if (gc_is_verbose) {
+    printf("Removing a root that points to:\n");
+    PrintObj(*root);
+    printf("\n");
+  }
 
   gc_roots->PopRoot(root);
-  gc_roots->PrintRoots();
+
+  if (gc_is_verbose) {
+    gc_roots->PrintRoots();
+  }
 }
