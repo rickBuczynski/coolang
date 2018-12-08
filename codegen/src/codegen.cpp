@@ -843,7 +843,7 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
       llvm::ConstantInt::get(context_, llvm::APInt(32, new_size, true));
 
   llvm::Value* malloc_val =
-      builder_.CreateCall(c_std_.GetMallocFunc(), {malloc_len_val});
+      builder_.CreateCall(c_std_.GetGcMallocFunc(), {malloc_len_val});
 
   llvm::Value* new_val = builder_.CreateBitCast(
       malloc_val, ast_to_.LlvmClass(type_name)->getPointerTo());

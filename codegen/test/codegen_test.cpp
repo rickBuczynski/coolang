@@ -52,7 +52,8 @@ std::string GetProgramOutput(const std::filesystem::path& out_path) {
 }
 
 std::string GetCodgenedProgramOutput(const std::string& input_file_name,
-                                     bool use_stdin_redirection) {
+                                     bool use_stdin_redirection,
+                                     bool gc_is_verbose) {
   auto lexer = std::make_unique<coolang::Lexer>(CODEGEN_TEST_DATA_PATH +
                                                 input_file_name);
   auto parser = std::make_unique<coolang::Parser>(std::move(lexer));
@@ -88,7 +89,7 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
   const auto codegen =
       std::make_unique<coolang::Codegen>(ast, obj_path, exe_path);
   // TODO set gc_verbose per test (only true for gc tests)
-  codegen->GenerateCode(/*gc_verbose=*/false);
+  codegen->GenerateCode(gc_is_verbose);
   codegen->Link();
 
   RunProgram(in_path, out_path, exe_path, use_stdin_redirection);
@@ -96,16 +97,17 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
 }
 
 void TestCodegen(const std::string& input_file,
-                 bool use_stdin_redirection = false) {
-  const std::string program_output =
-      GetCodgenedProgramOutput(input_file, use_stdin_redirection);
+                 bool use_stdin_redirection = false,
+                 bool gc_is_verbose = false) {
+  const std::string program_output = GetCodgenedProgramOutput(
+      input_file, use_stdin_redirection, gc_is_verbose);
   std::string expected_output =
       GetExpectedOutput(CODEGEN_TEST_DATA_PATH + input_file + ".out");
   EXPECT_EQ(expected_output, program_output);
 }
 
-TEST(CodegenTest, letgcroots) { TestCodegen("letgcroots.cl"); }
-/*
+TEST(CodegenTest, letgcroots) { TestCodegen("letgcroots.cl", false, true); }
+
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }
@@ -212,5 +214,5 @@ TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
 TEST(CodegenTest, typenameobject) { TestCodegen("typename-object-io.cl"); }
 TEST(CodegenTest, whileloop) { TestCodegen("whileloop.cl"); }
 TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
-*/
+
 }  // namespace

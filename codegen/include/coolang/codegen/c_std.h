@@ -16,12 +16,16 @@ class CStd {
   llvm::Constant* GetStrcpyFunc() const { return strcpy_func_; }
   llvm::Constant* GetStrncpyFunc() const { return strncpy_func_; }
   llvm::Constant* GetStrcatFunc() const { return strcat_func_; }
+  // TODO remove all use of malloc (should be all for Strings)
+  // and use gc_malloc instead. Will need to change String to be a pointer type
+  // instead of a basic type like int and bool
   llvm::Constant* GetMallocFunc() const { return malloc_func_; }
   llvm::Constant* GetExitFunc() const { return exit_func_; }
   llvm::Constant* GetStrCmpFunc() const { return strcmp_func_; }
   llvm::Constant* GetGetcharFunc() const { return getchar_func_; }
   llvm::Constant* GetAtoiFunc() const { return atoi_func_; }
 
+  llvm::Constant* GetGcMallocFunc() const { return gc_malloc_func_; }
   llvm::Constant* GetGcAddRootFunc() const { return gc_add_root_func_; }
   llvm::Constant* GetGcRemoveRootFunc() const { return gc_remove_root_func_; }
   llvm::Constant* GetGcMallocPrintFunc() const { return gc_malloc_print_func_; }
@@ -81,7 +85,11 @@ class CStd {
   // use String (becomes char*) as return type for malloc
   // since llvm has no void* type
   llvm::Constant* malloc_func_ =
+      CreateCStdFuncDecl("malloc", "String", {"Int"});
+
+  llvm::Constant* gc_malloc_func_ =
       CreateCStdFuncDecl("gc_malloc", "String", {"Int"});
+
   llvm::Constant* gc_add_root_func_ = CreateCStdFuncDecl(
       "gc_add_root", ast_to_code_map_->LlvmVoidType(),
       {ast_to_code_map_->LlvmClass("Object")->getPointerTo()->getPointerTo()},
