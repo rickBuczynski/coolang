@@ -1,12 +1,15 @@
 class Main inherits IO {
-  main() : Object { {
-    new Main;
-    new Main;
-    
-    let x : Main <- new Main in 1;
-    let x : Main <- new Main in 1;
-    let x : Main <- new Main in 1;
-    
-    new Main;
+  f(x : Int, y : Int) : Object { {
+    out_string("x: ");
+    out_int(x);
+    out_string("\ny: ");
+    out_int(y);
+    out_string("\n");
   } };
+  main() : Object {
+    let x : Int <- 2 in {
+      f(x <- 3, x <- 4);
+      out_int(x);
+    }
+  };
 };
