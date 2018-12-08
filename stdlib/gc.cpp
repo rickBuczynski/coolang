@@ -26,6 +26,7 @@ struct GcObj {
   bool is_reachable;
   // don't initialize this during malloc
   // the cool program itself handles initializing this
+  int gc_pointer_count;
   char* obj_typename;
 };
 
@@ -33,6 +34,7 @@ void PrintObj(const GcObj* obj) {
   printf("obj\n");
   // fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
   printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
+  printf("  gc_pointer_count=%d\n", obj->gc_pointer_count);
   printf("  typename=%s\n", obj->obj_typename);
 }
 

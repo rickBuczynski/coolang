@@ -22,6 +22,8 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   // use an i8 instead of i1 since clang emits i8 for bool
   // i1 should work too since i8 is min addressable data but use i8 to be safe
   class_attributes.push_back(builder_->getInt8Ty());
+  // obj_gc_pointer_count
+  class_attributes.push_back(builder_->getInt32Ty());
 
   // obj_typename_index
   class_attributes.push_back(builder_->getInt8PtrTy());

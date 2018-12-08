@@ -4,7 +4,7 @@ target datalayout = "e-m:x-p:32:32-i64:64-f80:32-n8:16:32-a:0:32-S32"
 target triple = "i386-pc-windows-msvc19.16.27024"
 
 %class.GcList = type { %struct.GcObj* }
-%struct.GcObj = type { %struct.GcObj*, %struct.GcObj*, %struct.GcObj*, %struct.GcObj*, i8, i8* }
+%struct.GcObj = type { %struct.GcObj*, %struct.GcObj*, %struct.GcObj*, %struct.GcObj*, i8, i32, i8* }
 %struct.GcRootStack = type { %struct.GcObj***, i32, i32 }
 %struct._iobuf = type { i8* }
 %struct.__crt_locale_pointers = type { %struct.__crt_locale_data*, %struct.__crt_multibyte_data* }
@@ -49,6 +49,8 @@ $"??_C@_04MDPHBIK@obj?6?$AA@" = comdat any
 
 $"??_C@_0BD@HGGAKDEI@?5?5is_reachable?$DN?$CFd?6?$AA@" = comdat any
 
+$"??_C@_0BH@JCPKELM@?5?5gc_pointer_count?$DN?$CFd?6?$AA@" = comdat any
+
 $"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@" = comdat any
 
 $"??_C@_0M@OILANDAA@Allocated?3?6?$AA@" = comdat any
@@ -83,6 +85,7 @@ $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 
 @"??_C@_04MDPHBIK@obj?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [5 x i8] c"obj\0A\00", comdat, align 1
 @"??_C@_0BD@HGGAKDEI@?5?5is_reachable?$DN?$CFd?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [19 x i8] c"  is_reachable=%d\0A\00", comdat, align 1
+@"??_C@_0BH@JCPKELM@?5?5gc_pointer_count?$DN?$CFd?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [23 x i8] c"  gc_pointer_count=%d\0A\00", comdat, align 1
 @"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [15 x i8] c"  typename=%s\0A\00", comdat, align 1
 @"?gc_obj_list@@3PAV?$GcList@VGcObjList@@@@A" = dso_local global %class.GcList* null, align 4
 @"?gc_roots@@3PAUGcRootStack@@A" = dso_local global %struct.GcRootStack* null, align 4
@@ -117,8 +120,12 @@ define dso_local void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj*) #0 {
   %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @"??_C@_0BD@HGGAKDEI@?5?5is_reachable?$DN?$CFd?6?$AA@", i32 0, i32 0), i32 %8)
   %10 = load %struct.GcObj*, %struct.GcObj** %2, align 4
   %11 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %10, i32 0, i32 5
-  %12 = load i8*, i8** %11, align 4
-  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@", i32 0, i32 0), i8* %12)
+  %12 = load i32, i32* %11, align 4
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @"??_C@_0BH@JCPKELM@?5?5gc_pointer_count?$DN?$CFd?6?$AA@", i32 0, i32 0), i32 %12)
+  %14 = load %struct.GcObj*, %struct.GcObj** %2, align 4
+  %15 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %14, i32 0, i32 6
+  %16 = load i8*, i8** %15, align 4
+  %17 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@", i32 0, i32 0), i8* %16)
   ret void
 }
 

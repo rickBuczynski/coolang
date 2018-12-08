@@ -1,5 +1,7 @@
 class A {
+ c1:C;
  foo:Int;
+ c2:C;
 };
 
 class B {
@@ -7,7 +9,7 @@ class B {
 };
 
 class C {
- foo:Int;
+ a:A;
 };
 
 class Main inherits IO {

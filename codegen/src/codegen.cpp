@@ -725,6 +725,15 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
       AstToCodeMap::obj_constructor_index);
   builder_.CreateStore(constructor, constructor_ptr_ptr);
 
+  // obj_gc_pointer_count
+  llvm::Value* gc_pointer_count_gep = builder_.CreateStructGEP(
+      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+      AstToCodeMap::obj_gc_pointer_count);
+  builder_.CreateStore(
+      llvm::ConstantInt::get(
+          context_, llvm::APInt(32, class_ast.GetNonBasicAttrCount(), true)),
+      gc_pointer_count_gep);
+
   // first store default values
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
