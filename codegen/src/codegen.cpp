@@ -130,11 +130,14 @@ class CodegenVisitor : public AstVisitor {
   bool gc_verbose_;
 };
 
-int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
+int StructAttrIndex(const ClassAst* class_ast, const AttributeFeature* attr) {
   int super_attr_count = 0;
   for (const ClassAst* super : class_ast->GetAllSuperClasses()) {
     super_attr_count += super->GetAttributeFeatures().size();
   }
+  auto attrs = class_ast->GetAllAttrsNonBasicFirst();
+  const int attribute_index =
+      std::distance(attrs.begin(), std::find(attrs.begin(), attrs.end(), attr));
   return super_attr_count + attribute_index +
          AstToCodeMap::obj_attributes_offset;
 }
@@ -160,7 +163,7 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
   case_expr.GetCaseExpr()->Accept(*this);
   llvm::Value* case_val = case_expr.GetCaseExpr()->LlvmValue();
 
-  if (!AstToCodeMap::IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+  if (!IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
     GenExitIfVoid(case_val,
                   case_expr.GetCaseExpr()->GetLineRange().end_line_num,
                   "Match on void in case statement.");
@@ -284,16 +287,15 @@ void CodegenVisitor::Visit(const WhileExpr& while_expr) {
 llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
                                          const std::string& cur_type,
                                          const std::string& dest_type) {
-  if (AstToCodeMap::IsBasicType(cur_type) && dest_type == "Object") {
+  if (IsBasicType(cur_type) && dest_type == "Object") {
     return CreateBoxedBasic(cur_type, convert_me);
   }
-  if (AstToCodeMap::IsBasicType(cur_type) && dest_type != "Object" &&
-      dest_type != cur_type) {
+  if (IsBasicType(cur_type) && dest_type != "Object" && dest_type != cur_type) {
     // invalid conversion, this should only occur in a case branch that's not
     // taken so we can return anything, choose to just return default val
     return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
   }
-  if (AstToCodeMap::IsBasicType(dest_type) && cur_type == "Object") {
+  if (IsBasicType(dest_type) && cur_type == "Object") {
     return UnboxValue(dest_type, convert_me);
   }
   if (cur_type != dest_type) {
@@ -327,8 +329,7 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
       llvm::Value* init_val = cur_let->GetInitializationExpr()->LlvmValue();
       llvm::Type* let_type = ast_to_.LlvmBasicOrClassPtrTy(cur_let->GetType());
 
-      if (AstToCodeMap::IsBasicType(
-              cur_let->GetInitializationExpr()->GetExprType()) &&
+      if (IsBasicType(cur_let->GetInitializationExpr()->GetExprType()) &&
           cur_let->GetType() == "Object") {
         init_val = CreateBoxedBasic(
             cur_let->GetInitializationExpr()->GetExprType(), init_val);
@@ -412,7 +413,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
 
   llvm::Value* lhs_val = call_expr.GetLhsExpr()->LlvmValue();
 
-  if (!AstToCodeMap::IsBasicType(call_expr.GetLhsExpr()->GetExprType())) {
+  if (!IsBasicType(call_expr.GetLhsExpr()->GetExprType())) {
     GenExitIfVoid(lhs_val, call_expr.GetLhsExpr()->GetLineRange().end_line_num,
                   "Dispatch to void.");
   }
@@ -557,9 +558,7 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
   }
 
   for (const ClassAst* class_ast : CurClass()->SupersThenThis()) {
-    for (size_t i = 0; i < class_ast->GetAttributeFeatures().size(); i++) {
-      const auto* attr = class_ast->GetAttributeFeatures()[i];
-
+    for (const auto* attr : class_ast->GetAttributeFeatures()) {
       llvm::Value* cur_class_val = ast_to_.CurLlvmFunc()->args().begin();
       cur_class_val = ConvertType(cur_class_val, CurClass()->GetName(),
                                   class_ast->GetName());
@@ -567,7 +566,7 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
       if (attr->GetId() == obj.GetId()) {
         llvm::Value* element_ptr = builder_.CreateStructGEP(
             ast_to_.LlvmClass(class_ast), cur_class_val,
-            StructAttrIndex(class_ast, i));
+            StructAttrIndex(class_ast, attr));
         obj.SetLlvmValue(builder_.CreateLoad(element_ptr));
         return;
       }
@@ -728,12 +727,10 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
   // first store default values
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
-    for (size_t i = 0; i < cur_class->GetAttributeFeatures().size(); i++) {
-      const AttributeFeature* attr = cur_class->GetAttributeFeatures()[i];
-
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-          StructAttrIndex(cur_class, i));
+          StructAttrIndex(cur_class, attr));
       builder_.CreateStore(
           ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()), element_ptr);
     }
@@ -746,9 +743,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
   // then store value from init expr
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
-    for (size_t i = 0; i < cur_class->GetAttributeFeatures().size(); i++) {
-      const AttributeFeature* attr = cur_class->GetAttributeFeatures()[i];
-
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
       if (attr->GetRootExpr()) {
         attr->GetRootExpr()->Accept(*this);
         llvm::Value* init_val = attr->GetRootExpr()->LlvmValue();
@@ -757,7 +752,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
         llvm::Value* element_ptr = builder_.CreateStructGEP(
             ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-            StructAttrIndex(cur_class, i));
+            StructAttrIndex(cur_class, attr));
 
         builder_.CreateStore(init_val, element_ptr);
       }
@@ -918,7 +913,7 @@ void CodegenVisitor::Visit(const AssignExpr& assign) {
   llvm::Value* assign_lhs_ptr = GetAssignmentLhsPtr(assign);
   llvm::Value* assign_rhs_val = assign.GetRhsExpr()->LlvmValue();
 
-  if (AstToCodeMap::IsBasicType(assign.GetRhsExpr()->GetExprType())) {
+  if (IsBasicType(assign.GetRhsExpr()->GetExprType())) {
     auto* lhs_ty = assign_lhs_ptr->getType()->getPointerElementType();
 
     const bool lhs_is_basic_ty = lhs_ty == builder_.getInt1Ty() ||
@@ -956,9 +951,7 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& assign) {
   }
 
   for (const ClassAst* class_ast : CurClass()->SupersThenThis()) {
-    for (size_t i = 0; i < class_ast->GetAttributeFeatures().size(); i++) {
-      const auto* attr = class_ast->GetAttributeFeatures()[i];
-
+    for (const auto* attr : class_ast->GetAttributeFeatures()) {
       llvm::Value* cur_class_val = ast_to_.CurLlvmFunc()->args().begin();
       cur_class_val = ConvertType(cur_class_val, CurClass()->GetName(),
                                   class_ast->GetName());
@@ -966,7 +959,7 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& assign) {
       if (attr->GetId() == assign.GetId()) {
         return builder_.CreateStructGEP(ast_to_.LlvmClass(class_ast),
                                         cur_class_val,
-                                        StructAttrIndex(class_ast, i));
+                                        StructAttrIndex(class_ast, attr));
       }
     }
   }

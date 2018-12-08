@@ -46,11 +46,6 @@ class AstToCodeMap {
   void AddMethods(const ClassAst* class_ast);
   void AddConstructor(const ClassAst* class_ast);
 
-  static bool IsBasicType(const std::string& class_name) {
-    return class_name == "Int" || class_name == "String" ||
-           class_name == "Bool";
-  }
-
   static bool TypeUsesVtable(const std::string& class_name) {
     // Int Bool and String are implemented as unboxed values so there's nowhere
     // to store a vtable pointer. And they can't be inherited from so there's no
