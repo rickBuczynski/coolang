@@ -858,11 +858,7 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
   builder_.CreateCall(ast_to_.GetConstructor(type_name), args);
 
   if (gc_verbose_) {
-    builder_.CreateCall(
-        c_std_.GetGcPrintObjFunc(),
-        {builder_.CreateBitCast(new_val,
-                                ast_to_.LlvmClass("Object")->getPointerTo())});
-    builder_.CreateCall(c_std_.GetPrintGcObjListFunc(), {});
+    builder_.CreateCall(c_std_.GetGcMallocPrintFunc(), {});
   }
 
   return new_val;

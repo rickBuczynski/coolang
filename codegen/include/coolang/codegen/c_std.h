@@ -24,10 +24,7 @@ class CStd {
 
   llvm::Constant* GetGcAddRootFunc() const { return gc_add_root_func_; }
   llvm::Constant* GetGcRemoveRootFunc() const { return gc_remove_root_func_; }
-  llvm::Constant* GetGcPrintObjFunc() const { return gc_print_obj_func_; }
-  llvm::Constant* GetPrintGcObjListFunc() const {
-    return print_gc_obj_list_func_;
-  }
+  llvm::Constant* GetGcMallocPrintFunc() const { return gc_malloc_print_func_; }
   llvm::Constant* GetGcSystemInitFunc() const { return gc_system_init_func_; }
   llvm::Constant* GetGcSystemDestroyFunc() const {
     return gc_system_destroy_func_;
@@ -93,12 +90,8 @@ class CStd {
       "gc_remove_root", ast_to_code_map_->LlvmVoidType(),
       {ast_to_code_map_->LlvmClass("Object")->getPointerTo()->getPointerTo()},
       false);
-  llvm::Constant* gc_print_obj_func_ = CreateCStdFuncDecl(
-      "gc_print_obj", ast_to_code_map_->LlvmVoidType(),
-      {ast_to_code_map_->LlvmClass("Object")->getPointerTo()}, false);
-  // TODO rename to gc_print_obj_list
-  llvm::Constant* print_gc_obj_list_func_ =
-      CreateCStdFuncDecl("print_gc_obj_list", "Void", {});
+  llvm::Constant* gc_malloc_print_func_ =
+      CreateCStdFuncDecl("gc_malloc_print", "Void", {});
   llvm::Constant* gc_system_init_func_ =
       CreateCStdFuncDecl("gc_system_init", "Void", {});
   llvm::Constant* gc_system_destroy_func_ =

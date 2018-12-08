@@ -1,8 +1,18 @@
+Allocated:
+obj
+  is_reachable=0
+  typename=A
+
 gc objs start
 obj
   is_reachable=0
   typename=A
 gc objs end
+
+Allocated:
+obj
+  is_reachable=0
+  typename=B
 
 gc objs start
 obj
@@ -12,6 +22,11 @@ obj
   is_reachable=0
   typename=A
 gc objs end
+
+Allocated:
+obj
+  is_reachable=0
+  typename=A
 
 gc objs start
 obj
@@ -37,6 +52,11 @@ obj
   typename=A
 End of current GC roots
 
+Allocated:
+obj
+  is_reachable=0
+  typename=B
+
 gc objs start
 obj
   is_reachable=0
@@ -67,6 +87,11 @@ obj
   is_reachable=0
   typename=B
 End of current GC roots
+
+Allocated:
+obj
+  is_reachable=0
+  typename=C
 
 gc objs start
 obj
@@ -141,6 +166,11 @@ obj
 
 Current GC roots:
 End of current GC roots
+
+Allocated:
+obj
+  is_reachable=0
+  typename=Object
 
 gc objs start
 obj

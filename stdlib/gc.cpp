@@ -11,9 +11,9 @@ extern "C" void* malloc(int size);
 
 // TODO refactor extern api to just:
 // gc_malloc(int size)
-// print_malloc() maybe takes in the malloced obj, or maybe gc system keeps track of it
-// similar api for roots
-// only call printing apis from codegen if verbose flag is set       
+// print_malloc() maybe takes in the malloced obj, or maybe gc system keeps
+// track of it similar api for roots only call printing apis from codegen if
+// verbose flag is set
 
 // TODO GCwont work for Cool Strings
 struct GcObj {
@@ -29,7 +29,7 @@ struct GcObj {
   char* obj_typename;
 };
 
-extern "C" void gc_print_obj(GcObj* obj) {
+void PrintObj(const GcObj* obj) {
   printf("obj\n");
   // fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
   printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
@@ -63,9 +63,9 @@ struct GcRootStack {
     if (roots[length - 1] != root) {
       printf("BADBADBADBADBADBADBADBADBAD\n");
       printf("Root at top of stack points to:\n");
-      gc_print_obj(*roots[length]);
+      PrintObj(*roots[length]);
       printf("Root to remove points to:\n");
-      gc_print_obj(*root);
+      PrintObj(*root);
     }
     length--;
   }
@@ -74,7 +74,7 @@ struct GcRootStack {
     printf("Current GC roots:\n");
     for (int i = 0; i < length; i++) {
       printf("Root that points to:\n");
-      gc_print_obj(*roots[i]);
+      PrintObj(*roots[i]);
     }
     printf("End of current GC roots\n\n");
   }
@@ -93,7 +93,7 @@ class GcList {
 
     printf("%s start\n", T::ListName());
     while (obj != nullptr) {
-      gc_print_obj(obj);
+      PrintObj(obj);
 
       if (prev != T::GetPrev(obj)) {
         printf("  BADBADBADBADBADBADBADBADBADBADBADBADBADBAD\n");
@@ -135,6 +135,8 @@ class GcList {
     head_ = obj;
   }
 
+  const GcObj* GetHead() const { return head_; };
+
  private:
   GcObj* head_ = nullptr;
 };
@@ -169,8 +171,6 @@ extern "C" void gc_system_destroy() {
   delete gc_obj_list;
 }
 
-extern "C" void print_gc_obj_list() { gc_obj_list->PrintList(); }
-
 extern "C" void* gc_malloc(int size) {
   auto* obj = static_cast<GcObj*>(malloc(size));
 
@@ -185,9 +185,17 @@ extern "C" void* gc_malloc(int size) {
   return static_cast<void*>(obj);
 }
 
+extern "C" void gc_malloc_print() {
+  printf("Allocated:\n");
+  PrintObj(gc_obj_list->GetHead());
+  printf("\n");
+
+  gc_obj_list->PrintList();
+}
+
 extern "C" void gc_add_root(GcObj** root) {
   printf("Inserting a root that points to:\n");
-  gc_print_obj(*root);
+  PrintObj(*root);
   printf("\n");
 
   gc_roots->PushRoot(root);
@@ -196,7 +204,7 @@ extern "C" void gc_add_root(GcObj** root) {
 
 extern "C" void gc_remove_root(GcObj** root) {
   printf("Removing a root that points to:\n");
-  gc_print_obj(*root);
+  PrintObj(*root);
   printf("\n");
 
   gc_roots->PopRoot(root);
