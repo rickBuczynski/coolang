@@ -199,10 +199,11 @@ class GcList {
 GcList* gc_obj_list;
 GcRootStack* gc_roots;
 
-// TODO use gc_is_allowed to block GC while evaluating function args
-// e.g. f(new A, 3, new B)
-// we don't want "new B" to trigger GC of "new A" before we go into the function
-// and add the function args as GC roots
+// TODO remove gc_is_allowed
+// use extra roots for eq expr instead of disable gc
+// TODO fix "c" test
+// TODO change test output to be simple just allocs and frees
+
 bool gc_is_allowed = false;
 
 bool gc_is_verbose = false;

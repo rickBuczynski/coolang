@@ -116,6 +116,8 @@ class CodegenVisitor : public AstVisitor {
 
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& assign);
 
+  llvm::Value* AddGcRoot(llvm::AllocaInst* alloca_inst);
+
   const ClassAst* CurClass() const { return ast_to_.CurClass(); }
   const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
 
@@ -345,10 +347,7 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
     }
 
     if (!IsBasicType(cur_let->GetType())) {
-      llvm::Value* root = builder_.CreateBitCast(
-          alloca_inst,
-          ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
-      builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+      AddGcRoot(alloca_inst);
     }
 
     AddToScope(cur_let->GetId(), alloca_inst);
@@ -400,10 +399,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
       llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
           ast_to_.LlvmBasicOrClassPtrTy(arg->GetExprType()));
       builder_.CreateStore(arg->LlvmValue(), alloca_inst);
-      llvm::Value* root = builder_.CreateBitCast(
-          alloca_inst,
-          ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
-      builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+      llvm::Value* root = AddGcRoot(alloca_inst);
       arg_gc_roots.push_back(root);
     }
   }
@@ -786,9 +782,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   llvm::AllocaInst* self_alloca =
       builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
   builder_.CreateStore(constructor->arg_begin(), self_alloca);
-  llvm::Value* root = builder_.CreateBitCast(
-      self_alloca, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
-  builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+  llvm::Value* root = AddGcRoot(self_alloca);
 
   // then store value from init expr
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
@@ -814,6 +808,13 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   ast_to_.EraseMethod(&dummy_constructor_method);
 
   builder_.CreateRetVoid();
+}
+
+llvm::Value* CodegenVisitor::AddGcRoot(llvm::AllocaInst* alloca_inst) {
+  llvm::Value* root = builder_.CreateBitCast(
+      alloca_inst, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+  builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+  return root;
 }
 
 void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
@@ -844,10 +845,7 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
 
     for (const auto& binding : bindings) {
       if (!IsBasicType(binding.type)) {
-        llvm::Value* root = builder_.CreateBitCast(
-            binding.alloca_inst,
-            ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
-        builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+        AddGcRoot(binding.alloca_inst);
       }
     }
 
