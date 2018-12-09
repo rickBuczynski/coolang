@@ -388,12 +388,30 @@ void CodegenVisitor::Visit(const IsVoidExpr& is_void) {
 }
 
 void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
+  std::vector<llvm::Value*> arg_gc_roots;
+
   // codegen args first
   for (const auto& arg : call_expr.GetArgs()) {
     arg->Accept(*this);
+
+    if (!IsBasicType(arg->GetExprType())) {
+      llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+          ast_to_.LlvmBasicOrClassPtrTy(arg->GetExprType()));
+      builder_.CreateStore(arg->LlvmValue(), alloca_inst);
+      llvm::Value* root = builder_.CreateBitCast(
+          alloca_inst,
+          ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+      builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+      arg_gc_roots.push_back(root);
+    }
   }
   // codegen LHS after all args
   call_expr.GetLhsExpr()->Accept(*this);
+
+  // for (auto* arg_gc_root : arg_gc_roots) {
+  for (auto it = arg_gc_roots.rbegin(); it != arg_gc_roots.rend(); ++it) {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {*it});
+  }
 
   const ClassAst* class_calling_method =
       ast_to_.GetClassByName(call_expr.GetLhsExpr()->GetExprType());
