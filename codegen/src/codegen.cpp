@@ -344,11 +344,10 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
           alloca_inst);
     }
 
-    llvm::Value* root = builder_.CreateBitCast(
-        alloca_inst,
-        ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
-
     if (!IsBasicType(cur_let->GetType())) {
+      llvm::Value* root = builder_.CreateBitCast(
+          alloca_inst,
+          ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
       builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
     }
 
@@ -365,11 +364,10 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
   // shouldn't need to pass in the root but it allows sanity checking we are
   // removing the correct root.
   for (auto it = bindings.rbegin(); it != bindings.rend(); ++it) {
-    llvm::Value* root = builder_.CreateBitCast(
-        it->alloca_inst,
-        ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
-
     if (!IsBasicType(it->type)) {
+      llvm::Value* root = builder_.CreateBitCast(
+          it->alloca_inst,
+          ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
       builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
     }
 
@@ -752,6 +750,15 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   ast_to_.SetLlvmFunction(&dummy_constructor_method, constructor);
   ast_to_.SetCurrentMethod(&dummy_constructor_method);
 
+  // need to set a GC root to an obj during initialization of attributes because
+  // an allocation in an init expr could cause the obj to be destroyed
+  llvm::AllocaInst* self_alloca =
+      builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
+  builder_.CreateStore(constructor->arg_begin(), self_alloca);
+  llvm::Value* root = builder_.CreateBitCast(
+      self_alloca, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+  builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+
   // then store value from init expr
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
@@ -770,6 +777,8 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
     }
   }
 
+  builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+
   ast_to_.SetCurrentMethod(nullptr);
   ast_to_.EraseMethod(&dummy_constructor_method);
 
@@ -784,12 +793,12 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
         llvm::BasicBlock::Create(context_, "entrypoint", func);
     builder_.SetInsertPoint(entry);
 
-    std::vector<Binding> gc_root_bindings;
+    std::vector<Binding> bindings;
     // add a gc_root_bindings for implicit self param
     llvm::AllocaInst* self_alloca = builder_.CreateAlloca(
         ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
     builder_.CreateStore(func->arg_begin(), self_alloca);
-    gc_root_bindings.emplace_back("self", class_ast.GetName(), self_alloca);
+    bindings.emplace_back("self", class_ast.GetName(), self_alloca);
 
     auto arg_iter = func->arg_begin();
     arg_iter++;  // skip implicit self param
@@ -797,9 +806,18 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
       llvm::AllocaInst* alloca_inst =
           builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(arg.GetType()));
       builder_.CreateStore(arg_iter, alloca_inst);
-      gc_root_bindings.emplace_back(arg.GetId(), arg.GetType(), alloca_inst);
+      bindings.emplace_back(arg.GetId(), arg.GetType(), alloca_inst);
       AddToScope(arg.GetId(), alloca_inst);
       arg_iter++;
+    }
+
+    for (const auto& binding : bindings) {
+      if (!IsBasicType(binding.type)) {
+        llvm::Value* root = builder_.CreateBitCast(
+            binding.alloca_inst,
+            ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+        builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+      }
     }
 
     ast_to_.SetCurrentMethod(method);
@@ -808,6 +826,15 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
 
     for (const auto& arg : method->GetArgs()) {
       RemoveFromScope(arg.GetId());
+    }
+
+    for (auto it = bindings.rbegin(); it != bindings.rend(); ++it) {
+      if (!IsBasicType(it->type)) {
+        llvm::Value* root = builder_.CreateBitCast(
+            it->alloca_inst,
+            ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+        builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+      }
     }
 
     llvm::Value* retval = ConvertType(method->GetRootExpr()->LlvmValue(),

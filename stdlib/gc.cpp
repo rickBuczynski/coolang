@@ -210,7 +210,7 @@ bool gc_is_verbose = false;
 extern "C" void gc_system_init(int is_verbose) {
   gc_obj_list = new GcList;
   gc_roots = new GcRootStack;
-  gc_is_allowed = true;
+  gc_is_allowed = true;  // TODO start as false?
   gc_is_verbose = is_verbose;
 }
 
@@ -219,6 +219,9 @@ extern "C" void gc_system_destroy() {
   delete gc_roots;
   delete gc_obj_list;
 }
+
+// TODO extern "C" void gc_set_allowed(int is_allowed) { gc_is_allowed =
+// is_allowed; }
 
 extern "C" void* gc_malloc(int size) {
   if (gc_is_allowed) {
