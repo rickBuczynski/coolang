@@ -674,17 +674,33 @@ void CodegenVisitor::GenExit(int line_num,
 }
 
 void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
-  // turn off GC during this expr so an expr like "new A = new A" doesn't delete
-  // before the comparison
   // TODO add gc verbose test for "new A = new A"
-  builder_.CreateCall(c_std_.GetGcSetIsAllowedFunc(),
-                      {ast_to_.LlvmConstInt32(0)});
+
+  // if we have 2 non-basic types this could be something like "new A = new A"
+  // and we don't want to GC the LHS when we allocate the RHS so we need a root
+  // for the LHS
+  bool need_gc_root = !IsBasicType(eq_expr.GetLhsExpr()->GetExprType()) &&
+                      !IsBasicType(eq_expr.GetRhsExpr()->GetExprType());
 
   eq_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = eq_expr.GetLhsExpr()->LlvmValue();
 
+  llvm::Value* root = nullptr;
+  if (need_gc_root) {
+    llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+        ast_to_.LlvmBasicOrClassPtrTy(eq_expr.GetLhsExpr()->GetExprType()));
+    builder_.CreateStore(eq_expr.GetLhsExpr()->LlvmValue(), alloca_inst);
+    root = AddGcRoot(alloca_inst);
+  }
+
   eq_expr.GetRhsExpr()->Accept(*this);
   llvm::Value* rhs_value = eq_expr.GetRhsExpr()->LlvmValue();
+
+  // safe to remove the root now that we codegened the RHS, there won't be
+  // another allocation/GC until after this expr is done
+  if (need_gc_root) {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+  }
 
   if (eq_expr.GetLhsExpr()->GetExprType() == "Int" ||
       eq_expr.GetLhsExpr()->GetExprType() == "Bool") {
@@ -700,9 +716,6 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   eq_expr.SetLlvmValue(builder_.CreateICmpEQ(
       builder_.CreatePtrToInt(lhs_value, builder_.getInt32Ty()),
       builder_.CreatePtrToInt(rhs_value, builder_.getInt32Ty())));
-
-  builder_.CreateCall(c_std_.GetGcSetIsAllowedFunc(),
-                      {ast_to_.LlvmConstInt32(1)});
 }
 
 void CodegenVisitor::Visit(const DivideExpr& div_expr) {

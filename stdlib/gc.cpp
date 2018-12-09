@@ -204,19 +204,15 @@ GcRootStack* gc_roots;
 // TODO fix "c" test
 // TODO change test output to be simple just allocs and frees
 
-bool gc_is_allowed = false;
-
 bool gc_is_verbose = false;
 
 extern "C" void gc_system_init(int is_verbose) {
   gc_obj_list = new GcList;
   gc_roots = new GcRootStack;
-  gc_is_allowed = true;
   gc_is_verbose = is_verbose;
 }
 
 extern "C" void gc_system_destroy() {
-  gc_is_allowed = false;
   delete gc_roots;
   delete gc_obj_list;
 }
@@ -235,17 +231,8 @@ void Collect() {
   }
 }
 
-extern "C" void gc_set_allowed(int is_allowed) {
-  gc_is_allowed = is_allowed;
-  if (gc_is_allowed) {
-    Collect();
-  }
-}
-
 extern "C" void* gc_malloc(int size) {
-  if (gc_is_allowed) {
-    Collect();
-  }
+  Collect();
 
   auto* obj = static_cast<GcObj*>(malloc(size));
 
