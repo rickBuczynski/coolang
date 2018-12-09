@@ -1033,8 +1033,7 @@ void CodegenVisitor::GenMainFunc() {
   builder_.CreateCall(c_std_.GetGcSystemInitFunc(),
                       {ast_to_.LlvmConstInt32(gc_verbose_)});
 
-  llvm::AllocaInst* main_class =
-      builder_.CreateAlloca(ast_to_.LlvmClass("Main"));
+  llvm::Value* main_class = GenAllocAndConstruct("Main");
   std::vector<llvm::Value*> args;
   args.push_back(main_class);
 
