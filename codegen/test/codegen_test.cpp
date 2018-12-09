@@ -107,9 +107,6 @@ void TestCodegen(const std::string& input_file,
 }
 
 TEST(CodegenTest, letgcroots) { TestCodegen("letgcroots.cl", false, true); }
-//TEST(CodegenTest, sort_list) { TestCodegen("sort_list.cl"); }
-//TEST(CodegenTest, evalorderargs) { TestCodegen("eval-order-args.cl"); }
-//TEST(CodegenTest, book_list) { TestCodegen("book_list.cl"); }
 
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
