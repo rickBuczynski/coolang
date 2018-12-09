@@ -394,6 +394,8 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
   for (const auto& arg : call_expr.GetArgs()) {
     arg->Accept(*this);
 
+    // add GC roots for each arg e.g f(new A, new B) we don't want GC to delete
+    // A when allocating B
     if (!IsBasicType(arg->GetExprType())) {
       llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
           ast_to_.LlvmBasicOrClassPtrTy(arg->GetExprType()));
@@ -408,7 +410,9 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
   // codegen LHS after all args
   call_expr.GetLhsExpr()->Accept(*this);
 
-  // for (auto* arg_gc_root : arg_gc_roots) {
+  // now it's safe to remove the gc roots for the args since there wont be any
+  // more GC allocations until inside the called function body which will set
+  // its own roots for its args
   for (auto it = arg_gc_roots.rbegin(); it != arg_gc_roots.rend(); ++it) {
     builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {*it});
   }
