@@ -656,6 +656,12 @@ void CodegenVisitor::GenExit(int line_num,
 }
 
 void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
+  // turn off GC during this expr so an expr like "new A = new A" doesn't delete
+  // before the comparison
+  // TODO add gc verbose test for "new A = new A"
+  builder_.CreateCall(c_std_.GetGcSetIsAllowedFunc(),
+                      {ast_to_.LlvmConstInt32(0)});
+
   eq_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = eq_expr.GetLhsExpr()->LlvmValue();
 
@@ -676,6 +682,9 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   eq_expr.SetLlvmValue(builder_.CreateICmpEQ(
       builder_.CreatePtrToInt(lhs_value, builder_.getInt32Ty()),
       builder_.CreatePtrToInt(rhs_value, builder_.getInt32Ty())));
+
+  builder_.CreateCall(c_std_.GetGcSetIsAllowedFunc(),
+                      {ast_to_.LlvmConstInt32(1)});
 }
 
 void CodegenVisitor::Visit(const DivideExpr& div_expr) {

@@ -33,6 +33,9 @@ class CStd {
   llvm::Constant* GetGcSystemDestroyFunc() const {
     return gc_system_destroy_func_;
   }
+  llvm::Constant* GetGcSetIsAllowedFunc() const {
+    return gc_set_allowed_func_;
+  }
 
  private:
   llvm::Constant* CreateCStdFuncDecl(const std::string& func_name,
@@ -104,6 +107,9 @@ class CStd {
       CreateCStdFuncDecl("gc_system_init", "Void", {"Int"});
   llvm::Constant* gc_system_destroy_func_ =
       CreateCStdFuncDecl("gc_system_destroy", "Void", {});
+
+  llvm::Constant* gc_set_allowed_func_ =
+      CreateCStdFuncDecl("gc_set_allowed", "Void", {"Int"});
 };
 
 }  // namespace coolang

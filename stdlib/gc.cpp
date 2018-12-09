@@ -210,7 +210,7 @@ bool gc_is_verbose = false;
 extern "C" void gc_system_init(int is_verbose) {
   gc_obj_list = new GcList;
   gc_roots = new GcRootStack;
-  gc_is_allowed = true;  // TODO start as false?
+  gc_is_allowed = true;
   gc_is_verbose = is_verbose;
 }
 
@@ -220,22 +220,30 @@ extern "C" void gc_system_destroy() {
   delete gc_obj_list;
 }
 
-// TODO extern "C" void gc_set_allowed(int is_allowed) { gc_is_allowed =
-// is_allowed; }
+void Collect() {
+  gc_obj_list->UnmarkList();
+  gc_roots->MarkReachable();
+  if (gc_is_verbose) {
+    printf("Gc Objs after marking reachable:\n");
+    gc_obj_list->PrintList();
+  }
+  gc_obj_list->Sweep();
+  if (gc_is_verbose) {
+    printf("Gc Objs after sweep:\n");
+    gc_obj_list->PrintList();
+  }
+}
+
+extern "C" void gc_set_allowed(int is_allowed) {
+  gc_is_allowed = is_allowed;
+  if (gc_is_allowed) {
+    Collect();
+  }
+}
 
 extern "C" void* gc_malloc(int size) {
   if (gc_is_allowed) {
-    gc_obj_list->UnmarkList();
-    gc_roots->MarkReachable();
-    if (gc_is_verbose) {
-      printf("Gc Objs after marking reachable:\n");
-      gc_obj_list->PrintList();
-    }
-    gc_obj_list->Sweep();
-    if (gc_is_verbose) {
-      printf("Gc Objs after sweep:\n");
-      gc_obj_list->PrintList();
-    }
+    Collect();
   }
 
   auto* obj = static_cast<GcObj*>(malloc(size));

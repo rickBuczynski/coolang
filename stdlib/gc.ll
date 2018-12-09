@@ -354,71 +354,36 @@ define linkonce_odr dso_local x86_thiscallcc void @"??1GcRootStack@@QAE@XZ"(%str
 declare dso_local void @"??3@YAXPAX@Z"(i8*) #2
 
 ; Function Attrs: noinline nounwind optnone
-define dso_local i8* @gc_malloc(i32) #0 {
-  %2 = alloca i32, align 4
-  %3 = alloca %struct.GcObj*, align 4
-  store i32 %0, i32* %2, align 4
-  %4 = load i8, i8* @"?gc_is_allowed@@3_NA", align 1
-  %5 = trunc i8 %4 to i1
-  br i1 %5, label %6, label %22
+define dso_local void @"?Collect@@YAXXZ"() #0 {
+  %1 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
+  call x86_thiscallcc void @"?UnmarkList@GcList@@QBEXXZ"(%class.GcList* %1)
+  %2 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
+  call x86_thiscallcc void @"?MarkReachable@GcRootStack@@QBEXXZ"(%struct.GcRootStack* %2)
+  %3 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
+  %4 = trunc i8 %3 to i1
+  br i1 %4, label %5, label %8
 
-; <label>:6:                                      ; preds = %1
+; <label>:5:                                      ; preds = %0
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @"??_C@_0CC@EADGIEBI@Gc?5Objs?5after?5marking?5reachable?3@", i32 0, i32 0))
   %7 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
-  call x86_thiscallcc void @"?UnmarkList@GcList@@QBEXXZ"(%class.GcList* %7)
-  %8 = load %struct.GcRootStack*, %struct.GcRootStack** @"?gc_roots@@3PAUGcRootStack@@A", align 4
-  call x86_thiscallcc void @"?MarkReachable@GcRootStack@@QBEXXZ"(%struct.GcRootStack* %8)
-  %9 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
-  %10 = trunc i8 %9 to i1
-  br i1 %10, label %11, label %14
+  call x86_thiscallcc void @"?PrintList@GcList@@QBEXXZ"(%class.GcList* %7)
+  br label %8
 
-; <label>:11:                                     ; preds = %6
-  %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @"??_C@_0CC@EADGIEBI@Gc?5Objs?5after?5marking?5reachable?3@", i32 0, i32 0))
-  %13 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
-  call x86_thiscallcc void @"?PrintList@GcList@@QBEXXZ"(%class.GcList* %13)
-  br label %14
+; <label>:8:                                      ; preds = %5, %0
+  %9 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
+  call x86_thiscallcc void @"?Sweep@GcList@@QAEXXZ"(%class.GcList* %9)
+  %10 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
+  %11 = trunc i8 %10 to i1
+  br i1 %11, label %12, label %15
 
-; <label>:14:                                     ; preds = %11, %6
-  %15 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
-  call x86_thiscallcc void @"?Sweep@GcList@@QAEXXZ"(%class.GcList* %15)
-  %16 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
-  %17 = trunc i8 %16 to i1
-  br i1 %17, label %18, label %21
+; <label>:12:                                     ; preds = %8
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @"??_C@_0BG@FKDBILDH@Gc?5Objs?5after?5sweep?3?6?$AA@", i32 0, i32 0))
+  %14 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
+  call x86_thiscallcc void @"?PrintList@GcList@@QBEXXZ"(%class.GcList* %14)
+  br label %15
 
-; <label>:18:                                     ; preds = %14
-  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([22 x i8], [22 x i8]* @"??_C@_0BG@FKDBILDH@Gc?5Objs?5after?5sweep?3?6?$AA@", i32 0, i32 0))
-  %20 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
-  call x86_thiscallcc void @"?PrintList@GcList@@QBEXXZ"(%class.GcList* %20)
-  br label %21
-
-; <label>:21:                                     ; preds = %18, %14
-  br label %22
-
-; <label>:22:                                     ; preds = %21, %1
-  %23 = load i32, i32* %2, align 4
-  %24 = call noalias i8* @malloc(i32 %23)
-  %25 = bitcast i8* %24 to %struct.GcObj*
-  store %struct.GcObj* %25, %struct.GcObj** %3, align 4
-  %26 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %27 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %26, i32 0, i32 0
-  store %struct.GcObj* null, %struct.GcObj** %27, align 4
-  %28 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %29 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %28, i32 0, i32 1
-  store %struct.GcObj* null, %struct.GcObj** %29, align 4
-  %30 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %31 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %30, i32 0, i32 2
-  store %struct.GcObj* null, %struct.GcObj** %31, align 4
-  %32 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %33 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %32, i32 0, i32 3
-  store %struct.GcObj* null, %struct.GcObj** %33, align 4
-  %34 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %35 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %34, i32 0, i32 4
-  store i8 0, i8* %35, align 4
-  %36 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
-  %37 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  call x86_thiscallcc void @"?PushFront@GcList@@QAEXPAUGcObj@@@Z"(%class.GcList* %36, %struct.GcObj* %37)
-  %38 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %39 = bitcast %struct.GcObj* %38 to i8*
-  ret i8* %39
+; <label>:15:                                     ; preds = %12, %8
+  ret void
 }
 
 ; Function Attrs: noinline nounwind optnone
@@ -575,6 +540,67 @@ define linkonce_odr dso_local x86_thiscallcc void @"?Sweep@GcList@@QAEXXZ"(%clas
 
 ; <label>:24:                                     ; preds = %8
   ret void
+}
+
+; Function Attrs: noinline nounwind optnone
+define dso_local void @gc_set_allowed(i32) #0 {
+  %2 = alloca i32, align 4
+  store i32 %0, i32* %2, align 4
+  %3 = load i32, i32* %2, align 4
+  %4 = icmp ne i32 %3, 0
+  %5 = zext i1 %4 to i8
+  store i8 %5, i8* @"?gc_is_allowed@@3_NA", align 1
+  %6 = load i8, i8* @"?gc_is_allowed@@3_NA", align 1
+  %7 = trunc i8 %6 to i1
+  br i1 %7, label %8, label %9
+
+; <label>:8:                                      ; preds = %1
+  call void @"?Collect@@YAXXZ"()
+  br label %9
+
+; <label>:9:                                      ; preds = %8, %1
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone
+define dso_local i8* @gc_malloc(i32) #0 {
+  %2 = alloca i32, align 4
+  %3 = alloca %struct.GcObj*, align 4
+  store i32 %0, i32* %2, align 4
+  %4 = load i8, i8* @"?gc_is_allowed@@3_NA", align 1
+  %5 = trunc i8 %4 to i1
+  br i1 %5, label %6, label %7
+
+; <label>:6:                                      ; preds = %1
+  call void @"?Collect@@YAXXZ"()
+  br label %7
+
+; <label>:7:                                      ; preds = %6, %1
+  %8 = load i32, i32* %2, align 4
+  %9 = call noalias i8* @malloc(i32 %8)
+  %10 = bitcast i8* %9 to %struct.GcObj*
+  store %struct.GcObj* %10, %struct.GcObj** %3, align 4
+  %11 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %12 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %11, i32 0, i32 0
+  store %struct.GcObj* null, %struct.GcObj** %12, align 4
+  %13 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %14 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %13, i32 0, i32 1
+  store %struct.GcObj* null, %struct.GcObj** %14, align 4
+  %15 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %16 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %15, i32 0, i32 2
+  store %struct.GcObj* null, %struct.GcObj** %16, align 4
+  %17 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %18 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %17, i32 0, i32 3
+  store %struct.GcObj* null, %struct.GcObj** %18, align 4
+  %19 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %20 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %19, i32 0, i32 4
+  store i8 0, i8* %20, align 4
+  %21 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
+  %22 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  call x86_thiscallcc void @"?PushFront@GcList@@QAEXPAUGcObj@@@Z"(%class.GcList* %21, %struct.GcObj* %22)
+  %23 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %24 = bitcast %struct.GcObj* %23 to i8*
+  ret i8* %24
 }
 
 declare dso_local noalias i8* @malloc(i32) #3
