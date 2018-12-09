@@ -1037,7 +1037,6 @@ void CodegenVisitor::GenMainFunc() {
   std::vector<llvm::Value*> args;
   args.push_back(main_class);
 
-  builder_.CreateCall(ast_to_.GetConstructor("Main"), args);
   builder_.CreateCall(ast_to_.LlvmFunc("Main", "main"), args);
 
   builder_.CreateCall(c_std_.GetGcSystemDestroyFunc(), {});

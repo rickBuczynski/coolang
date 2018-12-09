@@ -56,29 +56,6 @@ obj
   typename=Main
 End of current GC roots
 
-Removing a root that points to:
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=Main
-
-Current GC roots:
-End of current GC roots
-
-Inserting a root that points to:
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=Main
-
-Current GC roots:
-Root that points to:
-obj
-  is_reachable=0
-  gc_pointer_count=0
-  typename=Main
-End of current GC roots
-
 Gc Objs after marking reachable:
 gc objs start
 obj
