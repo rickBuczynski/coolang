@@ -15,6 +15,16 @@ extern "C" void* malloc(int size);
 // track of it similar api for roots only call printing apis from codegen if
 // verbose flag is set
 
+bool gc_is_verbose = false;
+
+struct GcObj;
+
+struct GcPtrsInfo {
+  int gc_ptr_count;
+  GcPtrsInfo* next_gc_info;
+  GcObj* first_gc_ptr;
+};
+
 // TODO GCwont work for Cool Strings
 struct GcObj {
   // initialize these during malloc
@@ -26,21 +36,21 @@ struct GcObj {
   bool is_reachable;
   // don't initialize this during malloc
   // the cool program itself handles initializing this
-  int gc_ptr_count;
+  int inheritance_length;
   char* obj_typename;
   void* vtable;
   int typesize;
   void* constructor;
   char* boxed_data;
 
-  GcObj* first_gc_ptr;
+  GcPtrsInfo gc_ptrs_info;
 };
 
 void PrintObj(const GcObj* obj) {
   printf("obj\n");
   // fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
   printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
-  printf("  gc_pointer_count=%d\n", obj->gc_ptr_count);
+  printf("  inheritance_length=%d\n", obj->inheritance_length);
   printf("  typename=%s\n", obj->obj_typename);
 }
 
@@ -57,10 +67,16 @@ void MarkObj(GcObj* obj) {
 
   obj->is_reachable = true;
 
-  GcObj** gc_ptrs = &obj->first_gc_ptr;
-
-  for (int i = 0; i < obj->gc_ptr_count; i++) {
-    MarkObj(gc_ptrs[i]);
+  GcPtrsInfo* gc_ptrs_info = &obj->gc_ptrs_info;
+  while (gc_ptrs_info != nullptr) {
+    if (gc_is_verbose) {
+      printf("  gc_ptr_count=%d\n", gc_ptrs_info->gc_ptr_count);
+    }
+    GcObj** gc_ptrs = &gc_ptrs_info->first_gc_ptr;
+    for (int i = 0; i < gc_ptrs_info->gc_ptr_count; i++) {
+      MarkObj(gc_ptrs[i]);
+    }
+    gc_ptrs_info = gc_ptrs_info->next_gc_info;
   }
 }
 
@@ -203,8 +219,6 @@ GcRootStack* gc_roots;
 // use extra roots for eq expr instead of disable gc
 // TODO fix "c" test
 // TODO change test output to be simple just allocs and frees
-
-bool gc_is_verbose = false;
 
 extern "C" void gc_system_init(int is_verbose) {
   gc_obj_list = new GcList;

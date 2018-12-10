@@ -22,7 +22,8 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   // use an i8 instead of i1 since clang emits i8 for bool
   // i1 should work too since i8 is min addressable data but use i8 to be safe
   class_attributes.push_back(builder_->getInt8Ty());
-  // obj_gc_pointer_count
+
+  // obj_inheritance_length
   class_attributes.push_back(builder_->getInt32Ty());
 
   // obj_typename_index
@@ -40,6 +41,10 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   class_attributes.push_back(builder_->getInt8PtrTy());
 
   for (const ClassAst* cur_class : class_ast->SupersThenThis()) {
+    // put the number of non-basic attrs so we know how many to visit for GC
+    class_attributes.push_back(builder_->getInt32Ty());
+    // put address of the  non-basic attr count for next class in inheritance
+    class_attributes.push_back(builder_->getInt32Ty()->getPointerTo());
     // Put non basic attrs first so we can visit them for GC
     for (const auto* attr : cur_class->GetAllAttrsNonBasicFirst()) {
       llvm::Type* attr_type = LlvmBasicOrClassPtrTy(attr->GetType());

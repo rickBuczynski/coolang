@@ -30,7 +30,8 @@ class AstToCodeMap {
   static constexpr int obj_gc_next_root_index = 2;
   static constexpr int obj_gc_prev_root_index = 3;
   static constexpr int obj_gc_is_reachable_index = 4;
-  static constexpr int obj_gc_pointer_count = 5;
+
+  static constexpr int obj_inheritance_length = 5;
 
   static constexpr int obj_typename_index = 6;
 
