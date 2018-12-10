@@ -36,7 +36,6 @@ struct GcObj {
   bool is_reachable;
   // don't initialize this during malloc
   // the cool program itself handles initializing this
-  int inheritance_length;
   char* obj_typename;
   void* vtable;
   int typesize;
@@ -50,7 +49,6 @@ void PrintObj(const GcObj* obj) {
   printf("obj\n");
   // fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
   printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
-  printf("  inheritance_length=%d\n", obj->inheritance_length);
   printf("  typename=%s\n", obj->obj_typename);
 }
 
@@ -69,9 +67,6 @@ void MarkObj(GcObj* obj) {
 
   GcPtrsInfo* gc_ptrs_info = &obj->gc_ptrs_info;
   while (gc_ptrs_info != nullptr) {
-    if (gc_is_verbose) {
-      printf("  gc_ptr_count=%d\n", gc_ptrs_info->gc_ptr_count);
-    }
     GcObj** gc_ptrs = &gc_ptrs_info->first_gc_ptr;
     for (int i = 0; i < gc_ptrs_info->gc_ptr_count; i++) {
       MarkObj(gc_ptrs[i]);

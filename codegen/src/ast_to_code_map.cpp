@@ -23,9 +23,6 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   // i1 should work too since i8 is min addressable data but use i8 to be safe
   class_attributes.push_back(builder_->getInt8Ty());
 
-  // obj_inheritance_length
-  class_attributes.push_back(builder_->getInt32Ty());
-
   // obj_typename_index
   class_attributes.push_back(builder_->getInt8PtrTy());
 

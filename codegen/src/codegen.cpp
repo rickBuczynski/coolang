@@ -774,18 +774,9 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
       AstToCodeMap::obj_constructor_index);
   builder_.CreateStore(constructor, constructor_ptr_ptr);
 
-  // obj_inheritance_length
-  int inheritance_length = class_ast.SupersThenThis().size();
-  llvm::Value* obj_inheritance_length_gep = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_inheritance_length);
-  builder_.CreateStore(llvm::ConstantInt::get(
-                           context_, llvm::APInt(32, inheritance_length, true)),
-                       obj_inheritance_length_gep);
-
   // first store default values and gc_ptr_counts
   auto supers_then_this = class_ast.SupersThenThis();
-  for (int i = 0; i < supers_then_this.size(); i++) {
+  for (size_t i = 0; i < supers_then_this.size(); i++) {
     const ClassAst* cur_class = supers_then_this[i];
 
     // store the gc_ptr_count

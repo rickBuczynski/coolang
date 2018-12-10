@@ -4,7 +4,7 @@ target datalayout = "e-m:x-p:32:32-i64:64-f80:32-n8:16:32-a:0:32-S32"
 target triple = "i386-pc-windows-msvc19.16.27024"
 
 %class.GcList = type { %struct.GcObj* }
-%struct.GcObj = type { %struct.GcObj*, %struct.GcObj*, %struct.GcObj*, %struct.GcObj*, i8, i32, i8*, i8*, i32, i8*, i8*, %struct.GcPtrsInfo }
+%struct.GcObj = type { %struct.GcObj*, %struct.GcObj*, %struct.GcObj*, %struct.GcObj*, i8, i8*, i8*, i32, i8*, i8*, %struct.GcPtrsInfo }
 %struct.GcPtrsInfo = type { i32, %struct.GcPtrsInfo*, %struct.GcObj* }
 %struct.GcRootStack = type { %struct.GcObj***, i32, i32 }
 %struct._iobuf = type { i8* }
@@ -48,13 +48,9 @@ $"??_C@_04MDPHBIK@obj?6?$AA@" = comdat any
 
 $"??_C@_0BD@HGGAKDEI@?5?5is_reachable?$DN?$CFd?6?$AA@" = comdat any
 
-$"??_C@_0BJ@DKJNEBMM@?5?5inheritance_length?$DN?$CFd?6?$AA@" = comdat any
-
 $"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@" = comdat any
 
 $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
-
-$"??_C@_0BD@BJCDOACF@?5?5gc_ptr_count?$DN?$CFd?6?$AA@" = comdat any
 
 $"??_C@_0CC@EADGIEBI@Gc?5Objs?5after?5marking?5reachable?3@" = comdat any
 
@@ -93,10 +89,8 @@ $"??_C@_0BL@PDCIMNAE@Root?5to?5remove?5points?5to?3?6?$AA@" = comdat any
 @"?gc_is_verbose@@3_NA" = dso_local global i8 0, align 1
 @"??_C@_04MDPHBIK@obj?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [5 x i8] c"obj\0A\00", comdat, align 1
 @"??_C@_0BD@HGGAKDEI@?5?5is_reachable?$DN?$CFd?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [19 x i8] c"  is_reachable=%d\0A\00", comdat, align 1
-@"??_C@_0BJ@DKJNEBMM@?5?5inheritance_length?$DN?$CFd?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [25 x i8] c"  inheritance_length=%d\0A\00", comdat, align 1
 @"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [15 x i8] c"  typename=%s\0A\00", comdat, align 1
 @"??_C@_07DGBOGBKN@gc?5objs?$AA@" = linkonce_odr dso_local unnamed_addr constant [8 x i8] c"gc objs\00", comdat, align 1
-@"??_C@_0BD@BJCDOACF@?5?5gc_ptr_count?$DN?$CFd?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [19 x i8] c"  gc_ptr_count=%d\0A\00", comdat, align 1
 @"?gc_obj_list@@3PAVGcList@@A" = dso_local global %class.GcList* null, align 4
 @"?gc_roots@@3PAUGcRootStack@@A" = dso_local global %struct.GcRootStack* null, align 4
 @"??_C@_0CC@EADGIEBI@Gc?5Objs?5after?5marking?5reachable?3@" = linkonce_odr dso_local unnamed_addr constant [34 x i8] c"Gc Objs after marking reachable:\0A\00", comdat, align 1
@@ -130,12 +124,8 @@ define dso_local void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj*) #0 {
   %9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @"??_C@_0BD@HGGAKDEI@?5?5is_reachable?$DN?$CFd?6?$AA@", i32 0, i32 0), i32 %8)
   %10 = load %struct.GcObj*, %struct.GcObj** %2, align 4
   %11 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %10, i32 0, i32 5
-  %12 = load i32, i32* %11, align 4
-  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([25 x i8], [25 x i8]* @"??_C@_0BJ@DKJNEBMM@?5?5inheritance_length?$DN?$CFd?6?$AA@", i32 0, i32 0), i32 %12)
-  %14 = load %struct.GcObj*, %struct.GcObj** %2, align 4
-  %15 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %14, i32 0, i32 6
-  %16 = load i8*, i8** %15, align 4
-  %17 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@", i32 0, i32 0), i8* %16)
+  %12 = load i8*, i8** %11, align 4
+  %13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@", i32 0, i32 0), i8* %12)
   ret void
 }
 
@@ -228,71 +218,59 @@ define dso_local void @"?MarkObj@@YAXPAUGcObj@@@Z"(%struct.GcObj*) #0 {
   br i1 %12, label %13, label %14
 
 ; <label>:13:                                     ; preds = %8, %1
-  br label %51
+  br label %43
 
 ; <label>:14:                                     ; preds = %8
   %15 = load %struct.GcObj*, %struct.GcObj** %2, align 4
   %16 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %15, i32 0, i32 4
   store i8 1, i8* %16, align 4
   %17 = load %struct.GcObj*, %struct.GcObj** %2, align 4
-  %18 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %17, i32 0, i32 11
+  %18 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %17, i32 0, i32 10
   store %struct.GcPtrsInfo* %18, %struct.GcPtrsInfo** %3, align 4
   br label %19
 
-; <label>:19:                                     ; preds = %47, %14
+; <label>:19:                                     ; preds = %39, %14
   %20 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %3, align 4
   %21 = icmp ne %struct.GcPtrsInfo* %20, null
-  br i1 %21, label %22, label %51
+  br i1 %21, label %22, label %43
 
 ; <label>:22:                                     ; preds = %19
-  %23 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
-  %24 = trunc i8 %23 to i1
-  br i1 %24, label %25, label %30
-
-; <label>:25:                                     ; preds = %22
-  %26 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %3, align 4
-  %27 = getelementptr inbounds %struct.GcPtrsInfo, %struct.GcPtrsInfo* %26, i32 0, i32 0
-  %28 = load i32, i32* %27, align 4
-  %29 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([19 x i8], [19 x i8]* @"??_C@_0BD@BJCDOACF@?5?5gc_ptr_count?$DN?$CFd?6?$AA@", i32 0, i32 0), i32 %28)
-  br label %30
-
-; <label>:30:                                     ; preds = %25, %22
-  %31 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %3, align 4
-  %32 = getelementptr inbounds %struct.GcPtrsInfo, %struct.GcPtrsInfo* %31, i32 0, i32 2
-  store %struct.GcObj** %32, %struct.GcObj*** %4, align 4
+  %23 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %3, align 4
+  %24 = getelementptr inbounds %struct.GcPtrsInfo, %struct.GcPtrsInfo* %23, i32 0, i32 2
+  store %struct.GcObj** %24, %struct.GcObj*** %4, align 4
   store i32 0, i32* %5, align 4
-  br label %33
+  br label %25
 
-; <label>:33:                                     ; preds = %44, %30
-  %34 = load i32, i32* %5, align 4
-  %35 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %3, align 4
-  %36 = getelementptr inbounds %struct.GcPtrsInfo, %struct.GcPtrsInfo* %35, i32 0, i32 0
-  %37 = load i32, i32* %36, align 4
-  %38 = icmp slt i32 %34, %37
-  br i1 %38, label %39, label %47
+; <label>:25:                                     ; preds = %36, %22
+  %26 = load i32, i32* %5, align 4
+  %27 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %3, align 4
+  %28 = getelementptr inbounds %struct.GcPtrsInfo, %struct.GcPtrsInfo* %27, i32 0, i32 0
+  %29 = load i32, i32* %28, align 4
+  %30 = icmp slt i32 %26, %29
+  br i1 %30, label %31, label %39
 
-; <label>:39:                                     ; preds = %33
-  %40 = load %struct.GcObj**, %struct.GcObj*** %4, align 4
-  %41 = load i32, i32* %5, align 4
-  %42 = getelementptr inbounds %struct.GcObj*, %struct.GcObj** %40, i32 %41
-  %43 = load %struct.GcObj*, %struct.GcObj** %42, align 4
-  call void @"?MarkObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %43)
-  br label %44
+; <label>:31:                                     ; preds = %25
+  %32 = load %struct.GcObj**, %struct.GcObj*** %4, align 4
+  %33 = load i32, i32* %5, align 4
+  %34 = getelementptr inbounds %struct.GcObj*, %struct.GcObj** %32, i32 %33
+  %35 = load %struct.GcObj*, %struct.GcObj** %34, align 4
+  call void @"?MarkObj@@YAXPAUGcObj@@@Z"(%struct.GcObj* %35)
+  br label %36
 
-; <label>:44:                                     ; preds = %39
-  %45 = load i32, i32* %5, align 4
-  %46 = add nsw i32 %45, 1
-  store i32 %46, i32* %5, align 4
-  br label %33
+; <label>:36:                                     ; preds = %31
+  %37 = load i32, i32* %5, align 4
+  %38 = add nsw i32 %37, 1
+  store i32 %38, i32* %5, align 4
+  br label %25
 
-; <label>:47:                                     ; preds = %33
-  %48 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %3, align 4
-  %49 = getelementptr inbounds %struct.GcPtrsInfo, %struct.GcPtrsInfo* %48, i32 0, i32 1
-  %50 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %49, align 4
-  store %struct.GcPtrsInfo* %50, %struct.GcPtrsInfo** %3, align 4
+; <label>:39:                                     ; preds = %25
+  %40 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %3, align 4
+  %41 = getelementptr inbounds %struct.GcPtrsInfo, %struct.GcPtrsInfo* %40, i32 0, i32 1
+  %42 = load %struct.GcPtrsInfo*, %struct.GcPtrsInfo** %41, align 4
+  store %struct.GcPtrsInfo* %42, %struct.GcPtrsInfo** %3, align 4
   br label %19
 
-; <label>:51:                                     ; preds = %13, %19
+; <label>:43:                                     ; preds = %13, %19
   ret void
 }
 
