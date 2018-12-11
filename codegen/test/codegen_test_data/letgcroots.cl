@@ -29,6 +29,10 @@ class D {
  foo:Int;
 };
 
+class E {
+ foo:Int;
+};
+
 class Main inherits IO {
   main() : Object { {
     new A;
@@ -39,14 +43,19 @@ class Main inherits IO {
 	  i:Int <- 7, -- make sure this doesnt add a gc root
       b:B <- new B,
     in {
-      let c:C <- new C in {
-	    c.setA(a);
-		out_int(i);
-		out_string("\n");
-	    a.setC1(c);
-	  };
-	  new D; -- a and c still alive here
+      let 
+	    c:C <- new C,
+		d:D <- new D,
+		  in {
+			c.setA(a);
+			out_int(i);
+			out_string("\n");
+			a.setC1(c);
+		  };
+	  out_string("D should die now\n\n");
+	  new E;
     };
-	new D; -- a and c dead here
+	out_string("A, B, C, E should die now\n\n");
+	new E;
   } };
 };
