@@ -1,0 +1,85 @@
+Allocated:
+obj
+  is_reachable=0
+  typename=Main
+
+Allocated:
+obj
+  is_reachable=0
+  typename=A
+
+Freeing:
+obj
+  is_reachable=0
+  typename=A
+
+Allocated:
+obj
+  is_reachable=0
+  typename=B
+
+Freeing:
+obj
+  is_reachable=0
+  typename=B
+
+Allocated:
+obj
+  is_reachable=0
+  typename=A
+
+Allocated:
+obj
+  is_reachable=0
+  typename=B
+
+Allocated:
+obj
+  is_reachable=0
+  typename=C
+
+Allocated:
+obj
+  is_reachable=0
+  typename=D
+
+7
+D should die now
+
+Freeing:
+obj
+  is_reachable=0
+  typename=D
+
+Allocated:
+obj
+  is_reachable=0
+  typename=E
+
+A, B, C, E should die now
+
+Freeing:
+obj
+  is_reachable=0
+  typename=E
+
+Freeing:
+obj
+  is_reachable=0
+  typename=C
+
+Freeing:
+obj
+  is_reachable=0
+  typename=B
+
+Freeing:
+obj
+  is_reachable=0
+  typename=A
+
+Allocated:
+obj
+  is_reachable=0
+  typename=E
+

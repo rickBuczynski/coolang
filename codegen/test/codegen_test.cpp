@@ -107,6 +107,9 @@ void TestCodegen(const std::string& input_file,
 }
 
 TEST(CodegenTest, gcrootslet) { TestCodegen("gc-roots-let.cl", false, true); }
+TEST(CodegenTest, gcrootssupertype) {
+  TestCodegen("gc-roots-supertype.cl", false, true);
+}
 
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }

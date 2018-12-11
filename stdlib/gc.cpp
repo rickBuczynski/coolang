@@ -216,8 +216,6 @@ class GcList {
 GcList* gc_obj_list;
 GcRootStack* gc_roots;
 
-// TODO change test output to be simple just allocs and frees
-
 extern "C" void gc_system_init(int is_verbose) {
   gc_obj_list = new GcList;
   gc_roots = new GcRootStack;
