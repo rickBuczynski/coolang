@@ -163,6 +163,12 @@ class GcList {
       GcObj* next = GetNext(obj);
 
       if (!obj->is_reachable) {
+        if (gc_is_verbose) {
+          printf("Freeing:\n");
+          PrintObj(obj);
+          printf("\n");
+        }
+
         Remove(obj);
         free(obj);
       }

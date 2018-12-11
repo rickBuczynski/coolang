@@ -115,6 +115,11 @@ obj
   typename=Main
 gc objs end
 
+Freeing:
+obj
+  is_reachable=0
+  typename=A
+
 Gc Objs after sweep:
 gc objs start
 obj
@@ -173,6 +178,11 @@ obj
   is_reachable=1
   typename=Main
 gc objs end
+
+Freeing:
+obj
+  is_reachable=0
+  typename=B
 
 Gc Objs after sweep:
 gc objs start
@@ -940,6 +950,26 @@ obj
   is_reachable=1
   typename=Main
 gc objs end
+
+Freeing:
+obj
+  is_reachable=0
+  typename=D
+
+Freeing:
+obj
+  is_reachable=0
+  typename=C
+
+Freeing:
+obj
+  is_reachable=0
+  typename=B
+
+Freeing:
+obj
+  is_reachable=0
+  typename=A
 
 Gc Objs after sweep:
 gc objs start
