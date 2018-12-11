@@ -88,7 +88,6 @@ std::string GetCodgenedProgramOutput(const std::string& input_file_name,
 
   const auto codegen =
       std::make_unique<coolang::Codegen>(ast, obj_path, exe_path);
-  // TODO set gc_verbose per test (only true for gc tests)
   codegen->GenerateCode(gc_is_verbose);
   codegen->Link();
 
@@ -109,6 +108,9 @@ void TestCodegen(const std::string& input_file,
 TEST(CodegenTest, gcrootslet) { TestCodegen("gc-roots-let.cl", false, true); }
 TEST(CodegenTest, gcrootssupertype) {
   TestCodegen("gc-roots-supertype.cl", false, true);
+}
+TEST(CodegenTest, gcrootseqcmp) {
+  TestCodegen("gc-roots-eqcmp.cl", false, true);
 }
 
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }

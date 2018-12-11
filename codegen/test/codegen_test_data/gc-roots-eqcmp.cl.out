@@ -6,39 +6,28 @@ obj
 Allocated:
 obj
   is_reachable=0
-  typename=B
+  typename=A
 
 Allocated:
 obj
   is_reachable=0
-  typename=C
+  typename=A
 
-C and B should live
+compare done
+both As should die now
+
+Freeing:
+obj
+  is_reachable=0
+  typename=A
+
+Freeing:
+obj
+  is_reachable=0
+  typename=A
 
 Allocated:
 obj
   is_reachable=0
-  typename=E
-
-C and B should die now
-
-Freeing:
-obj
-  is_reachable=0
-  typename=E
-
-Freeing:
-obj
-  is_reachable=0
-  typename=C
-
-Freeing:
-obj
-  is_reachable=0
-  typename=B
-
-Allocated:
-obj
-  is_reachable=0
-  typename=E
+  typename=Object
 
