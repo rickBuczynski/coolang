@@ -48,9 +48,7 @@ $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 
 $"?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA" = comdat any
 
-$"??_C@_09GMBKBGGI@Freeing?3?6?$AA@" = comdat any
-
-$"??_C@_01EEMJAFIK@?6?$AA@" = comdat any
+$"??_C@_0BP@CCCNBLIM@Freeing?5an?5object?5of?5type?3?5?$CFs?6?$AA@" = comdat any
 
 $"??_C@_0CP@HIJCJBBI@Tried?5to?5remove?5an?5obj?5that?8s?5no@" = comdat any
 
@@ -68,8 +66,7 @@ $"??_C@_0BL@PDCIMNAE@Root?5to?5remove?5points?5to?3?6?$AA@" = comdat any
 @"?gc_obj_list@@3PAVGcList@@A" = dso_local global %class.GcList* null, align 4
 @"?gc_roots@@3PAUGcRootStack@@A" = dso_local global %struct.GcRootStack* null, align 4
 @"?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA" = linkonce_odr dso_local global i64 0, comdat, align 8
-@"??_C@_09GMBKBGGI@Freeing?3?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [10 x i8] c"Freeing:\0A\00", comdat, align 1
-@"??_C@_01EEMJAFIK@?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [2 x i8] c"\0A\00", comdat, align 1
+@"??_C@_0BP@CCCNBLIM@Freeing?5an?5object?5of?5type?3?5?$CFs?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [31 x i8] c"Freeing an object of type: %s\0A\00", comdat, align 1
 @"??_C@_0CP@HIJCJBBI@Tried?5to?5remove?5an?5obj?5that?8s?5no@" = linkonce_odr dso_local unnamed_addr constant [47 x i8] c"Tried to remove an obj that's not in list: %s\0A\00", comdat, align 1
 @"??_C@_0BN@DLIALJMC@BADBADBADBADBADBADBADBADBAD?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [29 x i8] c"BADBADBADBADBADBADBADBADBAD\0A\00", comdat, align 1
 @"??_C@_0CB@NGCPCCJL@Root?5at?5top?5of?5stack?5points?5to?3?6@" = linkonce_odr dso_local unnamed_addr constant [33 x i8] c"Root at top of stack points to:\0A\00", comdat, align 1
@@ -415,10 +412,10 @@ define linkonce_odr dso_local x86_thiscallcc void @"?Sweep@GcList@@QAEXXZ"(%clas
   store %struct.GcObj* %7, %struct.GcObj** %3, align 4
   br label %8
 
-; <label>:8:                                      ; preds = %29, %1
+; <label>:8:                                      ; preds = %30, %1
   %9 = load %struct.GcObj*, %struct.GcObj** %3, align 4
   %10 = icmp ne %struct.GcObj* %9, null
-  br i1 %10, label %11, label %31
+  br i1 %10, label %11, label %32
 
 ; <label>:11:                                     ; preds = %8
   %12 = load %struct.GcObj*, %struct.GcObj** %3, align 4
@@ -428,34 +425,34 @@ define linkonce_odr dso_local x86_thiscallcc void @"?Sweep@GcList@@QAEXXZ"(%clas
   %15 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %14, i32 0, i32 4
   %16 = load i8, i8* %15, align 4
   %17 = trunc i8 %16 to i1
-  br i1 %17, label %29, label %18
+  br i1 %17, label %30, label %18
 
 ; <label>:18:                                     ; preds = %11
   %19 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
   %20 = trunc i8 %19 to i1
-  br i1 %20, label %21, label %25
+  br i1 %20, label %21, label %26
 
 ; <label>:21:                                     ; preds = %18
-  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([10 x i8], [10 x i8]* @"??_C@_09GMBKBGGI@Freeing?3?6?$AA@", i32 0, i32 0))
-  %23 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  call void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj* %23)
-  %24 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
-  br label %25
+  %22 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %23 = getelementptr inbounds %struct.GcObj, %struct.GcObj* %22, i32 0, i32 5
+  %24 = load i8*, i8** %23, align 4
+  %25 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([31 x i8], [31 x i8]* @"??_C@_0BP@CCCNBLIM@Freeing?5an?5object?5of?5type?3?5?$CFs?6?$AA@", i32 0, i32 0), i8* %24)
+  br label %26
 
-; <label>:25:                                     ; preds = %21, %18
-  %26 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  call x86_thiscallcc void @"?Remove@GcList@@QAEXPAUGcObj@@@Z"(%class.GcList* %5, %struct.GcObj* %26)
+; <label>:26:                                     ; preds = %21, %18
   %27 = load %struct.GcObj*, %struct.GcObj** %3, align 4
-  %28 = bitcast %struct.GcObj* %27 to i8*
-  call void @free(i8* %28)
-  br label %29
+  call x86_thiscallcc void @"?Remove@GcList@@QAEXPAUGcObj@@@Z"(%class.GcList* %5, %struct.GcObj* %27)
+  %28 = load %struct.GcObj*, %struct.GcObj** %3, align 4
+  %29 = bitcast %struct.GcObj* %28 to i8*
+  call void @free(i8* %29)
+  br label %30
 
-; <label>:29:                                     ; preds = %25, %11
-  %30 = load %struct.GcObj*, %struct.GcObj** %4, align 4
-  store %struct.GcObj* %30, %struct.GcObj** %3, align 4
+; <label>:30:                                     ; preds = %26, %11
+  %31 = load %struct.GcObj*, %struct.GcObj** %4, align 4
+  store %struct.GcObj* %31, %struct.GcObj** %3, align 4
   br label %8
 
-; <label>:31:                                     ; preds = %8
+; <label>:32:                                     ; preds = %8
   ret void
 }
 

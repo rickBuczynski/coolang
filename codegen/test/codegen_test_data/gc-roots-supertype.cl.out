@@ -6,19 +6,7 @@ C and B should live
 Allocated an object of type: E
 C and B should die now
 
-Freeing:
-obj
-  is_reachable=0
-  typename=E
-
-Freeing:
-obj
-  is_reachable=0
-  typename=C
-
-Freeing:
-obj
-  is_reachable=0
-  typename=B
-
+Freeing an object of type: E
+Freeing an object of type: C
+Freeing an object of type: B
 Allocated an object of type: E

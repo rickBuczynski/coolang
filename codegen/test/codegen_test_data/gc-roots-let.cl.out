@@ -1,16 +1,8 @@
 Allocated an object of type: Main
 Allocated an object of type: A
-Freeing:
-obj
-  is_reachable=0
-  typename=A
-
+Freeing an object of type: A
 Allocated an object of type: B
-Freeing:
-obj
-  is_reachable=0
-  typename=B
-
+Freeing an object of type: B
 Allocated an object of type: A
 Allocated an object of type: B
 Allocated an object of type: C
@@ -18,32 +10,12 @@ Allocated an object of type: D
 7
 D should die now
 
-Freeing:
-obj
-  is_reachable=0
-  typename=D
-
+Freeing an object of type: D
 Allocated an object of type: E
 A, B, C, E should die now
 
-Freeing:
-obj
-  is_reachable=0
-  typename=E
-
-Freeing:
-obj
-  is_reachable=0
-  typename=C
-
-Freeing:
-obj
-  is_reachable=0
-  typename=B
-
-Freeing:
-obj
-  is_reachable=0
-  typename=A
-
+Freeing an object of type: E
+Freeing an object of type: C
+Freeing an object of type: B
+Freeing an object of type: A
 Allocated an object of type: E

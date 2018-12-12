@@ -158,9 +158,7 @@ class GcList {
 
       if (!obj->is_reachable) {
         if (gc_is_verbose) {
-          printf("Freeing:\n");
-          PrintObj(obj);
-          printf("\n");
+          printf("Freeing an object of type: %s\n", obj->obj_typename);
         }
 
         Remove(obj);

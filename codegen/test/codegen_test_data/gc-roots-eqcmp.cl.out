@@ -4,14 +4,6 @@ Allocated an object of type: A
 compare done
 both As should die now
 
-Freeing:
-obj
-  is_reachable=0
-  typename=A
-
-Freeing:
-obj
-  is_reachable=0
-  typename=A
-
+Freeing an object of type: A
+Freeing an object of type: A
 Allocated an object of type: Object
