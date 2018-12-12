@@ -2,9 +2,7 @@ Allocated an object of type: Main
 Allocated an object of type: A
 Allocated an object of type: C
 A and C still alive
-
 A and C should die now
-
 Freeing an object of type: C
 Freeing an object of type: A
 Allocated an object of type: Object

@@ -46,10 +46,10 @@ class Main inherits IO {
 			c.setA(b);
 			b.setC1(c);
 		  };
-	  out_string("C and B should live\n\n");
+	  out_string("C and B should live\n");
 	  new E;
     };
-	out_string("C and B should die now\n\n");
+	out_string("C and B should die now\n");
 	new E;
   } };
 };

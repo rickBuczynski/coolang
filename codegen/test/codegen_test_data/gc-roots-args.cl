@@ -17,12 +17,12 @@ class D {
 
 class Main inherits IO {
   arg_roots(a: A, c: C) : Object {{
-    out_string("A and C still alive\n\n");
+    out_string("A and C still alive\n");
   }};
 
   main() : Object { {
     arg_roots(new A, new C);
-	out_string("A and C should die now\n\n");
+	out_string("A and C should die now\n");
 	new Object;
   } };
 };
