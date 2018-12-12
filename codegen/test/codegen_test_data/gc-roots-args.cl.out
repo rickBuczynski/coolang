@@ -1,0 +1,34 @@
+Allocated:
+obj
+  is_reachable=0
+  typename=Main
+
+Allocated:
+obj
+  is_reachable=0
+  typename=A
+
+Allocated:
+obj
+  is_reachable=0
+  typename=C
+
+A and C still alive
+
+A and C should die now
+
+Freeing:
+obj
+  is_reachable=0
+  typename=C
+
+Freeing:
+obj
+  is_reachable=0
+  typename=A
+
+Allocated:
+obj
+  is_reachable=0
+  typename=Object
+

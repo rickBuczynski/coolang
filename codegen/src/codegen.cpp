@@ -683,8 +683,6 @@ void CodegenVisitor::GenExit(int line_num,
 }
 
 void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
-  // TODO add gc verbose test for "new A = new A"
-
   // if we have 2 non-basic types this could be something like "new A = new A"
   // and we don't want to GC the LHS when we allocate the RHS so we need a root
   // for the LHS
