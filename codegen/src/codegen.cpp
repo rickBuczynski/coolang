@@ -109,6 +109,9 @@ class CodegenVisitor : public AstVisitor {
                                 llvm::Value* basic_val);
   llvm::Value* UnboxValue(const std::string& type_name, llvm::Value* boxed_val);
 
+  void StructStoreAtIndex(llvm::StructType* ty, llvm::Value* struct_val,
+                          llvm::Value* val, int index);
+
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
 
@@ -735,6 +738,13 @@ void CodegenVisitor::Visit(const DivideExpr& div_expr) {
   div_expr.SetLlvmValue(builder_.CreateSDiv(lhs_value, rhs_value));
 }
 
+void CodegenVisitor::StructStoreAtIndex(llvm::StructType* ty,
+                                        llvm::Value* struct_val,
+                                        llvm::Value* val, int index) {
+  llvm::Value* gep = builder_.CreateStructGEP(ty, struct_val, index);
+  builder_.CreateStore(val, gep);
+}
+
 void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   llvm::Function* constructor = ast_to_.GetConstructor(&class_ast);
 
@@ -742,35 +752,28 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
       llvm::BasicBlock::Create(context_, "entrypoint", constructor);
   builder_.SetInsertPoint(constructor_entry);
 
-  // store the vtable first since initializers might make dynamic calls
-  llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_vtable_index);
-  builder_.CreateStore(ast_to_.GetVtable(&class_ast).GetGlobalInstance(),
-                       vtable_ptr_ptr);
+  // constructee (the object being constructed)
+  llvm::Value* ctee = constructor->args().begin();
+  // type of the constructee
+  llvm::StructType* ty = ast_to_.LlvmClass(&class_ast);
 
-  // store the class type_name second
-  llvm::Value* typename_ptr_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_typename_index);
-  builder_.CreateStore(builder_.CreateGlobalStringPtr(class_ast.GetName()),
-                       typename_ptr_ptr);
+  StructStoreAtIndex(ty, ctee,
+                     ast_to_.GetVtable(&class_ast).GetGlobalInstance(),
+                     AstToCodeMap::obj_vtable_index);
 
-  // store the type_size third
+  StructStoreAtIndex(ty, ctee,
+                     builder_.CreateGlobalStringPtr(class_ast.GetName()),
+                     AstToCodeMap::obj_typename_index);
+
   const auto type_size =
       data_layout_.getTypeAllocSize(ast_to_.LlvmClass(&class_ast));
-  llvm::Value* typesize_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_typesize_index);
-  builder_.CreateStore(
+  StructStoreAtIndex(
+      ty, ctee,
       llvm::ConstantInt::get(context_, llvm::APInt(32, type_size, true)),
-      typesize_ptr);
+      AstToCodeMap::obj_typesize_index);
 
-  // store a pointer to this constructor 4th
-  llvm::Value* constructor_ptr_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_constructor_index);
-  builder_.CreateStore(constructor, constructor_ptr_ptr);
+  StructStoreAtIndex(ty, ctee, constructor,
+                     AstToCodeMap::obj_constructor_index);
 
   // first store default values and gc_ptr_counts
   auto supers_then_this = class_ast.SupersThenThis();
@@ -778,12 +781,9 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
     const ClassAst* cur_class = supers_then_this[i];
 
     // store the gc_ptr_count
-    int gc_ptr_count = cur_class->GetNonBasicAttrCount();
-    llvm::Value* gc_ptr_count_gep = builder_.CreateStructGEP(
-        ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-        GcPtrCountIndex(cur_class));
-    builder_.CreateStore(ast_to_.LlvmConstInt32(gc_ptr_count),
-                         gc_ptr_count_gep);
+    const int gc_ptr_count = cur_class->GetNonBasicAttrCount();
+    StructStoreAtIndex(ty, ctee, ast_to_.LlvmConstInt32(gc_ptr_count),
+                       GcPtrCountIndex(cur_class));
 
     // store the address of the next gc_ptr_count
     llvm::Value* next_gc_ptr_count_gep = builder_.CreateStructGEP(
