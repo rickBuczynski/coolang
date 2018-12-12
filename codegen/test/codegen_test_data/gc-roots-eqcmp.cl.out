@@ -1,18 +1,6 @@
-Allocated:
-obj
-  is_reachable=0
-  typename=Main
-
-Allocated:
-obj
-  is_reachable=0
-  typename=A
-
-Allocated:
-obj
-  is_reachable=0
-  typename=A
-
+Allocated an object of type: Main
+Allocated an object of type: A
+Allocated an object of type: A
 compare done
 both As should die now
 
@@ -26,8 +14,4 @@ obj
   is_reachable=0
   typename=A
 
-Allocated:
-obj
-  is_reachable=0
-  typename=Object
-
+Allocated an object of type: Object

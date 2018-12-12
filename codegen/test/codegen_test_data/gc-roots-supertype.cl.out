@@ -1,25 +1,9 @@
-Allocated:
-obj
-  is_reachable=0
-  typename=Main
-
-Allocated:
-obj
-  is_reachable=0
-  typename=B
-
-Allocated:
-obj
-  is_reachable=0
-  typename=C
-
+Allocated an object of type: Main
+Allocated an object of type: B
+Allocated an object of type: C
 C and B should live
 
-Allocated:
-obj
-  is_reachable=0
-  typename=E
-
+Allocated an object of type: E
 C and B should die now
 
 Freeing:
@@ -37,8 +21,4 @@ obj
   is_reachable=0
   typename=B
 
-Allocated:
-obj
-  is_reachable=0
-  typename=E
-
+Allocated an object of type: E

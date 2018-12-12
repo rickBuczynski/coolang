@@ -28,8 +28,6 @@ $"?Sweep@GcList@@QAEXXZ" = comdat any
 
 $"?PushFront@GcList@@QAEXPAUGcObj@@@Z" = comdat any
 
-$"?GetHead@GcList@@QBEPBUGcObj@@XZ" = comdat any
-
 $"?PushRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z" = comdat any
 
 $"?PopRoot@GcRootStack@@QAEXPAPAUGcObj@@@Z" = comdat any
@@ -48,13 +46,11 @@ $"??_C@_0P@DPHCNOIJ@?5?5typename?$DN?$CFs?6?$AA@" = comdat any
 
 $"??_C@_07DGBOGBKN@gc?5objs?$AA@" = comdat any
 
-$"??_C@_0M@OILANDAA@Allocated?3?6?$AA@" = comdat any
-
-$"??_C@_01EEMJAFIK@?6?$AA@" = comdat any
-
 $"?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA" = comdat any
 
 $"??_C@_09GMBKBGGI@Freeing?3?6?$AA@" = comdat any
+
+$"??_C@_01EEMJAFIK@?6?$AA@" = comdat any
 
 $"??_C@_0CP@HIJCJBBI@Tried?5to?5remove?5an?5obj?5that?8s?5no@" = comdat any
 
@@ -71,10 +67,9 @@ $"??_C@_0BL@PDCIMNAE@Root?5to?5remove?5points?5to?3?6?$AA@" = comdat any
 @"??_C@_07DGBOGBKN@gc?5objs?$AA@" = linkonce_odr dso_local unnamed_addr constant [8 x i8] c"gc objs\00", comdat, align 1
 @"?gc_obj_list@@3PAVGcList@@A" = dso_local global %class.GcList* null, align 4
 @"?gc_roots@@3PAUGcRootStack@@A" = dso_local global %struct.GcRootStack* null, align 4
-@"??_C@_0M@OILANDAA@Allocated?3?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [12 x i8] c"Allocated:\0A\00", comdat, align 1
-@"??_C@_01EEMJAFIK@?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [2 x i8] c"\0A\00", comdat, align 1
 @"?_OptionsStorage@?1??__local_stdio_printf_options@@9@4_KA" = linkonce_odr dso_local global i64 0, comdat, align 8
 @"??_C@_09GMBKBGGI@Freeing?3?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [10 x i8] c"Freeing:\0A\00", comdat, align 1
+@"??_C@_01EEMJAFIK@?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [2 x i8] c"\0A\00", comdat, align 1
 @"??_C@_0CP@HIJCJBBI@Tried?5to?5remove?5an?5obj?5that?8s?5no@" = linkonce_odr dso_local unnamed_addr constant [47 x i8] c"Tried to remove an obj that's not in list: %s\0A\00", comdat, align 1
 @"??_C@_0BN@DLIALJMC@BADBADBADBADBADBADBADBADBAD?6?$AA@" = linkonce_odr dso_local unnamed_addr constant [29 x i8] c"BADBADBADBADBADBADBADBADBAD\0A\00", comdat, align 1
 @"??_C@_0CB@NGCPCCJL@Root?5at?5top?5of?5stack?5points?5to?3?6@" = linkonce_odr dso_local unnamed_addr constant [33 x i8] c"Root at top of stack points to:\0A\00", comdat, align 1
@@ -527,34 +522,6 @@ define linkonce_odr dso_local x86_thiscallcc void @"?PushFront@GcList@@QAEXPAUGc
   %18 = getelementptr inbounds %class.GcList, %class.GcList* %5, i32 0, i32 0
   store %struct.GcObj* %17, %struct.GcObj** %18, align 4
   ret void
-}
-
-; Function Attrs: noinline nounwind optnone
-define dso_local void @gc_malloc_print() #0 {
-  %1 = load i8, i8* @"?gc_is_verbose@@3_NA", align 1
-  %2 = trunc i8 %1 to i1
-  br i1 %2, label %3, label %8
-
-; <label>:3:                                      ; preds = %0
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([12 x i8], [12 x i8]* @"??_C@_0M@OILANDAA@Allocated?3?6?$AA@", i32 0, i32 0))
-  %5 = load %class.GcList*, %class.GcList** @"?gc_obj_list@@3PAVGcList@@A", align 4
-  %6 = call x86_thiscallcc %struct.GcObj* @"?GetHead@GcList@@QBEPBUGcObj@@XZ"(%class.GcList* %5)
-  call void @"?PrintObj@@YAXPBUGcObj@@@Z"(%struct.GcObj* %6)
-  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @"??_C@_01EEMJAFIK@?6?$AA@", i32 0, i32 0))
-  br label %8
-
-; <label>:8:                                      ; preds = %3, %0
-  ret void
-}
-
-; Function Attrs: noinline nounwind optnone
-define linkonce_odr dso_local x86_thiscallcc %struct.GcObj* @"?GetHead@GcList@@QBEPBUGcObj@@XZ"(%class.GcList*) #0 comdat align 2 {
-  %2 = alloca %class.GcList*, align 4
-  store %class.GcList* %0, %class.GcList** %2, align 4
-  %3 = load %class.GcList*, %class.GcList** %2, align 4
-  %4 = getelementptr inbounds %class.GcList, %class.GcList* %3, i32 0, i32 0
-  %5 = load %struct.GcObj*, %struct.GcObj** %4, align 4
-  ret %struct.GcObj* %5
 }
 
 ; Function Attrs: noinline nounwind optnone

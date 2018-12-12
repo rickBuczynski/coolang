@@ -28,7 +28,6 @@ class CStd {
   llvm::Constant* GetGcMallocFunc() const { return gc_malloc_func_; }
   llvm::Constant* GetGcAddRootFunc() const { return gc_add_root_func_; }
   llvm::Constant* GetGcRemoveRootFunc() const { return gc_remove_root_func_; }
-  llvm::Constant* GetGcMallocPrintFunc() const { return gc_malloc_print_func_; }
   llvm::Constant* GetGcSystemInitFunc() const { return gc_system_init_func_; }
   llvm::Constant* GetGcSystemDestroyFunc() const {
     return gc_system_destroy_func_;
@@ -98,8 +97,6 @@ class CStd {
       "gc_remove_root", ast_to_code_map_->LlvmVoidType(),
       {ast_to_code_map_->LlvmClass("Object")->getPointerTo()->getPointerTo()},
       false);
-  llvm::Constant* gc_malloc_print_func_ =
-      CreateCStdFuncDecl("gc_malloc_print", "Void", {});
   llvm::Constant* gc_system_init_func_ =
       CreateCStdFuncDecl("gc_system_init", "Void", {"Int"});
   llvm::Constant* gc_system_destroy_func_ =

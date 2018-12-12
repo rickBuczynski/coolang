@@ -1,18 +1,6 @@
-Allocated:
-obj
-  is_reachable=0
-  typename=Main
-
-Allocated:
-obj
-  is_reachable=0
-  typename=A
-
-Allocated:
-obj
-  is_reachable=0
-  typename=C
-
+Allocated an object of type: Main
+Allocated an object of type: A
+Allocated an object of type: C
 A and C still alive
 
 A and C should die now
@@ -27,8 +15,4 @@ obj
   is_reachable=0
   typename=A
 
-Allocated:
-obj
-  is_reachable=0
-  typename=Object
-
+Allocated an object of type: Object

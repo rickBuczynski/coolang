@@ -9,12 +9,6 @@ extern "C" int fprintf(FILE *stream, const char *format, ...);
 extern "C" void* malloc(int size);
 */
 
-// TODO refactor extern api to just:
-// gc_malloc(int size)
-// print_malloc() maybe takes in the malloced obj, or maybe gc system keeps
-// track of it similar api for roots only call printing apis from codegen if
-// verbose flag is set
-
 bool gc_is_verbose = false;
 
 struct GcObj;
@@ -247,14 +241,6 @@ extern "C" void* gc_malloc(int size) {
   gc_obj_list->PushFront(obj);
 
   return static_cast<void*>(obj);
-}
-
-extern "C" void gc_malloc_print() {
-  if (gc_is_verbose) {
-    printf("Allocated:\n");
-    PrintObj(gc_obj_list->GetHead());
-    printf("\n");
-  }
 }
 
 extern "C" void gc_add_root(GcObj** root) { gc_roots->PushRoot(root); }

@@ -956,6 +956,11 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
 
   llvm::Value* malloc_val =
       builder_.CreateCall(c_std_.GetGcMallocFunc(), {malloc_len_val});
+  if (gc_verbose_) {
+    llvm::Value* type_str = builder_.CreateGlobalStringPtr(
+        "Allocated an object of type: " + type_name + "\n");
+    builder_.CreateCall(c_std_.GetPrintfFunc(), {type_str});
+  }
 
   llvm::Value* new_val = builder_.CreateBitCast(
       malloc_val, ast_to_.LlvmClass(type_name)->getPointerTo());
@@ -963,8 +968,6 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
   std::vector<llvm::Value*> args;
   args.push_back(new_val);
   builder_.CreateCall(ast_to_.GetConstructor(type_name), args);
-
-  builder_.CreateCall(c_std_.GetGcMallocPrintFunc(), {});
 
   return new_val;
 }
