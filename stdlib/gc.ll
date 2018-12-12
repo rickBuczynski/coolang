@@ -1,5 +1,5 @@
-; ModuleID = '.\gc.cpp'
-source_filename = ".\5Cgc.cpp"
+; ModuleID = 'gc.cpp'
+source_filename = "gc.cpp"
 target datalayout = "e-m:x-p:32:32-i64:64-f80:32-n8:16:32-a:0:32-S32"
 target triple = "i386-pc-windows-msvc19.16.27024"
 

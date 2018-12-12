@@ -12,4 +12,12 @@ set(SOURCES
   gc.cpp
 )
 
+add_custom_command(OUTPUT gc.ll
+  COMMAND clang++ -m32 -S -emit-llvm -fno-exceptions gc.cpp
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  DEPENDS gc.cpp
+)
+
+add_custom_target(generate_ll DEPENDS gc.ll)
+
 add_library(${PROJECT_NAME} ${SOURCES})
