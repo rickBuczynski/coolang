@@ -1177,6 +1177,10 @@ Codegen::Codegen(ProgramAst& ast, std::optional<std::filesystem::path> obj_path,
     exe_path_ = ast_->GetFilePath();
     exe_path_.replace_extension(platform::GetExeFileExtension());
   }
+
+  gc_obj_path_ = obj_path_;
+  gc_obj_path_.replace_filename("gc");
+  gc_obj_path_.replace_extension(platform::GetObjectFileExtension());
 }
 
 Codegen::~Codegen() = default;
@@ -1241,9 +1245,6 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   LLVMInitializeX86AsmParser();
   LLVMInitializeX86AsmPrinter();
 
-  std::filesystem::path std_lib_obj_path = std_lib_path_;
-  std_lib_obj_path.replace_extension(platform::GetObjectFileExtension());
-
   llvm::LLVMContext context;
   llvm::SMDiagnostic smd;
 
@@ -1251,9 +1252,9 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   auto gc_ll_file = fs.open("gc.ll");
   llvm::StringRef gc_ll_str_ref(gc_ll_file.begin(), gc_ll_file.size());
 
-  std::unique_ptr<llvm::Module> std_lib_module =
+  std::unique_ptr<llvm::Module> gc_module =
       parseIR({gc_ll_str_ref, "gc_ll"}, smd, context);
-  OutputModuleToObjectFile(std_lib_module.get(), std_lib_obj_path);
+  OutputModuleToObjectFile(gc_module.get(), gc_obj_path_);
 
   OutputModuleToObjectFile(module_.get(), obj_path_);
   std::cout << "Source input: " << ast_->GetFilePath().string() << std::endl;
@@ -1261,11 +1262,8 @@ void Codegen::GenerateCode(bool gc_verbose) const {
 }
 
 void Codegen::Link() const {
-  std::filesystem::path std_lib_obj_path = std_lib_path_;
-  std_lib_obj_path.replace_extension(platform::GetObjectFileExtension());
-
   std::string linker_cmd =
-      platform::GetLinkerCommand(obj_path_, std_lib_obj_path, exe_path_);
+      platform::GetLinkerCommand(obj_path_, gc_obj_path_, exe_path_);
   system(linker_cmd.c_str());
   std::cout << "Executable output: " << exe_path_.string() << std::endl;
 }
