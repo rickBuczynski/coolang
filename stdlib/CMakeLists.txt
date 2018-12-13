@@ -1,5 +1,7 @@
 project(stdlib)
 
+include (${CMAKE_SOURCE_DIR}/3rd_party/cmrc/CMakeRC.cmake)
+
 # TODO this project is a placeholder so I can edit gc.cpp within VS2017
 # should come up with some build system for gc.cpp->gc.ll->llvm module in coolang
 
@@ -19,5 +21,8 @@ add_custom_command(OUTPUT gc.ll
 )
 
 add_custom_target(generate_ll DEPENDS gc.ll)
+cmrc_add_resource_library(gcll gc.ll)
+
+add_dependencies(gcll generate_ll)
 
 add_library(${PROJECT_NAME} ${SOURCES})

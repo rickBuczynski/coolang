@@ -1,5 +1,6 @@
 #include "coolang/codegen/codegen.h"
 
+#include <cmrc/cmrc.hpp>
 #include <iostream>
 #include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/c_std.h"
@@ -31,6 +32,8 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+
+CMRC_DECLARE(gcll);
 
 namespace coolang {
 
@@ -1243,8 +1246,13 @@ void Codegen::GenerateCode(bool gc_verbose) const {
 
   llvm::LLVMContext context;
   llvm::SMDiagnostic smd;
+
+  auto fs = cmrc::gcll::get_filesystem();
+  auto gc_ll_file = fs.open("gc.ll");
+  llvm::StringRef gc_ll_str_ref(gc_ll_file.begin(), gc_ll_file.size());
+
   std::unique_ptr<llvm::Module> std_lib_module =
-      parseIRFile(std_lib_path_.string(), smd, context);
+      parseIR({gc_ll_str_ref, "gc_ll"}, smd, context);
   OutputModuleToObjectFile(std_lib_module.get(), std_lib_obj_path);
 
   OutputModuleToObjectFile(module_.get(), obj_path_);

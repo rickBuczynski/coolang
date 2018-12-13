@@ -24,9 +24,9 @@ set(HEADERS
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} 
   semantic
+  gcll
   ${llvm_libs}
 )
-add_dependencies(${PROJECT_NAME} generate_ll)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
