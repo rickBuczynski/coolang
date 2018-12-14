@@ -20,9 +20,9 @@ using PlatformClass = LinuxPlatform;
 #endif
 
 std::string GetLinkerCommand(const std::filesystem::path& obj_path,
-                             const std::filesystem::path& std_lib_obj_path,
+                             const std::filesystem::path& gc_obj_path,
                              const std::filesystem::path& exe_path) {
-  return PlatformClass::GetLinkerCommand(obj_path, std_lib_obj_path, exe_path);
+  return PlatformClass::GetLinkerCommand(obj_path, gc_obj_path, exe_path);
 }
 
 std::string GetObjectFileExtension() {

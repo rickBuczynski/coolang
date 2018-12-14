@@ -748,15 +748,11 @@ attributes #4 = { nounwind }
 attributes #5 = { builtin }
 attributes #6 = { builtin nounwind }
 
-!llvm.linker.options = !{!0, !1, !2, !3, !4}
-!llvm.module.flags = !{!5, !6}
-!llvm.ident = !{!7}
+!llvm.linker.options = !{!0}
+!llvm.module.flags = !{!1, !2}
+!llvm.ident = !{!3}
 
-!0 = !{!"/FAILIFMISMATCH:\22_MSC_VER=1900\22"}
-!1 = !{!"/FAILIFMISMATCH:\22_ITERATOR_DEBUG_LEVEL=0\22"}
-!2 = !{!"/FAILIFMISMATCH:\22RuntimeLibrary=MT_StaticRelease\22"}
-!3 = !{!"/DEFAULTLIB:libcpmt.lib"}
-!4 = !{!"/FAILIFMISMATCH:\22_CRT_STDIO_ISO_WIDE_SPECIFIERS=0\22"}
-!5 = !{i32 1, !"NumRegisterParameters", i32 0}
-!6 = !{i32 1, !"wchar_size", i32 2}
-!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!0 = !{!"/FAILIFMISMATCH:\22_CRT_STDIO_ISO_WIDE_SPECIFIERS=0\22"}
+!1 = !{i32 1, !"NumRegisterParameters", i32 0}
+!2 = !{i32 1, !"wchar_size", i32 2}
+!3 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
