@@ -23,7 +23,18 @@ class AstToCodeMap {
     }
     Insert(program_ast->GetIoClass());
     Insert(program_ast->GetObjectClass());
+
+    // TODO document this type and don't hardcode index 0,1,2 in constructors
+    // should have a way to get those indices
+    gc_ptrs_info_ty_ = llvm::StructType::create(*context_, "GcPtrsInfo");
+    gc_ptrs_info_ty_->setBody(
+        {builder_->getInt32Ty(),
+         LlvmClass("Object")->getPointerTo()->getPointerTo(),
+         gc_ptrs_info_ty_->getPointerTo()});
   }
+
+  // TODO this shouldn't be public
+  llvm::StructType* gc_ptrs_info_ty_;
 
   static constexpr int obj_gc_next_obj_index = 0;
   static constexpr int obj_gc_prev_obj_index = 1;
