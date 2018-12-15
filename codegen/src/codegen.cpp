@@ -138,25 +138,21 @@ class CodegenVisitor : public AstVisitor {
   bool gc_verbose_;
 };
 
-int GcPtrCountIndex(const ClassAst* class_ast) {
+int GcPtrsInfoIndex(const ClassAst* class_ast) {
   int super_attr_count = 0;
   for (const ClassAst* super : class_ast->GetAllSuperClasses()) {
     super_attr_count += super->GetAttributeFeatures().size();
   }
-  int gc_ptr_counts_offset = class_ast->GetAllSuperClasses().size() * 2;
-  return super_attr_count + gc_ptr_counts_offset +
+  int gc_ptr_infos_offset = class_ast->GetAllSuperClasses().size() * 1;
+  return super_attr_count + gc_ptr_infos_offset +
          AstToCodeMap::obj_attributes_offset;
-}
-
-int NextGcPtrCountIndex(const ClassAst* class_ast) {
-  return GcPtrCountIndex(class_ast) + 1;
 }
 
 int StructAttrIndex(const ClassAst* class_ast, const AttributeFeature* attr) {
   auto attrs = class_ast->GetAllAttrsNonBasicFirst();
   const int attribute_index =
       std::distance(attrs.begin(), std::find(attrs.begin(), attrs.end(), attr));
-  return NextGcPtrCountIndex(class_ast) + 1 + attribute_index;
+  return GcPtrsInfoIndex(class_ast) + 1 + attribute_index;
 }
 
 void CodegenVisitor::Visit(const CaseExpr& case_expr) {
@@ -783,24 +779,41 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   for (size_t i = 0; i < supers_then_this.size(); i++) {
     const ClassAst* cur_class = supers_then_this[i];
 
+    llvm::Value* gc_ptrs_info =
+        builder_.CreateStructGEP(ty, ctee, GcPtrsInfoIndex(cur_class));
+
     // store the gc_ptr_count
     const int gc_ptr_count = cur_class->GetNonBasicAttrCount();
-    StructStoreAtIndex(ty, ctee, ast_to_.LlvmConstInt32(gc_ptr_count),
-                       GcPtrCountIndex(cur_class));
+    StructStoreAtIndex(ast_to_.gc_ptrs_info_ty_, gc_ptrs_info,
+                       ast_to_.LlvmConstInt32(gc_ptr_count), 0);
 
     // store the address of the next gc_ptr_count
-    llvm::Value* next_gc_ptr_count_gep = builder_.CreateStructGEP(
-        ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-        NextGcPtrCountIndex(cur_class));
+    llvm::Value* next_gc_ptrs_info_gep =
+        builder_.CreateStructGEP(nullptr, gc_ptrs_info, 2);
     if (i == supers_then_this.size() - 1) {
-      auto int_null_ptr =
-          llvm::ConstantPointerNull::get(builder_.getInt32Ty()->getPointerTo());
-      builder_.CreateStore(int_null_ptr, next_gc_ptr_count_gep);
+      auto null_ptr = llvm::ConstantPointerNull::get(
+          ast_to_.gc_ptrs_info_ty_->getPointerTo());
+      builder_.CreateStore(null_ptr, next_gc_ptrs_info_gep);
     } else {
-      llvm::Value* next_class_gc_ptr_count_gep = builder_.CreateStructGEP(
+      llvm::Value* next_class_gc_ptrs_info_gep = builder_.CreateStructGEP(
           ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-          GcPtrCountIndex(supers_then_this[i + 1]));
-      builder_.CreateStore(next_class_gc_ptr_count_gep, next_gc_ptr_count_gep);
+          GcPtrsInfoIndex(supers_then_this[i + 1]));
+      builder_.CreateStore(next_class_gc_ptrs_info_gep, next_gc_ptrs_info_gep);
+    }
+
+    if (cur_class->GetAttributeFeatures().empty()) {
+      StructStoreAtIndex(
+          ast_to_.gc_ptrs_info_ty_, gc_ptrs_info,
+          llvm::ConstantPointerNull::get(
+              ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo()),
+          1);
+    } else {
+      const auto* first_attr = cur_class->GetAllAttrsNonBasicFirst().front();
+      llvm::Value* gep = builder_.CreateStructGEP(
+          ty, ctee, StructAttrIndex(cur_class, first_attr));
+      llvm::Value* casted_gep = builder_.CreateBitCast(
+          gep, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+      StructStoreAtIndex(ast_to_.gc_ptrs_info_ty_, gc_ptrs_info, casted_gep, 1);
     }
 
     for (const auto* attr : cur_class->GetAttributeFeatures()) {

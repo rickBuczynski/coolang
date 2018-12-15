@@ -15,8 +15,8 @@ struct GcObj;
 
 struct GcPtrsInfo {
   int gc_ptr_count;
+  GcObj** gc_ptrs;
   GcPtrsInfo* next_gc_info;
-  GcObj* first_gc_ptr;
 };
 
 // TODO GCwont work for Cool Strings
@@ -61,9 +61,8 @@ void MarkObj(GcObj* obj) {
 
   GcPtrsInfo* gc_ptrs_info = &obj->gc_ptrs_info;
   while (gc_ptrs_info != nullptr) {
-    GcObj** gc_ptrs = &gc_ptrs_info->first_gc_ptr;
     for (int i = 0; i < gc_ptrs_info->gc_ptr_count; i++) {
-      MarkObj(gc_ptrs[i]);
+      MarkObj(gc_ptrs_info->gc_ptrs[i]);
     }
     gc_ptrs_info = gc_ptrs_info->next_gc_info;
   }

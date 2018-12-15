@@ -38,10 +38,8 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   class_attributes.push_back(builder_->getInt8PtrTy());
 
   for (const ClassAst* cur_class : class_ast->SupersThenThis()) {
-    // put the number of non-basic attrs so we know how many to visit for GC
-    class_attributes.push_back(builder_->getInt32Ty());
-    // put address of the  non-basic attr count for next class in inheritance
-    class_attributes.push_back(builder_->getInt32Ty()->getPointerTo());
+    class_attributes.push_back(gc_ptrs_info_ty_);
+
     // Put non basic attrs first so we can visit them for GC
     for (const auto* attr : cur_class->GetAllAttrsNonBasicFirst()) {
       llvm::Type* attr_type = LlvmBasicOrClassPtrTy(attr->GetType());
