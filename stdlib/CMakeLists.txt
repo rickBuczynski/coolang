@@ -15,7 +15,7 @@ set(SOURCES
 )
 
 add_custom_command(OUTPUT gc.ll
-  COMMAND clang++ -m32 -S -emit-llvm -fno-exceptions gc.cpp
+  COMMAND clang++ -m64 -S -emit-llvm -fno-exceptions gc.cpp
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS gc.cpp
 )

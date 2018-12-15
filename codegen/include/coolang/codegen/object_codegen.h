@@ -72,7 +72,7 @@ class ObjectCodegen {
     llvm::Value* typesize = builder_->CreateLoad(typesize_ptr);
 
     llvm::Value* copy =
-        builder_->CreateCall(c_std_->GetGcMallocFunc(), {typesize});
+        builder_->CreateCall(c_std_->GetMallocFunc(), {typesize});
     builder_->CreateMemCpy(copy, 0, func->arg_begin(), 0, typesize);
 
     builder_->CreateRet(copy);

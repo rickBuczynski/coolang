@@ -23,7 +23,10 @@ class LinuxPlatform {
     output_exe_linker_arg += exe_path.string();
     output_exe_linker_arg += " ";
 
-    std::string linker_cmd = "gcc ";
+    std::string linker_cmd = "g++ ";
+    // TODO why do I get "relocation R_X86_64_32S against symbol...." errors without -no-pie
+    linker_cmd += "-no-pie ";
+
     linker_cmd += output_exe_linker_arg;
     linker_cmd += obj_input_linker_arg;
 
