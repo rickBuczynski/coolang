@@ -13,13 +13,14 @@ namespace coolang {
 class WindowsPlatform {
  public:
   static std::string GetLinkerCommand(
-      const std::filesystem::path& object_file_path,
-      const std::filesystem::path& exe_file_path) {
-    std::string obj_input_linker_arg = object_file_path.string();
+      const std::filesystem::path& obj_path,
+      const std::filesystem::path& std_lib_obj_path,
+      const std::filesystem::path& exe_path) {
+    std::string obj_input_linker_arg = obj_path.string();
     obj_input_linker_arg += " ";
 
     std::string output_exe_linker_arg = "-OUT:";
-    output_exe_linker_arg += exe_file_path.string();
+    output_exe_linker_arg += exe_path.string();
     output_exe_linker_arg += " ";
 
     const auto msvc_linker_path = GetMsvcLinkerPath();
@@ -45,7 +46,8 @@ class WindowsPlatform {
 
     std::string linker_cmd = "cmd /C \"";
     linker_cmd += "\"" + msvc_linker_path.value().string() + "\" ";
-    linker_cmd += obj_input_linker_arg;
+    linker_cmd += obj_path.string() + " ";
+    linker_cmd += std_lib_obj_path.string() + " ";
     linker_cmd += output_exe_linker_arg;
     linker_cmd += "libcmt.lib ";
     // TODO windows requires legacy_stdio_definitions.lib in new versions of

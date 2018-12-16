@@ -21,7 +21,8 @@ class Codegen {
   Codegen& operator=(const Codegen& other) = delete;
   Codegen& operator=(Codegen&& other) noexcept = delete;
 
-  void GenerateCode() const;
+  // gc_verbose is used for testing GC, not intended for public use
+  void GenerateCode(bool gc_verbose = false) const;
   void Link() const;
 
  private:
@@ -30,6 +31,7 @@ class Codegen {
   std::unique_ptr<llvm::LLVMContext> context_;
   std::unique_ptr<llvm::Module> module_;
 
+  std::filesystem::path gc_obj_path_;
   std::filesystem::path obj_path_;
   std::filesystem::path exe_path_;
 };

@@ -27,6 +27,13 @@ target_link_libraries(${PROJECT_NAME}
   ${llvm_libs}
 )
 
+# TODO windows should support 32 and 64 bit
+IF (WIN32)
+  target_link_libraries(${PROJECT_NAME} gc32ll)
+ELSE()
+  target_link_libraries(${PROJECT_NAME} gc64ll)
+ENDIF()
+
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 

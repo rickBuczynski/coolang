@@ -15,6 +15,10 @@ class Value;
 
 namespace coolang {
 
+inline bool IsBasicType(const std::string& class_name) {
+  return class_name == "Int" || class_name == "String" || class_name == "Bool";
+}
+
 class LineRange {
  public:
   LineRange(int start_line_num, int end_line_num)
@@ -720,6 +724,7 @@ class ClassAst : public AstNode {
   const std::vector<std::unique_ptr<Feature>>& GetFeatures() const {
     return features_;
   }
+
   std::vector<const AttributeFeature*> GetAttributeFeatures() const {
     std::vector<const AttributeFeature*> attribute_features;
     for (const auto& feature : GetFeatures()) {
@@ -729,6 +734,28 @@ class ClassAst : public AstNode {
     }
     return attribute_features;
   }
+
+  std::vector<const AttributeFeature*> GetAllAttrsNonBasicFirst() const {
+    auto attrs = GetAttributeFeatures();
+
+    std::vector<const AttributeFeature*> non_basic_first;
+    for (const auto& attr : attrs) {
+      if (!IsBasicType(attr->GetType())) non_basic_first.push_back(attr);
+    }
+    for (const auto& attr : attrs) {
+      if (IsBasicType(attr->GetType())) non_basic_first.push_back(attr);
+    }
+    return non_basic_first;
+  }
+
+  int GetNonBasicAttrCount() const {
+    int n = 0;
+    for (const auto& attr : GetAttributeFeatures()) {
+      if (!IsBasicType(attr->GetType())) n++;
+    }
+    return n;
+  }
+
   std::vector<const MethodFeature*> GetMethodFeatures() const {
     std::vector<const MethodFeature*> method_features;
     for (const auto& feature : GetFeatures()) {

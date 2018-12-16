@@ -1,6 +1,6 @@
+#include "coolang/codegen/ast_to_code_map.h"
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
-#include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/vtable.h"
 #include "coolang/parser/ast.h"
 
@@ -10,21 +10,38 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   current_class_ = class_ast;
 
   std::vector<llvm::Type*> class_attributes;
-  // vtable ptr
+  // obj_gc_next_obj_index
+  class_attributes.push_back(LlvmClass("Object")->getPointerTo());
+  // obj_gc_prev_obj_index
+  class_attributes.push_back(LlvmClass("Object")->getPointerTo());
+  // obj_gc_next_root_index
+  class_attributes.push_back(LlvmClass("Object")->getPointerTo());
+  // obj_gc_prev_root_index
+  class_attributes.push_back(LlvmClass("Object")->getPointerTo());
+  // obj_gc_is_reachable_index
+  // use an i8 instead of i1 since clang emits i8 for bool
+  // i1 should work too since i8 is min addressable data but use i8 to be safe
+  class_attributes.push_back(builder_->getInt8Ty());
+
+  // obj_typename_index
+  class_attributes.push_back(builder_->getInt8PtrTy());
+
+  // obj_vtable_index
   class_attributes.push_back(
       GetVtable(class_ast).GetStructType()->getPointerTo());
-  // typename
-  class_attributes.push_back(builder_->getInt8PtrTy());
-  // object size (to allow copying without a different function per type)
+  // obj_typesize_index (to allow copying without a different function per type)
   class_attributes.push_back(builder_->getInt32Ty());
-  // pointer to constructor to support "new SELF_TYPE"
+  // obj_constructor_index (to support "new SELF_TYPE")
   class_attributes.push_back(
       GetConstructorFunctionType(class_ast)->getPointerTo());
-  // obj_boxed_data
+  // obj_boxed_data_index
   class_attributes.push_back(builder_->getInt8PtrTy());
 
   for (const ClassAst* cur_class : class_ast->SupersThenThis()) {
-    for (const auto* attr : cur_class->GetAttributeFeatures()) {
+    class_attributes.push_back(gc_ptrs_info_ty_);
+
+    // Put non basic attrs first so we can visit them for GC
+    for (const auto* attr : cur_class->GetAllAttrsNonBasicFirst()) {
       llvm::Type* attr_type = LlvmBasicOrClassPtrTy(attr->GetType());
       class_attributes.push_back(attr_type);
     }

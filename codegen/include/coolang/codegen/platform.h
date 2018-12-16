@@ -7,6 +7,7 @@ namespace coolang {
 namespace platform {
 
 std::string GetLinkerCommand(const std::filesystem::path& obj_path,
+                             const std::filesystem::path& std_lib_obj_path,
                              const std::filesystem::path& exe_path);
 std::string GetObjectFileExtension();
 std::string GetExeFileExtension();

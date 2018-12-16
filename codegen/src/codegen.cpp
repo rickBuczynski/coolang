@@ -1,5 +1,6 @@
 #include "coolang/codegen/codegen.h"
 
+#include <cmrc/cmrc.hpp>
 #include <iostream>
 #include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/c_std.h"
@@ -21,8 +22,10 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
+#include "llvm/IRReader/IRReader.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
+#include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
@@ -30,19 +33,34 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
+// TODO support 64 bit windows
+#ifdef _WIN32
+CMRC_DECLARE(gc32ll);
+namespace gcll = cmrc::gc32ll;
+const char* gcll_path = "gc32.ll";
+#endif
+
+#ifdef __unix__
+CMRC_DECLARE(gc64ll);
+namespace gcll = cmrc::gc64ll;
+const char* gcll_path = "gc64.ll";
+#endif
+
 namespace coolang {
 
 class CodegenVisitor : public AstVisitor {
  public:
   explicit CodegenVisitor(const ProgramAst& program_ast,
-                          llvm::LLVMContext* context, llvm::Module* module)
+                          llvm::LLVMContext* context, llvm::Module* module,
+                          bool gc_verbose)
       : context_(*context),
         module_(module),
         data_layout_(module_),
         builder_(context_),
         ast_to_(&context_, module_, &builder_, &data_layout_, &program_ast),
         c_std_(module_, &ast_to_),
-        object_codegen_(&context_, &builder_, &ast_to_, &c_std_) {}
+        object_codegen_(&context_, &builder_, &ast_to_, &c_std_),
+        gc_verbose_(gc_verbose) {}
 
   void Visit(const CaseExpr& case_expr) override;
   void Visit(const StrExpr& str) override;
@@ -105,12 +123,17 @@ class CodegenVisitor : public AstVisitor {
                                 llvm::Value* basic_val);
   llvm::Value* UnboxValue(const std::string& type_name, llvm::Value* boxed_val);
 
+  void StructStoreAtIndex(llvm::StructType* ty, llvm::Value* struct_val,
+                          llvm::Value* val, int index);
+
   void GenConstructor(const ClassAst& class_ast);
   void GenMethodBodies(const ClassAst& class_ast);
 
   void GenMainFunc();
 
   llvm::Value* GetAssignmentLhsPtr(const AssignExpr& assign);
+
+  llvm::Value* AddGcRoot(llvm::AllocaInst* alloca_inst);
 
   const ClassAst* CurClass() const { return ast_to_.CurClass(); }
   const ProgramAst* GetProgramAst() const { return ast_to_.GetProgramAst(); }
@@ -122,15 +145,25 @@ class CodegenVisitor : public AstVisitor {
   AstToCodeMap ast_to_;
   CStd c_std_;
   ObjectCodegen object_codegen_;
+
+  bool gc_verbose_;
 };
 
-int StructAttrIndex(const ClassAst* class_ast, int attribute_index) {
+int GcPtrsInfoIndex(const ClassAst* class_ast) {
   int super_attr_count = 0;
   for (const ClassAst* super : class_ast->GetAllSuperClasses()) {
     super_attr_count += super->GetAttributeFeatures().size();
   }
-  return super_attr_count + attribute_index +
+  int gc_ptr_infos_offset = class_ast->GetAllSuperClasses().size() * 1;
+  return super_attr_count + gc_ptr_infos_offset +
          AstToCodeMap::obj_attributes_offset;
+}
+
+int StructAttrIndex(const ClassAst* class_ast, const AttributeFeature* attr) {
+  auto attrs = class_ast->GetAllAttrsNonBasicFirst();
+  const int attribute_index =
+      std::distance(attrs.begin(), std::find(attrs.begin(), attrs.end(), attr));
+  return GcPtrsInfoIndex(class_ast) + 1 + attribute_index;
 }
 
 void CodegenVisitor::Visit(const CaseExpr& case_expr) {
@@ -154,7 +187,7 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
   case_expr.GetCaseExpr()->Accept(*this);
   llvm::Value* case_val = case_expr.GetCaseExpr()->LlvmValue();
 
-  if (!AstToCodeMap::IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+  if (!IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
     GenExitIfVoid(case_val,
                   case_expr.GetCaseExpr()->GetLineRange().end_line_num,
                   "Match on void in case statement.");
@@ -278,16 +311,15 @@ void CodegenVisitor::Visit(const WhileExpr& while_expr) {
 llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
                                          const std::string& cur_type,
                                          const std::string& dest_type) {
-  if (AstToCodeMap::IsBasicType(cur_type) && dest_type == "Object") {
+  if (IsBasicType(cur_type) && dest_type == "Object") {
     return CreateBoxedBasic(cur_type, convert_me);
   }
-  if (AstToCodeMap::IsBasicType(cur_type) && dest_type != "Object" &&
-      dest_type != cur_type) {
+  if (IsBasicType(cur_type) && dest_type != "Object" && dest_type != cur_type) {
     // invalid conversion, this should only occur in a case branch that's not
     // taken so we can return anything, choose to just return default val
     return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
   }
-  if (AstToCodeMap::IsBasicType(dest_type) && cur_type == "Object") {
+  if (IsBasicType(dest_type) && cur_type == "Object") {
     return UnboxValue(dest_type, convert_me);
   }
   if (cur_type != dest_type) {
@@ -297,8 +329,17 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
   return convert_me;
 }
 
+struct Binding {
+  Binding(std::string id, std::string type, llvm::AllocaInst* alloca_inst)
+      : id(std::move(id)), type(std::move(type)), alloca_inst(alloca_inst) {}
+
+  std::string id;
+  std::string type;
+  llvm::AllocaInst* alloca_inst;
+};
+
 void CodegenVisitor::Visit(const LetExpr& let_expr) {
-  std::vector<std::pair<std::string, llvm::AllocaInst*>> bindings;
+  std::vector<Binding> bindings;
   const LetExpr* cur_let = &let_expr;
   const Expr* in_expr = nullptr;
 
@@ -312,8 +353,7 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
       llvm::Value* init_val = cur_let->GetInitializationExpr()->LlvmValue();
       llvm::Type* let_type = ast_to_.LlvmBasicOrClassPtrTy(cur_let->GetType());
 
-      if (AstToCodeMap::IsBasicType(
-              cur_let->GetInitializationExpr()->GetExprType()) &&
+      if (IsBasicType(cur_let->GetInitializationExpr()->GetExprType()) &&
           cur_let->GetType() == "Object") {
         init_val = CreateBoxedBasic(
             cur_let->GetInitializationExpr()->GetExprType(), init_val);
@@ -328,8 +368,12 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
           alloca_inst);
     }
 
+    if (!IsBasicType(cur_let->GetType())) {
+      AddGcRoot(alloca_inst);
+    }
+
     AddToScope(cur_let->GetId(), alloca_inst);
-    bindings.emplace_back(cur_let->GetId(), alloca_inst);
+    bindings.emplace_back(cur_let->GetId(), cur_let->GetType(), alloca_inst);
 
     in_expr = cur_let->GetInExpr();
     cur_let = cur_let->GetChainedLet();
@@ -337,8 +381,18 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
 
   in_expr->Accept(*this);
 
-  for (const auto& binding : bindings) {
-    RemoveFromScope(binding.first);
+  // remove roots in reverse order that we added them since roots are a stack
+  // shouldn't need to pass in the root but it allows sanity checking we are
+  // removing the correct root.
+  for (auto it = bindings.rbegin(); it != bindings.rend(); ++it) {
+    if (!IsBasicType(it->type)) {
+      llvm::Value* root = builder_.CreateBitCast(
+          it->alloca_inst,
+          ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+      builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+    }
+
+    RemoveFromScope(it->id);
   }
 
   let_expr.SetLlvmValue(in_expr->LlvmValue());
@@ -355,12 +409,31 @@ void CodegenVisitor::Visit(const IsVoidExpr& is_void) {
 }
 
 void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
+  std::vector<llvm::Value*> arg_gc_roots;
+
   // codegen args first
   for (const auto& arg : call_expr.GetArgs()) {
     arg->Accept(*this);
+
+    // add GC roots for each arg e.g f(new A, new B) we don't want GC to delete
+    // A when allocating B
+    if (!IsBasicType(arg->GetExprType())) {
+      llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+          ast_to_.LlvmBasicOrClassPtrTy(arg->GetExprType()));
+      builder_.CreateStore(arg->LlvmValue(), alloca_inst);
+      llvm::Value* root = AddGcRoot(alloca_inst);
+      arg_gc_roots.push_back(root);
+    }
   }
   // codegen LHS after all args
   call_expr.GetLhsExpr()->Accept(*this);
+
+  // now it's safe to remove the gc roots for the args since there wont be any
+  // more GC allocations until inside the called function body which will set
+  // its own roots for its args
+  for (auto it = arg_gc_roots.rbegin(); it != arg_gc_roots.rend(); ++it) {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {*it});
+  }
 
   const ClassAst* class_calling_method =
       ast_to_.GetClassByName(call_expr.GetLhsExpr()->GetExprType());
@@ -380,7 +453,7 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
 
   llvm::Value* lhs_val = call_expr.GetLhsExpr()->LlvmValue();
 
-  if (!AstToCodeMap::IsBasicType(call_expr.GetLhsExpr()->GetExprType())) {
+  if (!IsBasicType(call_expr.GetLhsExpr()->GetExprType())) {
     GenExitIfVoid(lhs_val, call_expr.GetLhsExpr()->GetLineRange().end_line_num,
                   "Dispatch to void.");
   }
@@ -422,7 +495,8 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
     call_expr.SetLlvmValue(builder_.CreateCall(called_method, arg_vals));
   } else {
     llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-        ast_to_.LlvmClass(call_expr.GetLhsExpr()->GetExprType()), lhs_val, 0);
+        ast_to_.LlvmClass(call_expr.GetLhsExpr()->GetExprType()), lhs_val,
+        AstToCodeMap::obj_vtable_index);
     llvm::Value* vtable_ptr = builder_.CreateLoad(vtable_ptr_ptr);
     const int method_offset_in_vtable =
         ast_to_.GetVtable(class_calling_method)
@@ -524,9 +598,7 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
   }
 
   for (const ClassAst* class_ast : CurClass()->SupersThenThis()) {
-    for (size_t i = 0; i < class_ast->GetAttributeFeatures().size(); i++) {
-      const auto* attr = class_ast->GetAttributeFeatures()[i];
-
+    for (const auto* attr : class_ast->GetAttributeFeatures()) {
       llvm::Value* cur_class_val = ast_to_.CurLlvmFunc()->args().begin();
       cur_class_val = ConvertType(cur_class_val, CurClass()->GetName(),
                                   class_ast->GetName());
@@ -534,7 +606,7 @@ void CodegenVisitor::Visit(const ObjectExpr& obj) {
       if (attr->GetId() == obj.GetId()) {
         llvm::Value* element_ptr = builder_.CreateStructGEP(
             ast_to_.LlvmClass(class_ast), cur_class_val,
-            StructAttrIndex(class_ast, i));
+            StructAttrIndex(class_ast, attr));
         obj.SetLlvmValue(builder_.CreateLoad(element_ptr));
         return;
       }
@@ -624,11 +696,31 @@ void CodegenVisitor::GenExit(int line_num,
 }
 
 void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
+  // if we have 2 non-basic types this could be something like "new A = new A"
+  // and we don't want to GC the LHS when we allocate the RHS so we need a root
+  // for the LHS
+  bool need_gc_root = !IsBasicType(eq_expr.GetLhsExpr()->GetExprType()) &&
+                      !IsBasicType(eq_expr.GetRhsExpr()->GetExprType());
+
   eq_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = eq_expr.GetLhsExpr()->LlvmValue();
 
+  llvm::Value* root = nullptr;
+  if (need_gc_root) {
+    llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+        ast_to_.LlvmBasicOrClassPtrTy(eq_expr.GetLhsExpr()->GetExprType()));
+    builder_.CreateStore(eq_expr.GetLhsExpr()->LlvmValue(), alloca_inst);
+    root = AddGcRoot(alloca_inst);
+  }
+
   eq_expr.GetRhsExpr()->Accept(*this);
   llvm::Value* rhs_value = eq_expr.GetRhsExpr()->LlvmValue();
+
+  // safe to remove the root now that we codegened the RHS, there won't be
+  // another allocation/GC until after this expr is done
+  if (need_gc_root) {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+  }
 
   if (eq_expr.GetLhsExpr()->GetExprType() == "Int" ||
       eq_expr.GetLhsExpr()->GetExprType() == "Bool") {
@@ -656,6 +748,13 @@ void CodegenVisitor::Visit(const DivideExpr& div_expr) {
   div_expr.SetLlvmValue(builder_.CreateSDiv(lhs_value, rhs_value));
 }
 
+void CodegenVisitor::StructStoreAtIndex(llvm::StructType* ty,
+                                        llvm::Value* struct_val,
+                                        llvm::Value* val, int index) {
+  llvm::Value* gep = builder_.CreateStructGEP(ty, struct_val, index);
+  builder_.CreateStore(val, gep);
+}
+
 void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   llvm::Function* constructor = ast_to_.GetConstructor(&class_ast);
 
@@ -663,44 +762,75 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
       llvm::BasicBlock::Create(context_, "entrypoint", constructor);
   builder_.SetInsertPoint(constructor_entry);
 
-  // store the vtable first since initializers might make dynamic calls
-  llvm::Value* vtable_ptr_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_vtable_index);
-  builder_.CreateStore(ast_to_.GetVtable(&class_ast).GetGlobalInstance(),
-                       vtable_ptr_ptr);
+  // constructee (the object being constructed)
+  llvm::Value* ctee = constructor->args().begin();
+  // type of the constructee
+  llvm::StructType* ty = ast_to_.LlvmClass(&class_ast);
 
-  // store the class type_name second
-  llvm::Value* typename_ptr_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_typename_index);
-  builder_.CreateStore(builder_.CreateGlobalStringPtr(class_ast.GetName()),
-                       typename_ptr_ptr);
+  StructStoreAtIndex(ty, ctee,
+                     ast_to_.GetVtable(&class_ast).GetGlobalInstance(),
+                     AstToCodeMap::obj_vtable_index);
 
-  // store the type_size third
+  StructStoreAtIndex(ty, ctee,
+                     builder_.CreateGlobalStringPtr(class_ast.GetName()),
+                     AstToCodeMap::obj_typename_index);
+
   const auto type_size =
       data_layout_.getTypeAllocSize(ast_to_.LlvmClass(&class_ast));
-  llvm::Value* typesize_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_typesize_index);
-  builder_.CreateStore(
+  StructStoreAtIndex(
+      ty, ctee,
       llvm::ConstantInt::get(context_, llvm::APInt(32, type_size, true)),
-      typesize_ptr);
+      AstToCodeMap::obj_typesize_index);
 
-  // store a pointer to this constructor 4th
-  llvm::Value* constructor_ptr_ptr = builder_.CreateStructGEP(
-      ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-      AstToCodeMap::obj_constructor_index);
-  builder_.CreateStore(constructor, constructor_ptr_ptr);
+  StructStoreAtIndex(ty, ctee, constructor,
+                     AstToCodeMap::obj_constructor_index);
 
-  // first store default values
-  for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
-    for (size_t i = 0; i < cur_class->GetAttributeFeatures().size(); i++) {
-      const AttributeFeature* attr = cur_class->GetAttributeFeatures()[i];
+  // first store default values and gc_ptr_counts
+  auto supers_then_this = class_ast.SupersThenThis();
+  for (size_t i = 0; i < supers_then_this.size(); i++) {
+    const ClassAst* cur_class = supers_then_this[i];
 
+    llvm::Value* gc_ptrs_info =
+        builder_.CreateStructGEP(ty, ctee, GcPtrsInfoIndex(cur_class));
+
+    // store the gc_ptr_count
+    const int gc_ptr_count = cur_class->GetNonBasicAttrCount();
+    StructStoreAtIndex(ast_to_.gc_ptrs_info_ty_, gc_ptrs_info,
+                       ast_to_.LlvmConstInt32(gc_ptr_count), 0);
+
+    // store the address of the next gc_ptr_count
+    llvm::Value* next_gc_ptrs_info_gep =
+        builder_.CreateStructGEP(nullptr, gc_ptrs_info, 2);
+    if (i == supers_then_this.size() - 1) {
+      auto null_ptr = llvm::ConstantPointerNull::get(
+          ast_to_.gc_ptrs_info_ty_->getPointerTo());
+      builder_.CreateStore(null_ptr, next_gc_ptrs_info_gep);
+    } else {
+      llvm::Value* next_class_gc_ptrs_info_gep = builder_.CreateStructGEP(
+          ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
+          GcPtrsInfoIndex(supers_then_this[i + 1]));
+      builder_.CreateStore(next_class_gc_ptrs_info_gep, next_gc_ptrs_info_gep);
+    }
+
+    if (cur_class->GetAttributeFeatures().empty()) {
+      StructStoreAtIndex(
+          ast_to_.gc_ptrs_info_ty_, gc_ptrs_info,
+          llvm::ConstantPointerNull::get(
+              ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo()),
+          1);
+    } else {
+      const auto* first_attr = cur_class->GetAllAttrsNonBasicFirst().front();
+      llvm::Value* gep = builder_.CreateStructGEP(
+          ty, ctee, StructAttrIndex(cur_class, first_attr));
+      llvm::Value* casted_gep = builder_.CreateBitCast(
+          gep, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+      StructStoreAtIndex(ast_to_.gc_ptrs_info_ty_, gc_ptrs_info, casted_gep, 1);
+    }
+
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
       llvm::Value* element_ptr = builder_.CreateStructGEP(
           ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-          StructAttrIndex(cur_class, i));
+          StructAttrIndex(cur_class, attr));
       builder_.CreateStore(
           ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()), element_ptr);
     }
@@ -711,11 +841,16 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   ast_to_.SetLlvmFunction(&dummy_constructor_method, constructor);
   ast_to_.SetCurrentMethod(&dummy_constructor_method);
 
+  // need to set a GC root to an obj during initialization of attributes because
+  // an allocation in an init expr could cause the obj to be destroyed
+  llvm::AllocaInst* self_alloca =
+      builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
+  builder_.CreateStore(constructor->arg_begin(), self_alloca);
+  llvm::Value* root = AddGcRoot(self_alloca);
+
   // then store value from init expr
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
-    for (size_t i = 0; i < cur_class->GetAttributeFeatures().size(); i++) {
-      const AttributeFeature* attr = cur_class->GetAttributeFeatures()[i];
-
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
       if (attr->GetRootExpr()) {
         attr->GetRootExpr()->Accept(*this);
         llvm::Value* init_val = attr->GetRootExpr()->LlvmValue();
@@ -724,17 +859,26 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
         llvm::Value* element_ptr = builder_.CreateStructGEP(
             ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-            StructAttrIndex(cur_class, i));
+            StructAttrIndex(cur_class, attr));
 
         builder_.CreateStore(init_val, element_ptr);
       }
     }
   }
 
+  builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+
   ast_to_.SetCurrentMethod(nullptr);
   ast_to_.EraseMethod(&dummy_constructor_method);
 
   builder_.CreateRetVoid();
+}
+
+llvm::Value* CodegenVisitor::AddGcRoot(llvm::AllocaInst* alloca_inst) {
+  llvm::Value* root = builder_.CreateBitCast(
+      alloca_inst, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+  builder_.CreateCall(c_std_.GetGcAddRootFunc(), {root});
+  return root;
 }
 
 void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
@@ -745,14 +889,28 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
         llvm::BasicBlock::Create(context_, "entrypoint", func);
     builder_.SetInsertPoint(entry);
 
+    std::vector<Binding> bindings;
+    // add a gc_root_bindings for implicit self param
+    llvm::AllocaInst* self_alloca = builder_.CreateAlloca(
+        ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
+    builder_.CreateStore(func->arg_begin(), self_alloca);
+    bindings.emplace_back("self", class_ast.GetName(), self_alloca);
+
     auto arg_iter = func->arg_begin();
     arg_iter++;  // skip implicit self param
     for (const auto& arg : method->GetArgs()) {
       llvm::AllocaInst* alloca_inst =
           builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(arg.GetType()));
       builder_.CreateStore(arg_iter, alloca_inst);
+      bindings.emplace_back(arg.GetId(), arg.GetType(), alloca_inst);
       AddToScope(arg.GetId(), alloca_inst);
       arg_iter++;
+    }
+
+    for (const auto& binding : bindings) {
+      if (!IsBasicType(binding.type)) {
+        AddGcRoot(binding.alloca_inst);
+      }
     }
 
     ast_to_.SetCurrentMethod(method);
@@ -761,6 +919,15 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
 
     for (const auto& arg : method->GetArgs()) {
       RemoveFromScope(arg.GetId());
+    }
+
+    for (auto it = bindings.rbegin(); it != bindings.rend(); ++it) {
+      if (!IsBasicType(it->type)) {
+        llvm::Value* root = builder_.CreateBitCast(
+            it->alloca_inst,
+            ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
+        builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+      }
     }
 
     llvm::Value* retval = ConvertType(method->GetRootExpr()->LlvmValue(),
@@ -815,7 +982,12 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
       llvm::ConstantInt::get(context_, llvm::APInt(32, new_size, true));
 
   llvm::Value* malloc_val =
-      builder_.CreateCall(c_std_.GetMallocFunc(), {malloc_len_val});
+      builder_.CreateCall(c_std_.GetGcMallocFunc(), {malloc_len_val});
+  if (gc_verbose_) {
+    llvm::Value* type_str = builder_.CreateGlobalStringPtr(
+        "Allocated an object of type: " + type_name + "\n");
+    builder_.CreateCall(c_std_.GetPrintfFunc(), {type_str});
+  }
 
   llvm::Value* new_val = builder_.CreateBitCast(
       malloc_val, ast_to_.LlvmClass(type_name)->getPointerTo());
@@ -881,7 +1053,7 @@ void CodegenVisitor::Visit(const AssignExpr& assign) {
   llvm::Value* assign_lhs_ptr = GetAssignmentLhsPtr(assign);
   llvm::Value* assign_rhs_val = assign.GetRhsExpr()->LlvmValue();
 
-  if (AstToCodeMap::IsBasicType(assign.GetRhsExpr()->GetExprType())) {
+  if (IsBasicType(assign.GetRhsExpr()->GetExprType())) {
     auto* lhs_ty = assign_lhs_ptr->getType()->getPointerElementType();
 
     const bool lhs_is_basic_ty = lhs_ty == builder_.getInt1Ty() ||
@@ -919,9 +1091,7 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& assign) {
   }
 
   for (const ClassAst* class_ast : CurClass()->SupersThenThis()) {
-    for (size_t i = 0; i < class_ast->GetAttributeFeatures().size(); i++) {
-      const auto* attr = class_ast->GetAttributeFeatures()[i];
-
+    for (const auto* attr : class_ast->GetAttributeFeatures()) {
       llvm::Value* cur_class_val = ast_to_.CurLlvmFunc()->args().begin();
       cur_class_val = ConvertType(cur_class_val, CurClass()->GetName(),
                                   class_ast->GetName());
@@ -929,7 +1099,7 @@ llvm::Value* CodegenVisitor::GetAssignmentLhsPtr(const AssignExpr& assign) {
       if (attr->GetId() == assign.GetId()) {
         return builder_.CreateStructGEP(ast_to_.LlvmClass(class_ast),
                                         cur_class_val,
-                                        StructAttrIndex(class_ast, i));
+                                        StructAttrIndex(class_ast, attr));
       }
     }
   }
@@ -956,23 +1126,21 @@ void CodegenVisitor::GenMainFunc() {
       llvm::BasicBlock::Create(context_, "entrypoint", func);
   builder_.SetInsertPoint(entry);
 
-  llvm::AllocaInst* main_class =
-      builder_.CreateAlloca(ast_to_.LlvmClass("Main"));
+  builder_.CreateCall(c_std_.GetGcSystemInitFunc(),
+                      {ast_to_.LlvmConstInt32(gc_verbose_)});
+
+  llvm::Value* main_class = GenAllocAndConstruct("Main");
   std::vector<llvm::Value*> args;
   args.push_back(main_class);
 
-  builder_.CreateCall(ast_to_.GetConstructor("Main"), args);
   builder_.CreateCall(ast_to_.LlvmFunc("Main", "main"), args);
+
+  builder_.CreateCall(c_std_.GetGcSystemDestroyFunc(), {});
+
   builder_.CreateRetVoid();
 }
 
 void CodegenVisitor::Visit(const ProgramAst& prog) {
-  for (const auto& class_ast : prog.GetClasses()) {
-    ast_to_.Insert(&class_ast);
-  }
-  ast_to_.Insert(prog.GetIoClass());
-  ast_to_.Insert(prog.GetObjectClass());
-
   ast_to_.AddMethods(prog.GetObjectClass());
   ast_to_.AddMethods(prog.GetIoClass());
 
@@ -1033,25 +1201,18 @@ Codegen::Codegen(ProgramAst& ast, std::optional<std::filesystem::path> obj_path,
     exe_path_ = ast_->GetFilePath();
     exe_path_.replace_extension(platform::GetExeFileExtension());
   }
+
+  gc_obj_path_ = obj_path_;
+  gc_obj_path_.replace_filename("gc");
+  gc_obj_path_.replace_extension(platform::GetObjectFileExtension());
 }
 
 Codegen::~Codegen() = default;
 
-void Codegen::GenerateCode() const {
-  CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get());
-  ast_->Accept(codegen_visitor);
-
-  // module_->print(llvm::errs(), nullptr);
-
-  // Initialize the target registry etc.
-  LLVMInitializeX86TargetInfo();
-  LLVMInitializeX86Target();
-  LLVMInitializeX86TargetMC();
-  LLVMInitializeX86AsmParser();
-  LLVMInitializeX86AsmPrinter();
-
+void OutputModuleToObjectFile(llvm::Module* module,
+                              const std::filesystem::path& obj_path) {
   const auto target_triple = llvm::sys::getDefaultTargetTriple();
-  module_->setTargetTriple(target_triple);
+  module->setTargetTriple(target_triple);
 
   std::string error;
   const auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
@@ -1072,10 +1233,10 @@ void Codegen::GenerateCode() const {
   auto the_target_machine =
       target->createTargetMachine(target_triple, cpu, features, opt, rm);
 
-  module_->setDataLayout(the_target_machine->createDataLayout());
+  module->setDataLayout(the_target_machine->createDataLayout());
 
   std::error_code ec;
-  llvm::raw_fd_ostream dest(obj_path_.string(), ec, llvm::sys::fs::F_None);
+  llvm::raw_fd_ostream dest(obj_path.string(), ec, llvm::sys::fs::F_None);
 
   if (ec) {
     llvm::errs() << "Could not open file: " << ec.message();
@@ -1090,15 +1251,43 @@ void Codegen::GenerateCode() const {
     return;
   }
 
-  pass.run(*module_);
+  pass.run(*module);
   dest.flush();
+}
 
+void Codegen::GenerateCode(bool gc_verbose) const {
+  CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get(),
+                                 gc_verbose);
+  ast_->Accept(codegen_visitor);
+
+  // module_->print(llvm::errs(), nullptr);
+
+  // Initialize the target registry etc.
+  LLVMInitializeX86TargetInfo();
+  LLVMInitializeX86Target();
+  LLVMInitializeX86TargetMC();
+  LLVMInitializeX86AsmParser();
+  LLVMInitializeX86AsmPrinter();
+
+  llvm::LLVMContext context;
+  llvm::SMDiagnostic smd;
+
+  auto fs = gcll::get_filesystem();
+  auto gc_ll_file = fs.open(gcll_path);
+  const llvm::StringRef gc_ll_str_ref(gc_ll_file.begin(), gc_ll_file.size());
+
+  std::unique_ptr<llvm::Module> gc_module =
+      parseIR({gc_ll_str_ref, "gc"}, smd, context);
+  OutputModuleToObjectFile(gc_module.get(), gc_obj_path_);
+
+  OutputModuleToObjectFile(module_.get(), obj_path_);
   std::cout << "Source input: " << ast_->GetFilePath().string() << std::endl;
   std::cout << "Object output: " << obj_path_.string() << std::endl;
 }
 
 void Codegen::Link() const {
-  std::string linker_cmd = platform::GetLinkerCommand(obj_path_, exe_path_);
+  std::string linker_cmd =
+      platform::GetLinkerCommand(obj_path_, gc_obj_path_, exe_path_);
   system(linker_cmd.c_str());
   std::cout << "Executable output: " << exe_path_.string() << std::endl;
 }

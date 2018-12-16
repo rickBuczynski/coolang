@@ -17,32 +17,45 @@ class AstToCodeMap {
         module_(module),
         builder_(builder),
         data_layout_(data_layout),
-        program_ast_(program_ast) {}
+        program_ast_(program_ast) {
+    for (const auto& class_ast : program_ast->GetClasses()) {
+      Insert(&class_ast);
+    }
+    Insert(program_ast->GetIoClass());
+    Insert(program_ast->GetObjectClass());
 
-  static constexpr int obj_vtable_index = 0;
-  static constexpr int obj_typename_index = 1;
-  static constexpr int obj_typesize_index = 2;
-  // need a pointer to constructor to handle "new SELF_TYPE"
-  static constexpr int obj_constructor_index = 3;
-  static constexpr int obj_boxed_data_index = 4;
-
-  // attrbiutes start at index 5, after the 5 things above
-  static constexpr int obj_attributes_offset = 5;
-
-  void Insert(const ClassAst* class_ast) {
-    types_.insert(std::make_pair(
-        class_ast, llvm::StructType::create(*context_, class_ast->GetName())));
-    vtables_.insert(std::make_pair(class_ast, Vtable(*context_, class_ast)));
+    // TODO document this type and don't hardcode index 0,1,2 in constructors
+    // should have a way to get those indices
+    gc_ptrs_info_ty_ = llvm::StructType::create(*context_, "GcPtrsInfo");
+    gc_ptrs_info_ty_->setBody(
+        {builder_->getInt32Ty(),
+         LlvmClass("Object")->getPointerTo()->getPointerTo(),
+         gc_ptrs_info_ty_->getPointerTo()});
   }
+
+  // TODO this shouldn't be public
+  llvm::StructType* gc_ptrs_info_ty_;
+
+  static constexpr int obj_gc_next_obj_index = 0;
+  static constexpr int obj_gc_prev_obj_index = 1;
+  static constexpr int obj_gc_next_root_index = 2;
+  static constexpr int obj_gc_prev_root_index = 3;
+  static constexpr int obj_gc_is_reachable_index = 4;
+
+  static constexpr int obj_typename_index = 5;
+
+  static constexpr int obj_vtable_index = 6;
+  static constexpr int obj_typesize_index = 7;
+  // need a pointer to constructor to handle "new SELF_TYPE"
+  static constexpr int obj_constructor_index = 8;
+  static constexpr int obj_boxed_data_index = 9;
+
+  // attributes start after the things above
+  static constexpr int obj_attributes_offset = 10;
 
   void AddAttributes(const ClassAst* class_ast);
   void AddMethods(const ClassAst* class_ast);
   void AddConstructor(const ClassAst* class_ast);
-
-  static bool IsBasicType(const std::string& class_name) {
-    return class_name == "Int" || class_name == "String" ||
-           class_name == "Bool";
-  }
 
   static bool TypeUsesVtable(const std::string& class_name) {
     // Int Bool and String are implemented as unboxed values so there's nowhere
@@ -171,6 +184,12 @@ class AstToCodeMap {
   llvm::FunctionType* GetConstructorFunctionType(const ClassAst* class_ast);
 
  private:
+  void Insert(const ClassAst* class_ast) {
+    types_.insert(std::make_pair(
+        class_ast, llvm::StructType::create(*context_, class_ast->GetName())));
+    vtables_.insert(std::make_pair(class_ast, Vtable(*context_, class_ast)));
+  }
+
   std::unordered_map<const ClassAst*, llvm::StructType*> types_;
   std::unordered_map<const ClassAst*, Vtable> vtables_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
