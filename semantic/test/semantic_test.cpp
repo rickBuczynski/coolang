@@ -29,12 +29,12 @@ std::string GetSemanticOutput(const std::string& input_file_name) {
 }
 
 void TestSemantic(const std::string& input_file) {
-  const std::string parser_output = GetSemanticOutput(input_file);
-  std::cout << parser_output;
+  const std::string semantic_output = GetSemanticOutput(input_file);
+  // std::cout << semantic_output;
 
   std::string expected_output =
       GetExpectedOutput(SEMANTIC_TEST_DATA_PATH + input_file + ".out");
-  EXPECT_EQ(expected_output, parser_output);
+  EXPECT_EQ(expected_output, semantic_output);
 }
 
 TEST(SemanticTest, anattributenamedself) {
