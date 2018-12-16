@@ -1,3 +1,5 @@
 /build
 /codegen/test/codegen_test_data/test_output
 *.TMP
+/gc/gc32.ll
+/gc/gc64.ll
