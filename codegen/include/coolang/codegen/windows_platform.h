@@ -58,7 +58,8 @@ class WindowsPlatform {
     linker_cmd += "-LIBPATH:\"" + um_path + "\" ";
     linker_cmd += "-LIBPATH:\"" + ucrt_path + "\" ";
     linker_cmd += "-SUBSYSTEM:CONSOLE ";
-    linker_cmd += "-MACHINE:X86";
+    linker_cmd += "-MACHINE:X86 ";
+    linker_cmd += "-NOLOGO";
     linker_cmd += "\"";
 
     return linker_cmd;
