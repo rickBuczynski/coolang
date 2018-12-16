@@ -37,13 +37,13 @@
 #ifdef _WIN32
 CMRC_DECLARE(gc32ll);
 namespace gcll = cmrc::gc32ll;
-char* gcll_path = "gc32.ll";
+const char* gcll_path = "gc32.ll";
 #endif
 
 #ifdef __unix__
 CMRC_DECLARE(gc64ll);
 namespace gcll = cmrc::gc64ll;
-char* gcll_path = "gc64.ll";
+const char* gcll_path = "gc64.ll";
 #endif
 
 namespace coolang {
@@ -1272,7 +1272,7 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   llvm::LLVMContext context;
   llvm::SMDiagnostic smd;
 
-  auto fs = cmrc::gc32ll::get_filesystem();
+  auto fs = gcll::get_filesystem();
   auto gc_ll_file = fs.open(gcll_path);
   const llvm::StringRef gc_ll_str_ref(gc_ll_file.begin(), gc_ll_file.size());
 
