@@ -799,19 +799,18 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
                        ast_to_.LlvmConstInt32(gc_ptr_count),
                        AstToCodeMap::gc_ptrs_count_index);
 
-    // store the address of the next gc_ptr_count
-    llvm::Value* next_gc_ptrs_info_gep = builder_.CreateStructGEP(
-        nullptr, gc_ptrs_info, AstToCodeMap::gc_ptrs_next_index);
+    // store the address of the next gc_ptrs_info
+    llvm::Value* next_gc_ptrs_info;
     if (i == supers_then_this.size() - 1) {
-      auto null_ptr = llvm::ConstantPointerNull::get(
+      next_gc_ptrs_info = llvm::ConstantPointerNull::get(
           ast_to_.GcPtrsInfoTy()->getPointerTo());
-      builder_.CreateStore(null_ptr, next_gc_ptrs_info_gep);
     } else {
-      llvm::Value* next_class_gc_ptrs_info_gep = builder_.CreateStructGEP(
+      next_gc_ptrs_info = builder_.CreateStructGEP(
           ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
           GcPtrsInfoIndex(supers_then_this[i + 1]));
-      builder_.CreateStore(next_class_gc_ptrs_info_gep, next_gc_ptrs_info_gep);
     }
+    StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, next_gc_ptrs_info,
+                       AstToCodeMap::gc_ptrs_next_index);
 
     if (cur_class->GetAttributeFeatures().empty()) {
       StructStoreAtIndex(
