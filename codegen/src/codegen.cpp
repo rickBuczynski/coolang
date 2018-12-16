@@ -854,15 +854,12 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
       if (attr->GetRootExpr()) {
         attr->GetRootExpr()->Accept(*this);
+
         llvm::Value* init_val = attr->GetRootExpr()->LlvmValue();
         init_val = ConvertType(init_val, attr->GetRootExpr()->GetExprType(),
                                attr->GetType());
-
-        llvm::Value* element_ptr = builder_.CreateStructGEP(
-            ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-            StructAttrIndex(cur_class, attr));
-
-        builder_.CreateStore(init_val, element_ptr);
+        StructStoreAtIndex(ty, ctee, init_val,
+                           StructAttrIndex(cur_class, attr));
       }
     }
   }
