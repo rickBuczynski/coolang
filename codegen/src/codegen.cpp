@@ -799,20 +799,8 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
                        ast_to_.LlvmConstInt32(gc_ptr_count),
                        AstToCodeMap::gc_ptrs_count_index);
 
-    // store the address of the next gc_ptrs_info
-    llvm::Value* next_gc_ptrs_info;
-    if (i == supers_then_this.size() - 1) {
-      next_gc_ptrs_info = llvm::ConstantPointerNull::get(
-          ast_to_.GcPtrsInfoTy()->getPointerTo());
-    } else {
-      next_gc_ptrs_info = builder_.CreateStructGEP(
-          ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-          GcPtrsInfoIndex(supers_then_this[i + 1]));
-    }
-    StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, next_gc_ptrs_info,
-                       AstToCodeMap::gc_ptrs_next_index);
-
-    if (cur_class->GetAttributeFeatures().empty()) {
+    // store the address of the first non-basic attribute if there is one
+    if (cur_class->GetAllAttrsNonBasicFirst().empty()) {
       StructStoreAtIndex(
           ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
           llvm::ConstantPointerNull::get(
@@ -828,12 +816,24 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
                          AstToCodeMap::gc_ptrs_array_index);
     }
 
-    for (const auto* attr : cur_class->GetAttributeFeatures()) {
-      llvm::Value* element_ptr = builder_.CreateStructGEP(
+    // store the address of the next gc_ptrs_info
+    llvm::Value* next_gc_ptrs_info;
+    if (i == supers_then_this.size() - 1) {
+      next_gc_ptrs_info = llvm::ConstantPointerNull::get(
+          ast_to_.GcPtrsInfoTy()->getPointerTo());
+    } else {
+      next_gc_ptrs_info = builder_.CreateStructGEP(
           ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-          StructAttrIndex(cur_class, attr));
-      builder_.CreateStore(
-          ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()), element_ptr);
+          GcPtrsInfoIndex(supers_then_this[i + 1]));
+    }
+    StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, next_gc_ptrs_info,
+                       AstToCodeMap::gc_ptrs_next_index);
+
+    // store default vals for all attrs
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
+      StructStoreAtIndex(ty, ctee,
+                         ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()),
+                         StructAttrIndex(cur_class, attr));
     }
   }
 
