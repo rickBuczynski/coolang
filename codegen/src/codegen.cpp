@@ -1281,15 +1281,12 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   OutputModuleToObjectFile(gc_module.get(), gc_obj_path_);
 
   OutputModuleToObjectFile(module_.get(), obj_path_);
-  std::cout << "Source input: " << ast_->GetFilePath().string() << std::endl;
-  std::cout << "Object output: " << obj_path_.string() << std::endl;
 }
 
 void Codegen::Link() const {
   std::string linker_cmd =
       platform::GetLinkerCommand(obj_path_, gc_obj_path_, exe_path_);
   system(linker_cmd.c_str());
-  std::cout << "Executable output: " << exe_path_.string() << std::endl;
 }
 
 }  // namespace coolang
