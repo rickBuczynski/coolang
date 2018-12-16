@@ -24,17 +24,15 @@ class AstToCodeMap {
     Insert(program_ast->GetIoClass());
     Insert(program_ast->GetObjectClass());
 
-    // TODO document this type and don't hardcode index 0,1,2 in constructors
-    // should have a way to get those indices
     gc_ptrs_info_ty_ = llvm::StructType::create(*context_, "GcPtrsInfo");
     gc_ptrs_info_ty_->setBody(
         {builder_->getInt32Ty(),
          LlvmClass("Object")->getPointerTo()->getPointerTo(),
          gc_ptrs_info_ty_->getPointerTo()});
   }
-
-  // TODO this shouldn't be public
-  llvm::StructType* gc_ptrs_info_ty_;
+  static constexpr int gc_ptrs_count_index = 0;
+  static constexpr int gc_ptrs_array_index = 1;
+  static constexpr int gc_ptrs_next_index = 2;
 
   static constexpr int obj_gc_next_obj_index = 0;
   static constexpr int obj_gc_prev_obj_index = 1;
@@ -106,6 +104,8 @@ class AstToCodeMap {
   llvm::Function* GetConstructor(const std::string& type_name) {
     return GetConstructor(GetClassByName(type_name));
   }
+
+  llvm::StructType* GcPtrsInfoTy() const { return gc_ptrs_info_ty_; }
 
   llvm::Type* LlvmBasicOrClassPtrTy(const std::string& type_name) {
     llvm::Type* type = LlvmBasicType(type_name);
@@ -204,6 +204,8 @@ class AstToCodeMap {
   const ProgramAst* program_ast_;
   const ClassAst* current_class_ = nullptr;
   const MethodFeature* current_method_ = nullptr;
+
+  llvm::StructType* gc_ptrs_info_ty_;
 };
 
 }  // namespace coolang

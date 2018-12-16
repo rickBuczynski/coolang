@@ -38,6 +38,8 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   class_attributes.push_back(builder_->getInt8PtrTy());
 
   for (const ClassAst* cur_class : class_ast->SupersThenThis()) {
+    // Put the gc ptrs info before attributes so we know how many ptrs to visit
+    // for GC and where to start visiting for the next super class
     class_attributes.push_back(gc_ptrs_info_ty_);
 
     // Put non basic attrs first so we can visit them for GC

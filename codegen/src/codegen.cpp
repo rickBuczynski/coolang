@@ -795,15 +795,16 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
     // store the gc_ptr_count
     const int gc_ptr_count = cur_class->GetNonBasicAttrCount();
-    StructStoreAtIndex(ast_to_.gc_ptrs_info_ty_, gc_ptrs_info,
-                       ast_to_.LlvmConstInt32(gc_ptr_count), 0);
+    StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
+                       ast_to_.LlvmConstInt32(gc_ptr_count),
+                       AstToCodeMap::gc_ptrs_count_index);
 
     // store the address of the next gc_ptr_count
-    llvm::Value* next_gc_ptrs_info_gep =
-        builder_.CreateStructGEP(nullptr, gc_ptrs_info, 2);
+    llvm::Value* next_gc_ptrs_info_gep = builder_.CreateStructGEP(
+        nullptr, gc_ptrs_info, AstToCodeMap::gc_ptrs_next_index);
     if (i == supers_then_this.size() - 1) {
       auto null_ptr = llvm::ConstantPointerNull::get(
-          ast_to_.gc_ptrs_info_ty_->getPointerTo());
+          ast_to_.GcPtrsInfoTy()->getPointerTo());
       builder_.CreateStore(null_ptr, next_gc_ptrs_info_gep);
     } else {
       llvm::Value* next_class_gc_ptrs_info_gep = builder_.CreateStructGEP(
@@ -814,17 +815,18 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
     if (cur_class->GetAttributeFeatures().empty()) {
       StructStoreAtIndex(
-          ast_to_.gc_ptrs_info_ty_, gc_ptrs_info,
+          ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
           llvm::ConstantPointerNull::get(
               ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo()),
-          1);
+          AstToCodeMap::gc_ptrs_array_index);
     } else {
       const auto* first_attr = cur_class->GetAllAttrsNonBasicFirst().front();
       llvm::Value* gep = builder_.CreateStructGEP(
           ty, ctee, StructAttrIndex(cur_class, first_attr));
       llvm::Value* casted_gep = builder_.CreateBitCast(
           gep, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
-      StructStoreAtIndex(ast_to_.gc_ptrs_info_ty_, gc_ptrs_info, casted_gep, 1);
+      StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, casted_gep,
+                         AstToCodeMap::gc_ptrs_array_index);
     }
 
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
