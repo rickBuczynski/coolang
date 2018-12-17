@@ -1,22 +1,3 @@
 Allocated an object of type: Main
-Allocated an object of type: A
-Freeing an object of type: A
-Allocated an object of type: B
-Freeing an object of type: B
-Allocated an object of type: A
-Allocated an object of type: B
-Allocated an object of type: C
-Allocated an object of type: D
-7Allocated a string
-
-Allocated a string
-D should die now
-Freeing an object of type: D
-Allocated an object of type: E
-Allocated a string
-A, B, C, E should die now
-Freeing an object of type: E
-Freeing an object of type: C
-Freeing an object of type: B
-Freeing an object of type: A
-Allocated an object of type: E
+1Allocated a string
+23[MISSING A STRING FREE HERE]Allocated an object of type: Killer
