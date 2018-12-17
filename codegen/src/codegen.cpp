@@ -154,7 +154,7 @@ int GcPtrsInfoIndex(const ClassAst* class_ast) {
   for (const ClassAst* super : class_ast->GetAllSuperClasses()) {
     super_attr_count += super->GetAttributeFeatures().size();
   }
-  int gc_ptr_infos_offset = class_ast->GetAllSuperClasses().size() * 1;
+  int gc_ptr_infos_offset = class_ast->GetAllSuperClasses().size();
   return super_attr_count + gc_ptr_infos_offset +
          AstToCodeMap::obj_attributes_offset;
 }
@@ -279,7 +279,12 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
 }
 
 void CodegenVisitor::Visit(const StrExpr& str) {
-  str.SetLlvmValue(builder_.CreateGlobalStringPtr(str.GetVal()));
+  llvm::Value* malloc_val =
+      builder_.CreateCall(c_std_.GetGcMallocStringFunc(),
+                          {ast_to_.LlvmConstInt32(str.GetVal().length())});
+  llvm::Value* str_global = builder_.CreateGlobalStringPtr(str.GetVal());
+  builder_.CreateCall(c_std_.GetStrcpyFunc(), {malloc_val, str_global});
+  str.SetLlvmValue(malloc_val);
 }
 
 void CodegenVisitor::Visit(const WhileExpr& while_expr) {

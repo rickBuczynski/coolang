@@ -240,6 +240,12 @@ extern "C" void* gc_malloc(int size) {
   return static_cast<void*>(obj);
 }
 
+extern "C" void* gc_malloc_string(int size) {
+  printf("allocated a string");
+  auto* obj = static_cast<GcObj*>(malloc(size));
+  return static_cast<void*>(obj);
+}
+
 extern "C" void gc_add_root(GcObj** root) { gc_roots->PushRoot(root); }
 
 extern "C" void gc_remove_root(GcObj** root) { gc_roots->PopRoot(root); }
