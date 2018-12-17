@@ -241,9 +241,12 @@ extern "C" void* gc_malloc(int size) {
 }
 
 extern "C" void* gc_malloc_string(int size) {
-  printf("allocated a string");
-  auto* obj = static_cast<GcObj*>(malloc(size));
-  return static_cast<void*>(obj);
+  if (gc_is_verbose) {
+    printf("allocated a string\n");
+  }
+  char* str_alloc = static_cast<char*>(malloc(sizeof(GcObj) + size));
+  char* str_data_start = str_alloc + sizeof(GcObj);
+  return static_cast<void*>(str_data_start);
 }
 
 extern "C" void gc_add_root(GcObj** root) { gc_roots->PushRoot(root); }

@@ -281,7 +281,7 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
 void CodegenVisitor::Visit(const StrExpr& str) {
   llvm::Value* malloc_val =
       builder_.CreateCall(c_std_.GetGcMallocStringFunc(),
-                          {ast_to_.LlvmConstInt32(str.GetVal().length())});
+                          {ast_to_.LlvmConstInt32(str.GetVal().length() + 1)});
   llvm::Value* str_global = builder_.CreateGlobalStringPtr(str.GetVal());
   builder_.CreateCall(c_std_.GetStrcpyFunc(), {malloc_val, str_global});
   str.SetLlvmValue(malloc_val);
