@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 
@@ -68,7 +69,20 @@ void MarkObj(GcObj* obj) {
   }
 }
 
-using GcRoot = GcObj**;
+class GcRoot {
+ public:
+  GcRoot(GcObj** obj_root) : obj_root_(obj_root) {}
+  GcRoot(char** string_root) : string_root_(string_root) {}
+
+  GcObj** ObjRoot() const {
+    assert(string_root_ == nullptr);
+    return obj_root_;
+  }
+
+ private:
+  GcObj** obj_root_ = nullptr;
+  char** string_root_ = nullptr;
+};
 
 struct GcRootStack {
   static constexpr int init_capacity = 2;
@@ -92,12 +106,12 @@ struct GcRootStack {
   }
 
   void PopRoot(GcRoot root) {
-    if (roots[length - 1] != root) {
+    if (roots[length - 1].ObjRoot() != root.ObjRoot()) {
       printf("BADBADBADBADBADBADBADBADBAD\n");
       printf("Root at top of stack points to:\n");
-      PrintObj(*roots[length]);
+      PrintObj(*roots[length].ObjRoot());
       printf("Root to remove points to:\n");
-      PrintObj(*root);
+      PrintObj(*root.ObjRoot());
     }
     length--;
   }
@@ -106,14 +120,14 @@ struct GcRootStack {
     printf("Current GC roots:\n");
     for (int i = 0; i < length; i++) {
       printf("Root that points to:\n");
-      PrintObj(*roots[i]);
+      PrintObj(*roots[i].ObjRoot());
     }
     printf("End of current GC roots\n\n");
   }
 
   void MarkReachable() const {
     for (int i = 0; i < length; i++) {
-      MarkObj(*roots[i]);
+      MarkObj(*roots[i].ObjRoot());
     }
   }
 
@@ -261,5 +275,6 @@ extern "C" void* gc_malloc_string(int size) {
 }
 
 extern "C" void gc_add_root(GcObj** root) { gc_roots->PushRoot(root); }
+extern "C" void gc_add_root_string(char** root) { gc_roots->PushRoot(root); }
 
 extern "C" void gc_remove_root(GcObj** root) { gc_roots->PopRoot(root); }
