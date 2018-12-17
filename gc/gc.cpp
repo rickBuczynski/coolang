@@ -245,6 +245,17 @@ extern "C" void* gc_malloc_string(int size) {
     printf("allocated a string\n");
   }
   char* str_alloc = static_cast<char*>(malloc(sizeof(GcObj) + size));
+
+  GcObj* obj = reinterpret_cast<GcObj*>(str_alloc);
+  obj->next_obj = nullptr;
+  obj->prev_obj = nullptr;
+  obj->next_root = nullptr;
+  obj->prev_root = nullptr;
+  obj->is_reachable = false;
+  obj->gc_ptrs_info.gc_ptr_count = 0;
+  obj->gc_ptrs_info.gc_ptrs = nullptr;
+  obj->gc_ptrs_info.next_gc_info = nullptr;
+
   char* str_data_start = str_alloc + sizeof(GcObj);
   return static_cast<void*>(str_data_start);
 }
