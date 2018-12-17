@@ -105,8 +105,6 @@ void TestCodegen(const std::string& input_file,
   EXPECT_EQ(expected_output, program_output);
 }
 
-// TEST(CodegenTest, hairyscary) { TestCodegen("hairyscary.cl"); }
-
 TEST(CodegenTest, gcrootslet) { TestCodegen("gc-roots-let.cl", false, true); }
 TEST(CodegenTest, gcrootssupertype) {
   TestCodegen("gc-roots-supertype.cl", false, true);
@@ -115,7 +113,9 @@ TEST(CodegenTest, gcrootseqcmp) {
   TestCodegen("gc-roots-eqcmp.cl", false, true);
 }
 TEST(CodegenTest, gcrootsargs) { TestCodegen("gc-roots-args.cl", false, true); }
-
+TEST(CodegenTest, gcrootsreassign) {
+  TestCodegen("gc-roots-reassign.cl", false, true);
+}
 TEST(CodegenTest, gcrootsletstr) {
   TestCodegen("gc-roots-let-str.cl", false, true);
 }
