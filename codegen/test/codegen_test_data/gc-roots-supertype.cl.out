@@ -1,8 +1,10 @@
 Allocated an object of type: Main
 Allocated an object of type: B
 Allocated an object of type: C
+Allocated a string
 C and B should live
 Allocated an object of type: E
+Allocated a string
 C and B should die now
 Freeing an object of type: E
 Freeing an object of type: C

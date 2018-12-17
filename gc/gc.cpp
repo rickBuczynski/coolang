@@ -242,7 +242,7 @@ extern "C" void* gc_malloc(int size) {
 
 extern "C" void* gc_malloc_string(int size) {
   if (gc_is_verbose) {
-    printf("allocated a string\n");
+    printf("Allocated a string\n");
   }
   char* str_alloc = static_cast<char*>(malloc(sizeof(GcObj) + size));
 
