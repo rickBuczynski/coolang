@@ -1,3 +1,4 @@
 Allocated an object of type: Main
 1Allocated a string
-23[MISSING A STRING FREE HERE]Allocated an object of type: Killer
+23Freeing an object of type: String
+Allocated an object of type: Killer

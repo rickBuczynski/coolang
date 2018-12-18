@@ -30,7 +30,13 @@ class CStd {
     return gc_malloc_string_func_;
   }
   llvm::Constant* GetGcAddRootFunc() const { return gc_add_root_func_; }
+  llvm::Constant* GetGcAddStringRootFunc() const {
+    return gc_add_string_root_func_;
+  }
   llvm::Constant* GetGcRemoveRootFunc() const { return gc_remove_root_func_; }
+  llvm::Constant* GetGcRemoveStringRootFunc() const {
+    return gc_remove_string_root_func_;
+  }
   llvm::Constant* GetGcSystemInitFunc() const { return gc_system_init_func_; }
   llvm::Constant* GetGcSystemDestroyFunc() const {
     return gc_system_destroy_func_;
@@ -99,10 +105,18 @@ class CStd {
       "gc_add_root", ast_to_code_map_->LlvmVoidType(),
       {ast_to_code_map_->LlvmClass("Object")->getPointerTo()->getPointerTo()},
       false);
+  llvm::Constant* gc_add_string_root_func_ = CreateCStdFuncDecl(
+      "gc_add_string_root", ast_to_code_map_->LlvmVoidType(),
+      {ast_to_code_map_->LlvmBasicType("String")->getPointerTo()}, false);
+
   llvm::Constant* gc_remove_root_func_ = CreateCStdFuncDecl(
       "gc_remove_root", ast_to_code_map_->LlvmVoidType(),
       {ast_to_code_map_->LlvmClass("Object")->getPointerTo()->getPointerTo()},
       false);
+  llvm::Constant* gc_remove_string_root_func_ = CreateCStdFuncDecl(
+      "gc_remove_string_root", ast_to_code_map_->LlvmVoidType(),
+      {ast_to_code_map_->LlvmBasicType("String")->getPointerTo()}, false);
+
   llvm::Constant* gc_system_init_func_ =
       CreateCStdFuncDecl("gc_system_init", "Void", {"Int"});
   llvm::Constant* gc_system_destroy_func_ =

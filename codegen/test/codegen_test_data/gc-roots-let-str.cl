@@ -4,7 +4,6 @@ class Killer {
 
 class Main inherits IO {
   main() : Object { {
-	new String;
 	out_int(1); -- no allocation yet
 
     let

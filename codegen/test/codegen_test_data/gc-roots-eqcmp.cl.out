@@ -5,6 +5,8 @@ Allocated a string
 compare done
 Allocated a string
 both As should die now
+Freeing an object of type: String
+Freeing an object of type: String
 Freeing an object of type: A
 Freeing an object of type: A
 Allocated an object of type: Object

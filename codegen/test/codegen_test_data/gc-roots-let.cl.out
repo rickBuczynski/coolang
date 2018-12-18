@@ -11,10 +11,13 @@ Allocated an object of type: D
 
 Allocated a string
 D should die now
+Freeing an object of type: String
+Freeing an object of type: String
 Freeing an object of type: D
 Allocated an object of type: E
 Allocated a string
 A, B, C, E should die now
+Freeing an object of type: String
 Freeing an object of type: E
 Freeing an object of type: C
 Freeing an object of type: B

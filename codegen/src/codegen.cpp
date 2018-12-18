@@ -106,6 +106,24 @@ class CodegenVisitor : public AstVisitor {
     in_scope_vars_[id].push(val);
   }
 
+  llvm::Value* LlvmDefaultVal(const std::string& type_name) {
+    if (type_name == "Int") {
+      return ast_to_.LlvmConstInt32(0);
+    }
+    if (type_name == "String") {
+      llvm::Value* malloc_val = builder_.CreateCall(
+          c_std_.GetGcMallocStringFunc(), {ast_to_.LlvmConstInt32(1)});
+      llvm::Value* str_global = builder_.CreateGlobalStringPtr("");
+      builder_.CreateCall(c_std_.GetStrcpyFunc(), {malloc_val, str_global});
+      return malloc_val;
+    }
+    if (type_name == "Bool") {
+      return llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
+    }
+    return llvm::ConstantPointerNull::get(
+        ast_to_.LlvmClass(type_name)->getPointerTo());
+  }
+
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
   llvm::Value* ConvertType(llvm::Value* convert_me, const std::string& cur_type,
@@ -259,9 +277,8 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
   object_codegen_.GenExitWithMessage(
       "No match in case statement for Class %s\n", {case_val_type});
 
-  branch_vals_and_bbs.emplace_back(
-      ast_to_.LlvmBasicOrClassPtrDefaultVal(case_expr.GetExprType()),
-      builder_.GetInsertBlock());
+  branch_vals_and_bbs.emplace_back(LlvmDefaultVal(case_expr.GetExprType()),
+                                   builder_.GetInsertBlock());
 
   builder_.CreateBr(done_bb);
 
@@ -310,7 +327,7 @@ void CodegenVisitor::Visit(const WhileExpr& while_expr) {
 
   builder_.SetInsertPoint(loop_done_bb);
 
-  while_expr.SetLlvmValue(ast_to_.LlvmBasicOrClassPtrDefaultVal("Object"));
+  while_expr.SetLlvmValue(LlvmDefaultVal("Object"));
 }
 
 llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
@@ -322,7 +339,7 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
   if (IsBasicType(cur_type) && dest_type != "Object" && dest_type != cur_type) {
     // invalid conversion, this should only occur in a case branch that's not
     // taken so we can return anything, choose to just return default val
-    return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
+    return LlvmDefaultVal(dest_type);
   }
   if (IsBasicType(dest_type) && cur_type == "Object") {
     return UnboxValue(dest_type, convert_me);
@@ -368,13 +385,13 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
 
       builder_.CreateStore(init_val, alloca_inst);
     } else {
-      builder_.CreateStore(
-          ast_to_.LlvmBasicOrClassPtrDefaultVal(cur_let->GetType()),
-          alloca_inst);
+      builder_.CreateStore(LlvmDefaultVal(cur_let->GetType()), alloca_inst);
     }
 
     if (!IsBasicType(cur_let->GetType())) {
       AddGcRoot(alloca_inst);
+    } else if (cur_let->GetType() == "String") {
+      builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {alloca_inst});
     }
 
     AddToScope(cur_let->GetId(), alloca_inst);
@@ -395,6 +412,9 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
           it->alloca_inst,
           ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
       builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+    } else if (it->type == "String") {
+      builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(),
+                          {it->alloca_inst});
     }
 
     RemoveFromScope(it->id);
@@ -836,8 +856,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
     // store default vals for all attrs
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
-      StructStoreAtIndex(ty, ctee,
-                         ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()),
+      StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
                          StructAttrIndex(cur_class, attr));
     }
   }
@@ -952,8 +971,7 @@ void CodegenVisitor::Visit(const LessThanCompareExpr& lt_expr) {
 
 void CodegenVisitor::Visit(const NewExpr& new_expr) {
   if (ast_to_.LlvmBasicType(new_expr.GetType()) != nullptr) {
-    new_expr.SetLlvmValue(
-        ast_to_.LlvmBasicOrClassPtrDefaultVal(new_expr.GetType()));
+    new_expr.SetLlvmValue(LlvmDefaultVal(new_expr.GetType()));
     return;
   }
 

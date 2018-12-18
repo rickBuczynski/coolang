@@ -123,19 +123,6 @@ class AstToCodeMap {
     return llvm::ConstantInt::get(*context_, llvm::APInt(8, i, true));
   }
 
-  llvm::Value* LlvmBasicOrClassPtrDefaultVal(const std::string& type_name) {
-    if (type_name == "Int") {
-      return LlvmConstInt32(0);
-    }
-    if (type_name == "String") {
-      return builder_->CreateGlobalStringPtr("");
-    }
-    if (type_name == "Bool") {
-      return llvm::ConstantInt::get(*context_, llvm::APInt(1, 0, false));
-    }
-    return llvm::ConstantPointerNull::get(LlvmClass(type_name)->getPointerTo());
-  }
-
   const ClassAst* GetClassByName(std::string name) const {
     if (name == "SELF_TYPE") {
       name = current_class_->GetName();
