@@ -434,7 +434,7 @@ void CodegenVisitor::Visit(const IsVoidExpr& is_void) {
 }
 
 void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
-  std::vector<llvm::Value*> arg_gc_roots;
+  std::vector<std::pair<llvm::Value*, std::string>> arg_gc_roots_and_types;
 
   // codegen args first
   for (const auto& arg : call_expr.GetArgs()) {
@@ -442,12 +442,18 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
 
     // add GC roots for each arg e.g f(new A, new B) we don't want GC to delete
     // A when allocating B
-    if (!IsBasicType(arg->GetExprType())) {
+    if (!IsBasicType(arg->GetExprType()) || arg->GetExprType() == "String") {
       llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
           ast_to_.LlvmBasicOrClassPtrTy(arg->GetExprType()));
       builder_.CreateStore(arg->LlvmValue(), alloca_inst);
-      llvm::Value* root = AddGcRoot(alloca_inst);
-      arg_gc_roots.push_back(root);
+
+      if (arg->GetExprType() == "String") {
+        builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {alloca_inst});
+        arg_gc_roots_and_types.push_back({alloca_inst, arg->GetExprType()});
+      } else {
+        llvm::Value* root = AddGcRoot(alloca_inst);
+        arg_gc_roots_and_types.push_back({root, arg->GetExprType()});
+      }
     }
   }
   // codegen LHS after all args
@@ -456,8 +462,13 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
   // now it's safe to remove the gc roots for the args since there wont be any
   // more GC allocations until inside the called function body which will set
   // its own roots for its args
-  for (auto it = arg_gc_roots.rbegin(); it != arg_gc_roots.rend(); ++it) {
-    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {*it});
+  for (auto it = arg_gc_roots_and_types.rbegin();
+       it != arg_gc_roots_and_types.rend(); ++it) {
+    if (it->second == "String") {
+      builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {it->first});
+    } else {
+      builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {it->first});
+    }
   }
 
   const ClassAst* class_calling_method =
@@ -724,18 +735,23 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   // if we have 2 non-basic types this could be something like "new A = new A"
   // and we don't want to GC the LHS when we allocate the RHS so we need a root
   // for the LHS
-  bool need_gc_root = !IsBasicType(eq_expr.GetLhsExpr()->GetExprType()) &&
-                      !IsBasicType(eq_expr.GetRhsExpr()->GetExprType());
+  bool both_non_basic = !IsBasicType(eq_expr.GetLhsExpr()->GetExprType()) &&
+                        !IsBasicType(eq_expr.GetRhsExpr()->GetExprType());
+  bool both_string = eq_expr.GetLhsExpr()->GetExprType() == "String" &&
+                     eq_expr.GetRhsExpr()->GetExprType() == "String";
 
   eq_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = eq_expr.GetLhsExpr()->LlvmValue();
 
+  llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+      ast_to_.LlvmBasicOrClassPtrTy(eq_expr.GetLhsExpr()->GetExprType()));
+  builder_.CreateStore(eq_expr.GetLhsExpr()->LlvmValue(), alloca_inst);
+
   llvm::Value* root = nullptr;
-  if (need_gc_root) {
-    llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
-        ast_to_.LlvmBasicOrClassPtrTy(eq_expr.GetLhsExpr()->GetExprType()));
-    builder_.CreateStore(eq_expr.GetLhsExpr()->LlvmValue(), alloca_inst);
+  if (both_non_basic) {
     root = AddGcRoot(alloca_inst);
+  } else if (both_string) {
+    builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {alloca_inst});
   }
 
   eq_expr.GetRhsExpr()->Accept(*this);
@@ -743,8 +759,10 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
 
   // safe to remove the root now that we codegened the RHS, there won't be
   // another allocation/GC until after this expr is done
-  if (need_gc_root) {
+  if (both_non_basic) {
     builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+  } else if (both_string) {
+    builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {alloca_inst});
   }
 
   if (eq_expr.GetLhsExpr()->GetExprType() == "Int" ||
@@ -932,6 +950,9 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
     for (const auto& binding : bindings) {
       if (!IsBasicType(binding.type)) {
         AddGcRoot(binding.alloca_inst);
+      } else if (binding.type == "String") {
+        builder_.CreateCall(c_std_.GetGcAddStringRootFunc(),
+                            {binding.alloca_inst});
       }
     }
 
@@ -949,6 +970,9 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
             it->alloca_inst,
             ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
         builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+      } else if (it->type == "String") {
+        builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(),
+                            {it->alloca_inst});
       }
     }
 
