@@ -22,13 +22,12 @@ struct GcPtrsInfo {
   GcPtrsInfo* next_gc_info;
 };
 
-// TODO GCwont work for Cool Strings
 struct GcObj {
   // initialize these during malloc
   // the cool program wont touch these so they will contain garbage
   GcObj* next_obj;
   GcObj* prev_obj;
-  GcObj* next_root;
+  GcObj* next_root; // TODO remove this, not used
   GcObj* prev_root;
   bool is_reachable;
   // don't initialize this during malloc
@@ -83,6 +82,9 @@ void MarkObj(GcObj* obj) {
     gc_ptrs_info = gc_ptrs_info->next_gc_info;
   }
 }
+
+int gc_alloc_count = 0;
+int gc_free_count = 0;
 
 class GcRoot {
  public:
@@ -193,6 +195,7 @@ class GcList {
           printf("Freeing an object of type: %s\n", obj->obj_typename);
         }
 
+        gc_free_count++;
         Remove(obj);
         free(obj);
       }
@@ -244,11 +247,8 @@ extern "C" void gc_system_init(int is_verbose) {
   gc_obj_list = new GcList;
   gc_roots = new GcRootStack;
   gc_is_verbose = is_verbose;
-}
-
-extern "C" void gc_system_destroy() {
-  delete gc_roots;
-  delete gc_obj_list;
+  gc_alloc_count = 0;
+  gc_free_count = 0;
 }
 
 void Collect() {
@@ -257,10 +257,22 @@ void Collect() {
   gc_obj_list->Sweep();
 }
 
+extern "C" void gc_system_destroy() {
+  Collect();
+  delete gc_roots;
+  delete gc_obj_list;
+  if (gc_alloc_count != gc_free_count) {
+    printf("GC alloc count: %d\n", gc_alloc_count);
+    printf("GC free count: %d\n", gc_free_count);
+    printf("GC leak count: %d\n", gc_alloc_count - gc_free_count);
+  }
+}
+
 extern "C" void* gc_malloc(int size) {
   Collect();
 
   auto* obj = static_cast<GcObj*>(malloc(size));
+  gc_alloc_count++;
 
   obj->next_obj = nullptr;
   obj->prev_obj = nullptr;
@@ -280,6 +292,7 @@ extern "C" void* gc_malloc_string(int size) {
     printf("Allocated a string\n");
   }
   char* str_alloc = static_cast<char*>(malloc(sizeof(GcObj) + size));
+  gc_alloc_count++;
 
   GcObj* obj = reinterpret_cast<GcObj*>(str_alloc);
 
