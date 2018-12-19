@@ -28,11 +28,14 @@ class AstToCodeMap {
     gc_ptrs_info_ty_->setBody(
         {builder_->getInt32Ty(),
          LlvmClass("Object")->getPointerTo()->getPointerTo(),
+         builder_->getInt32Ty(), LlvmBasicType("String")->getPointerTo(),
          gc_ptrs_info_ty_->getPointerTo()});
   }
   static constexpr int gc_ptrs_count_index = 0;
   static constexpr int gc_ptrs_array_index = 1;
-  static constexpr int gc_ptrs_next_index = 2;
+  static constexpr int gc_str_count_index = 2;
+  static constexpr int gc_strs_array_index = 3;
+  static constexpr int gc_ptrs_next_index = 4;
 
   static constexpr int obj_gc_next_obj_index = 0;
   static constexpr int obj_gc_prev_obj_index = 1;

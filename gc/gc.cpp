@@ -17,6 +17,8 @@ struct GcObj;
 struct GcPtrsInfo {
   int gc_ptr_count;
   GcObj** gc_ptrs;
+  int gc_str_count;
+  char** gc_strs;
   GcPtrsInfo* next_gc_info;
 };
 
@@ -53,6 +55,15 @@ GcObj* GetNext(GcObj* obj) { return obj->next_obj; }
 GcObj* GetPrev(GcObj* obj) { return obj->prev_obj; }
 const char* ListName() { return "gc objs"; }
 
+GcObj* ObjFromString(char* str_data_start) {
+  if (str_data_start == nullptr) {
+    return nullptr;
+  }
+  char* str_obj_start = str_data_start - sizeof(GcObj);
+  GcObj* obj = reinterpret_cast<GcObj*>(str_obj_start);
+  return obj;
+}
+
 void MarkObj(GcObj* obj) {
   if (obj == nullptr || obj->is_reachable) {
     return;
@@ -65,6 +76,9 @@ void MarkObj(GcObj* obj) {
   while (gc_ptrs_info != nullptr) {
     for (int i = 0; i < gc_ptrs_info->gc_ptr_count; i++) {
       MarkObj(gc_ptrs_info->gc_ptrs[i]);
+    }
+    for (int i = 0; i < gc_ptrs_info->gc_str_count; i++) {
+      MarkObj(ObjFromString(gc_ptrs_info->gc_strs[i]));
     }
     gc_ptrs_info = gc_ptrs_info->next_gc_info;
   }
@@ -81,15 +95,7 @@ class GcRoot {
       return *obj_root_;
     }
     assert(string_root_ != nullptr);
-
-    char* str_data_start = *string_root_;
-    if (str_data_start == nullptr) {
-      return nullptr;
-    }
-
-    char* str_obj_start = str_data_start - sizeof(GcObj);
-    GcObj* obj = reinterpret_cast<GcObj*>(str_obj_start);
-    return obj;
+    return ObjFromString(*string_root_);
   }
 
  private:
@@ -285,6 +291,8 @@ extern "C" void* gc_malloc_string(int size) {
   obj->obj_typename = "String";
   obj->gc_ptrs_info.gc_ptr_count = 0;
   obj->gc_ptrs_info.gc_ptrs = nullptr;
+  obj->gc_ptrs_info.gc_str_count = 0;
+  obj->gc_ptrs_info.gc_strs = nullptr;
   obj->gc_ptrs_info.next_gc_info = nullptr;
 
   gc_obj_list->PushFront(obj);

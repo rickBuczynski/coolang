@@ -178,7 +178,7 @@ int GcPtrsInfoIndex(const ClassAst* class_ast) {
 }
 
 int StructAttrIndex(const ClassAst* class_ast, const AttributeFeature* attr) {
-  auto attrs = class_ast->GetAllAttrsNonBasicFirst();
+  auto attrs = class_ast->NonBasicThenStrsThenOtherAttrs();
   const int attribute_index =
       std::distance(attrs.begin(), std::find(attrs.begin(), attrs.end(), attr));
   return GcPtrsInfoIndex(class_ast) + 1 + attribute_index;
@@ -843,20 +843,41 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
                        AstToCodeMap::gc_ptrs_count_index);
 
     // store the address of the first non-basic attribute if there is one
-    if (cur_class->GetAllAttrsNonBasicFirst().empty()) {
+    if (gc_ptr_count == 0) {
       StructStoreAtIndex(
           ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
           llvm::ConstantPointerNull::get(
               ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo()),
           AstToCodeMap::gc_ptrs_array_index);
     } else {
-      const auto* first_attr = cur_class->GetAllAttrsNonBasicFirst().front();
+      const auto* first_attr =
+          cur_class->NonBasicThenStrsThenOtherAttrs().front();
       llvm::Value* gep = builder_.CreateStructGEP(
           ty, ctee, StructAttrIndex(cur_class, first_attr));
       llvm::Value* casted_gep = builder_.CreateBitCast(
           gep, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
       StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, casted_gep,
                          AstToCodeMap::gc_ptrs_array_index);
+    }
+
+    // store the str_count
+    const int str_count = cur_class->GetStrAttrCount();
+    StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
+                       ast_to_.LlvmConstInt32(str_count),
+                       AstToCodeMap::gc_str_count_index);
+
+    // store the address of the first String attribute if there is one
+    if (str_count == 0) {
+      StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
+                         llvm::ConstantPointerNull::get(
+                             ast_to_.LlvmBasicType("String")->getPointerTo()),
+                         AstToCodeMap::gc_strs_array_index);
+    } else {
+      const auto* first_attr = cur_class->FirstStrAttr();
+      llvm::Value* gep = builder_.CreateStructGEP(
+          ty, ctee, StructAttrIndex(cur_class, first_attr));
+      StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, gep,
+                         AstToCodeMap::gc_strs_array_index);
     }
 
     // store the address of the next gc_ptrs_info

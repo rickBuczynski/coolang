@@ -43,7 +43,7 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
     class_attributes.push_back(gc_ptrs_info_ty_);
 
     // Put non basic attrs first so we can visit them for GC
-    for (const auto* attr : cur_class->GetAllAttrsNonBasicFirst()) {
+    for (const auto* attr : cur_class->NonBasicThenStrsThenOtherAttrs()) {
       llvm::Type* attr_type = LlvmBasicOrClassPtrTy(attr->GetType());
       class_attributes.push_back(attr_type);
     }
