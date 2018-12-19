@@ -73,6 +73,9 @@ class ObjectCodegen {
 
     llvm::Value* copy =
         builder_->CreateCall(c_std_->GetGcMallocFunc(), {typesize});
+    // TODO can't use memcpy need to use a copy constructor
+    // we only want a shallow copy but MemCpy won't setup the GC info that is
+    // interspersed in the attributes
     builder_->CreateMemCpy(copy, 0, func->arg_begin(), 0, typesize);
 
     builder_->CreateRet(copy);

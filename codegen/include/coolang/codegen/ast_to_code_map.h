@@ -28,11 +28,14 @@ class AstToCodeMap {
     gc_ptrs_info_ty_->setBody(
         {builder_->getInt32Ty(),
          LlvmClass("Object")->getPointerTo()->getPointerTo(),
+         builder_->getInt32Ty(), LlvmBasicType("String")->getPointerTo(),
          gc_ptrs_info_ty_->getPointerTo()});
   }
   static constexpr int gc_ptrs_count_index = 0;
   static constexpr int gc_ptrs_array_index = 1;
-  static constexpr int gc_ptrs_next_index = 2;
+  static constexpr int gc_str_count_index = 2;
+  static constexpr int gc_strs_array_index = 3;
+  static constexpr int gc_ptrs_next_index = 4;
 
   static constexpr int obj_gc_next_obj_index = 0;
   static constexpr int obj_gc_prev_obj_index = 1;
@@ -121,19 +124,6 @@ class AstToCodeMap {
 
   llvm::ConstantInt* LlvmConstInt8(uint64_t i) const {
     return llvm::ConstantInt::get(*context_, llvm::APInt(8, i, true));
-  }
-
-  llvm::Value* LlvmBasicOrClassPtrDefaultVal(const std::string& type_name) {
-    if (type_name == "Int") {
-      return LlvmConstInt32(0);
-    }
-    if (type_name == "String") {
-      return builder_->CreateGlobalStringPtr("");
-    }
-    if (type_name == "Bool") {
-      return llvm::ConstantInt::get(*context_, llvm::APInt(1, 0, false));
-    }
-    return llvm::ConstantPointerNull::get(LlvmClass(type_name)->getPointerTo());
   }
 
   const ClassAst* GetClassByName(std::string name) const {

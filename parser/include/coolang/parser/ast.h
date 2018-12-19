@@ -735,7 +735,7 @@ class ClassAst : public AstNode {
     return attribute_features;
   }
 
-  std::vector<const AttributeFeature*> GetAllAttrsNonBasicFirst() const {
+  std::vector<const AttributeFeature*> NonBasicThenStrsThenOtherAttrs() const {
     auto attrs = GetAttributeFeatures();
 
     std::vector<const AttributeFeature*> non_basic_first;
@@ -743,15 +743,35 @@ class ClassAst : public AstNode {
       if (!IsBasicType(attr->GetType())) non_basic_first.push_back(attr);
     }
     for (const auto& attr : attrs) {
-      if (IsBasicType(attr->GetType())) non_basic_first.push_back(attr);
+      if (attr->GetType() == "String") non_basic_first.push_back(attr);
+    }
+    for (const auto& attr : attrs) {
+      if (attr->GetType() != "String" && IsBasicType(attr->GetType())) {
+        non_basic_first.push_back(attr);
+      }
     }
     return non_basic_first;
+  }
+
+  const AttributeFeature* FirstStrAttr() const {
+    for (const auto& attr : GetAttributeFeatures()) {
+      if (attr->GetType() == "String") return attr;
+    }
+    return nullptr;
   }
 
   int GetNonBasicAttrCount() const {
     int n = 0;
     for (const auto& attr : GetAttributeFeatures()) {
       if (!IsBasicType(attr->GetType())) n++;
+    }
+    return n;
+  }
+
+  int GetStrAttrCount() const {
+    int n = 0;
+    for (const auto& attr : GetAttributeFeatures()) {
+      if (attr->GetType() == "String") n++;
     }
     return n;
   }

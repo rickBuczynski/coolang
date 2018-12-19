@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 
@@ -16,16 +17,17 @@ struct GcObj;
 struct GcPtrsInfo {
   int gc_ptr_count;
   GcObj** gc_ptrs;
+  int gc_str_count;
+  char** gc_strs;
   GcPtrsInfo* next_gc_info;
 };
 
-// TODO GCwont work for Cool Strings
 struct GcObj {
   // initialize these during malloc
   // the cool program wont touch these so they will contain garbage
   GcObj* next_obj;
   GcObj* prev_obj;
-  GcObj* next_root;
+  GcObj* next_root; // TODO remove this, not used
   GcObj* prev_root;
   bool is_reachable;
   // don't initialize this during malloc
@@ -52,6 +54,15 @@ GcObj* GetNext(GcObj* obj) { return obj->next_obj; }
 GcObj* GetPrev(GcObj* obj) { return obj->prev_obj; }
 const char* ListName() { return "gc objs"; }
 
+GcObj* ObjFromString(char* str_data_start) {
+  if (str_data_start == nullptr) {
+    return nullptr;
+  }
+  char* str_obj_start = str_data_start - sizeof(GcObj);
+  GcObj* obj = reinterpret_cast<GcObj*>(str_obj_start);
+  return obj;
+}
+
 void MarkObj(GcObj* obj) {
   if (obj == nullptr || obj->is_reachable) {
     return;
@@ -60,15 +71,39 @@ void MarkObj(GcObj* obj) {
   obj->is_reachable = true;
 
   GcPtrsInfo* gc_ptrs_info = &obj->gc_ptrs_info;
+
   while (gc_ptrs_info != nullptr) {
     for (int i = 0; i < gc_ptrs_info->gc_ptr_count; i++) {
       MarkObj(gc_ptrs_info->gc_ptrs[i]);
+    }
+    for (int i = 0; i < gc_ptrs_info->gc_str_count; i++) {
+      MarkObj(ObjFromString(gc_ptrs_info->gc_strs[i]));
     }
     gc_ptrs_info = gc_ptrs_info->next_gc_info;
   }
 }
 
-using GcRoot = GcObj**;
+int gc_alloc_count = 0;
+int gc_free_count = 0;
+
+class GcRoot {
+ public:
+  explicit GcRoot(GcObj** obj_root) : obj_root_(obj_root) {}
+  explicit GcRoot(char** string_root) : string_root_(string_root) {}
+
+  GcObj* Obj() const {
+    if (obj_root_ != nullptr) {
+      assert(string_root_ == nullptr);
+      return *obj_root_;
+    }
+    assert(string_root_ != nullptr);
+    return ObjFromString(*string_root_);
+  }
+
+ private:
+  GcObj** obj_root_ = nullptr;
+  char** string_root_ = nullptr;
+};
 
 struct GcRootStack {
   static constexpr int init_capacity = 2;
@@ -92,12 +127,12 @@ struct GcRootStack {
   }
 
   void PopRoot(GcRoot root) {
-    if (roots[length - 1] != root) {
+    if (roots[length - 1].Obj() != root.Obj()) {
       printf("BADBADBADBADBADBADBADBADBAD\n");
       printf("Root at top of stack points to:\n");
-      PrintObj(*roots[length]);
+      PrintObj(roots[length].Obj());
       printf("Root to remove points to:\n");
-      PrintObj(*root);
+      PrintObj(root.Obj());
     }
     length--;
   }
@@ -106,14 +141,14 @@ struct GcRootStack {
     printf("Current GC roots:\n");
     for (int i = 0; i < length; i++) {
       printf("Root that points to:\n");
-      PrintObj(*roots[i]);
+      PrintObj(roots[i].Obj());
     }
     printf("End of current GC roots\n\n");
   }
 
   void MarkReachable() const {
     for (int i = 0; i < length; i++) {
-      MarkObj(*roots[i]);
+      MarkObj(roots[i].Obj());
     }
   }
 
@@ -160,6 +195,7 @@ class GcList {
           printf("Freeing an object of type: %s\n", obj->obj_typename);
         }
 
+        gc_free_count++;
         Remove(obj);
         free(obj);
       }
@@ -211,11 +247,8 @@ extern "C" void gc_system_init(int is_verbose) {
   gc_obj_list = new GcList;
   gc_roots = new GcRootStack;
   gc_is_verbose = is_verbose;
-}
-
-extern "C" void gc_system_destroy() {
-  delete gc_roots;
-  delete gc_obj_list;
+  gc_alloc_count = 0;
+  gc_free_count = 0;
 }
 
 void Collect() {
@@ -224,10 +257,22 @@ void Collect() {
   gc_obj_list->Sweep();
 }
 
+extern "C" void gc_system_destroy() {
+  Collect();
+  delete gc_roots;
+  delete gc_obj_list;
+  if (gc_alloc_count != gc_free_count) {
+    //printf("GC alloc count: %d\n", gc_alloc_count);
+    //printf("GC free count: %d\n", gc_free_count);
+    //printf("GC leak count: %d\n", gc_alloc_count - gc_free_count);
+  }
+}
+
 extern "C" void* gc_malloc(int size) {
   Collect();
 
   auto* obj = static_cast<GcObj*>(malloc(size));
+  gc_alloc_count++;
 
   obj->next_obj = nullptr;
   obj->prev_obj = nullptr;
@@ -240,6 +285,43 @@ extern "C" void* gc_malloc(int size) {
   return static_cast<void*>(obj);
 }
 
-extern "C" void gc_add_root(GcObj** root) { gc_roots->PushRoot(root); }
+extern "C" void* gc_malloc_string(int size) {
+  // TODO Collect when allocating string
 
-extern "C" void gc_remove_root(GcObj** root) { gc_roots->PopRoot(root); }
+  if (gc_is_verbose) {
+    printf("Allocated a string\n");
+  }
+  char* str_alloc = static_cast<char*>(malloc(sizeof(GcObj) + size));
+  gc_alloc_count++;
+
+  GcObj* obj = reinterpret_cast<GcObj*>(str_alloc);
+
+  obj->next_obj = nullptr;
+  obj->prev_obj = nullptr;
+  obj->next_root = nullptr;
+  obj->prev_root = nullptr;
+  obj->is_reachable = false;
+  obj->obj_typename = "String";
+  obj->gc_ptrs_info.gc_ptr_count = 0;
+  obj->gc_ptrs_info.gc_ptrs = nullptr;
+  obj->gc_ptrs_info.gc_str_count = 0;
+  obj->gc_ptrs_info.gc_strs = nullptr;
+  obj->gc_ptrs_info.next_gc_info = nullptr;
+
+  gc_obj_list->PushFront(obj);
+
+  char* str_data_start = str_alloc + sizeof(GcObj);
+  return static_cast<void*>(str_data_start);
+}
+
+extern "C" void gc_add_root(GcObj** root) { gc_roots->PushRoot(GcRoot(root)); }
+extern "C" void gc_add_string_root(char** root) {
+  gc_roots->PushRoot(GcRoot(root));
+}
+
+extern "C" void gc_remove_root(GcObj** root) {
+  gc_roots->PopRoot(GcRoot(root));
+}
+extern "C" void gc_remove_string_root(char** root) {
+  gc_roots->PopRoot(GcRoot(root));
+}

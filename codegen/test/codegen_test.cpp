@@ -116,6 +116,10 @@ TEST(CodegenTest, gcrootsargs) { TestCodegen("gc-roots-args.cl", false, true); }
 TEST(CodegenTest, gcrootsreassign) {
   TestCodegen("gc-roots-reassign.cl", false, true);
 }
+TEST(CodegenTest, gcrootsletstr) {
+  TestCodegen("gc-roots-let-str.cl", false, true);
+}
+
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
 TEST(CodegenTest, assignmentval) { TestCodegen("assignment-val.cl"); }

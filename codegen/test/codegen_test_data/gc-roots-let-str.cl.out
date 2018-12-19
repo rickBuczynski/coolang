@@ -1,0 +1,6 @@
+Allocated an object of type: Main
+1Allocated a string
+23Freeing an object of type: String
+Allocated an object of type: Killer
+Freeing an object of type: Killer
+Freeing an object of type: Main

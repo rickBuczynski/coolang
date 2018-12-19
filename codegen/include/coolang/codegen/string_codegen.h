@@ -45,9 +45,8 @@ class StringCodegen {
     llvm::Value* concated_len = builder_->CreateAdd(lhs_len, rhs_len);
     concated_len = builder_->CreateAdd(concated_len, const_one);
 
-    // TODO this malloc leaks memory
     llvm::Value* concated_val =
-        builder_->CreateCall(c_std_->GetMallocFunc(), {concated_len});
+        builder_->CreateCall(c_std_->GetGcMallocStringFunc(), {concated_len});
     builder_->CreateCall(c_std_->GetStrcpyFunc(), {concated_val, lhs_arg});
     builder_->CreateCall(c_std_->GetStrcatFunc(), {concated_val, rhs_arg});
 
@@ -73,9 +72,8 @@ class StringCodegen {
         llvm::ConstantInt::get(*context_, llvm::APInt(32, 1, true));
     llvm::Value* malloc_len = builder_->CreateAdd(substr_len, const_one);
 
-    // TODO this malloc leaks memory
     llvm::Value* substr_val =
-        builder_->CreateCall(c_std_->GetMallocFunc(), {malloc_len});
+        builder_->CreateCall(c_std_->GetGcMallocStringFunc(), {malloc_len});
     llvm::Value* substr_start_ptr =
         builder_->CreateGEP(str_lhs, int_start_index);
     builder_->CreateCall(c_std_->GetStrncpyFunc(),

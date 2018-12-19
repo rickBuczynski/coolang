@@ -106,6 +106,24 @@ class CodegenVisitor : public AstVisitor {
     in_scope_vars_[id].push(val);
   }
 
+  llvm::Value* LlvmDefaultVal(const std::string& type_name) {
+    if (type_name == "Int") {
+      return ast_to_.LlvmConstInt32(0);
+    }
+    if (type_name == "String") {
+      llvm::Value* malloc_val = builder_.CreateCall(
+          c_std_.GetGcMallocStringFunc(), {ast_to_.LlvmConstInt32(1)});
+      llvm::Value* str_global = builder_.CreateGlobalStringPtr("");
+      builder_.CreateCall(c_std_.GetStrcpyFunc(), {malloc_val, str_global});
+      return malloc_val;
+    }
+    if (type_name == "Bool") {
+      return llvm::ConstantInt::get(context_, llvm::APInt(1, 0, false));
+    }
+    return llvm::ConstantPointerNull::get(
+        ast_to_.LlvmClass(type_name)->getPointerTo());
+  }
+
   std::unordered_map<std::string, std::stack<llvm::AllocaInst*>> in_scope_vars_;
 
   llvm::Value* ConvertType(llvm::Value* convert_me, const std::string& cur_type,
@@ -154,13 +172,13 @@ int GcPtrsInfoIndex(const ClassAst* class_ast) {
   for (const ClassAst* super : class_ast->GetAllSuperClasses()) {
     super_attr_count += super->GetAttributeFeatures().size();
   }
-  int gc_ptr_infos_offset = class_ast->GetAllSuperClasses().size() * 1;
+  int gc_ptr_infos_offset = class_ast->GetAllSuperClasses().size();
   return super_attr_count + gc_ptr_infos_offset +
          AstToCodeMap::obj_attributes_offset;
 }
 
 int StructAttrIndex(const ClassAst* class_ast, const AttributeFeature* attr) {
-  auto attrs = class_ast->GetAllAttrsNonBasicFirst();
+  auto attrs = class_ast->NonBasicThenStrsThenOtherAttrs();
   const int attribute_index =
       std::distance(attrs.begin(), std::find(attrs.begin(), attrs.end(), attr));
   return GcPtrsInfoIndex(class_ast) + 1 + attribute_index;
@@ -259,9 +277,8 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
   object_codegen_.GenExitWithMessage(
       "No match in case statement for Class %s\n", {case_val_type});
 
-  branch_vals_and_bbs.emplace_back(
-      ast_to_.LlvmBasicOrClassPtrDefaultVal(case_expr.GetExprType()),
-      builder_.GetInsertBlock());
+  branch_vals_and_bbs.emplace_back(LlvmDefaultVal(case_expr.GetExprType()),
+                                   builder_.GetInsertBlock());
 
   builder_.CreateBr(done_bb);
 
@@ -279,7 +296,12 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
 }
 
 void CodegenVisitor::Visit(const StrExpr& str) {
-  str.SetLlvmValue(builder_.CreateGlobalStringPtr(str.GetVal()));
+  llvm::Value* malloc_val =
+      builder_.CreateCall(c_std_.GetGcMallocStringFunc(),
+                          {ast_to_.LlvmConstInt32(str.GetVal().length() + 1)});
+  llvm::Value* str_global = builder_.CreateGlobalStringPtr(str.GetVal());
+  builder_.CreateCall(c_std_.GetStrcpyFunc(), {malloc_val, str_global});
+  str.SetLlvmValue(malloc_val);
 }
 
 void CodegenVisitor::Visit(const WhileExpr& while_expr) {
@@ -305,7 +327,7 @@ void CodegenVisitor::Visit(const WhileExpr& while_expr) {
 
   builder_.SetInsertPoint(loop_done_bb);
 
-  while_expr.SetLlvmValue(ast_to_.LlvmBasicOrClassPtrDefaultVal("Object"));
+  while_expr.SetLlvmValue(LlvmDefaultVal("Object"));
 }
 
 llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
@@ -317,7 +339,7 @@ llvm::Value* CodegenVisitor::ConvertType(llvm::Value* convert_me,
   if (IsBasicType(cur_type) && dest_type != "Object" && dest_type != cur_type) {
     // invalid conversion, this should only occur in a case branch that's not
     // taken so we can return anything, choose to just return default val
-    return ast_to_.LlvmBasicOrClassPtrDefaultVal(dest_type);
+    return LlvmDefaultVal(dest_type);
   }
   if (IsBasicType(dest_type) && cur_type == "Object") {
     return UnboxValue(dest_type, convert_me);
@@ -363,13 +385,13 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
 
       builder_.CreateStore(init_val, alloca_inst);
     } else {
-      builder_.CreateStore(
-          ast_to_.LlvmBasicOrClassPtrDefaultVal(cur_let->GetType()),
-          alloca_inst);
+      builder_.CreateStore(LlvmDefaultVal(cur_let->GetType()), alloca_inst);
     }
 
     if (!IsBasicType(cur_let->GetType())) {
       AddGcRoot(alloca_inst);
+    } else if (cur_let->GetType() == "String") {
+      builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {alloca_inst});
     }
 
     AddToScope(cur_let->GetId(), alloca_inst);
@@ -390,6 +412,9 @@ void CodegenVisitor::Visit(const LetExpr& let_expr) {
           it->alloca_inst,
           ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
       builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+    } else if (it->type == "String") {
+      builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(),
+                          {it->alloca_inst});
     }
 
     RemoveFromScope(it->id);
@@ -409,7 +434,7 @@ void CodegenVisitor::Visit(const IsVoidExpr& is_void) {
 }
 
 void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
-  std::vector<llvm::Value*> arg_gc_roots;
+  std::vector<std::pair<llvm::Value*, std::string>> arg_gc_roots_and_types;
 
   // codegen args first
   for (const auto& arg : call_expr.GetArgs()) {
@@ -417,12 +442,18 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
 
     // add GC roots for each arg e.g f(new A, new B) we don't want GC to delete
     // A when allocating B
-    if (!IsBasicType(arg->GetExprType())) {
+    if (!IsBasicType(arg->GetExprType()) || arg->GetExprType() == "String") {
       llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
           ast_to_.LlvmBasicOrClassPtrTy(arg->GetExprType()));
       builder_.CreateStore(arg->LlvmValue(), alloca_inst);
-      llvm::Value* root = AddGcRoot(alloca_inst);
-      arg_gc_roots.push_back(root);
+
+      if (arg->GetExprType() == "String") {
+        builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {alloca_inst});
+        arg_gc_roots_and_types.push_back({alloca_inst, arg->GetExprType()});
+      } else {
+        llvm::Value* root = AddGcRoot(alloca_inst);
+        arg_gc_roots_and_types.push_back({root, arg->GetExprType()});
+      }
     }
   }
   // codegen LHS after all args
@@ -431,8 +462,13 @@ void CodegenVisitor::Visit(const MethodCallExpr& call_expr) {
   // now it's safe to remove the gc roots for the args since there wont be any
   // more GC allocations until inside the called function body which will set
   // its own roots for its args
-  for (auto it = arg_gc_roots.rbegin(); it != arg_gc_roots.rend(); ++it) {
-    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {*it});
+  for (auto it = arg_gc_roots_and_types.rbegin();
+       it != arg_gc_roots_and_types.rend(); ++it) {
+    if (it->second == "String") {
+      builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {it->first});
+    } else {
+      builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {it->first});
+    }
   }
 
   const ClassAst* class_calling_method =
@@ -699,18 +735,23 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
   // if we have 2 non-basic types this could be something like "new A = new A"
   // and we don't want to GC the LHS when we allocate the RHS so we need a root
   // for the LHS
-  bool need_gc_root = !IsBasicType(eq_expr.GetLhsExpr()->GetExprType()) &&
-                      !IsBasicType(eq_expr.GetRhsExpr()->GetExprType());
+  bool both_non_basic = !IsBasicType(eq_expr.GetLhsExpr()->GetExprType()) &&
+                        !IsBasicType(eq_expr.GetRhsExpr()->GetExprType());
+  bool both_string = eq_expr.GetLhsExpr()->GetExprType() == "String" &&
+                     eq_expr.GetRhsExpr()->GetExprType() == "String";
 
   eq_expr.GetLhsExpr()->Accept(*this);
   llvm::Value* lhs_value = eq_expr.GetLhsExpr()->LlvmValue();
 
+  llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
+      ast_to_.LlvmBasicOrClassPtrTy(eq_expr.GetLhsExpr()->GetExprType()));
+  builder_.CreateStore(eq_expr.GetLhsExpr()->LlvmValue(), alloca_inst);
+
   llvm::Value* root = nullptr;
-  if (need_gc_root) {
-    llvm::AllocaInst* alloca_inst = builder_.CreateAlloca(
-        ast_to_.LlvmBasicOrClassPtrTy(eq_expr.GetLhsExpr()->GetExprType()));
-    builder_.CreateStore(eq_expr.GetLhsExpr()->LlvmValue(), alloca_inst);
+  if (both_non_basic) {
     root = AddGcRoot(alloca_inst);
+  } else if (both_string) {
+    builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {alloca_inst});
   }
 
   eq_expr.GetRhsExpr()->Accept(*this);
@@ -718,8 +759,10 @@ void CodegenVisitor::Visit(const EqCompareExpr& eq_expr) {
 
   // safe to remove the root now that we codegened the RHS, there won't be
   // another allocation/GC until after this expr is done
-  if (need_gc_root) {
+  if (both_non_basic) {
     builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+  } else if (both_string) {
+    builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {alloca_inst});
   }
 
   if (eq_expr.GetLhsExpr()->GetExprType() == "Int" ||
@@ -800,20 +843,41 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
                        AstToCodeMap::gc_ptrs_count_index);
 
     // store the address of the first non-basic attribute if there is one
-    if (cur_class->GetAllAttrsNonBasicFirst().empty()) {
+    if (gc_ptr_count == 0) {
       StructStoreAtIndex(
           ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
           llvm::ConstantPointerNull::get(
               ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo()),
           AstToCodeMap::gc_ptrs_array_index);
     } else {
-      const auto* first_attr = cur_class->GetAllAttrsNonBasicFirst().front();
+      const auto* first_attr =
+          cur_class->NonBasicThenStrsThenOtherAttrs().front();
       llvm::Value* gep = builder_.CreateStructGEP(
           ty, ctee, StructAttrIndex(cur_class, first_attr));
       llvm::Value* casted_gep = builder_.CreateBitCast(
           gep, ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
       StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, casted_gep,
                          AstToCodeMap::gc_ptrs_array_index);
+    }
+
+    // store the str_count
+    const int str_count = cur_class->GetStrAttrCount();
+    StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
+                       ast_to_.LlvmConstInt32(str_count),
+                       AstToCodeMap::gc_str_count_index);
+
+    // store the address of the first String attribute if there is one
+    if (str_count == 0) {
+      StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info,
+                         llvm::ConstantPointerNull::get(
+                             ast_to_.LlvmBasicType("String")->getPointerTo()),
+                         AstToCodeMap::gc_strs_array_index);
+    } else {
+      const auto* first_attr = cur_class->FirstStrAttr();
+      llvm::Value* gep = builder_.CreateStructGEP(
+          ty, ctee, StructAttrIndex(cur_class, first_attr));
+      StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, gep,
+                         AstToCodeMap::gc_strs_array_index);
     }
 
     // store the address of the next gc_ptrs_info
@@ -831,8 +895,7 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
     // store default vals for all attrs
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
-      StructStoreAtIndex(ty, ctee,
-                         ast_to_.LlvmBasicOrClassPtrDefaultVal(attr->GetType()),
+      StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
                          StructAttrIndex(cur_class, attr));
     }
   }
@@ -908,6 +971,9 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
     for (const auto& binding : bindings) {
       if (!IsBasicType(binding.type)) {
         AddGcRoot(binding.alloca_inst);
+      } else if (binding.type == "String") {
+        builder_.CreateCall(c_std_.GetGcAddStringRootFunc(),
+                            {binding.alloca_inst});
       }
     }
 
@@ -925,6 +991,9 @@ void CodegenVisitor::GenMethodBodies(const ClassAst& class_ast) {
             it->alloca_inst,
             ast_to_.LlvmClass("Object")->getPointerTo()->getPointerTo());
         builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+      } else if (it->type == "String") {
+        builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(),
+                            {it->alloca_inst});
       }
     }
 
@@ -947,8 +1016,7 @@ void CodegenVisitor::Visit(const LessThanCompareExpr& lt_expr) {
 
 void CodegenVisitor::Visit(const NewExpr& new_expr) {
   if (ast_to_.LlvmBasicType(new_expr.GetType()) != nullptr) {
-    new_expr.SetLlvmValue(
-        ast_to_.LlvmBasicOrClassPtrDefaultVal(new_expr.GetType()));
+    new_expr.SetLlvmValue(LlvmDefaultVal(new_expr.GetType()));
     return;
   }
 
