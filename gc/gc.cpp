@@ -28,8 +28,6 @@ struct GcObj {
   // the cool program wont touch these so they will contain garbage
   GcObj* next_obj;
   GcObj* prev_obj;
-  GcObj* next_root;  // TODO remove this, not used
-  GcObj* prev_root;
   bool is_reachable;
   // don't initialize this during malloc
   // the cool program itself handles initializing this
@@ -277,8 +275,6 @@ extern "C" void* gc_malloc(int size) {
 
   obj->next_obj = nullptr;
   obj->prev_obj = nullptr;
-  obj->next_root = nullptr;
-  obj->prev_root = nullptr;
   obj->is_reachable = false;
 
   gc_obj_list->PushFront(obj);
@@ -296,8 +292,6 @@ extern "C" void* gc_malloc_and_copy(int size, GcObj* copy_src) {
   // TODO don't duplicate code from gc_malloc_and_copy
   obj->next_obj = nullptr;
   obj->prev_obj = nullptr;
-  obj->next_root = nullptr;
-  obj->prev_root = nullptr;
   obj->is_reachable = false;
 
   gc_obj_list->PushFront(obj);
@@ -318,8 +312,6 @@ extern "C" void* gc_malloc_string(int size) {
 
   obj->next_obj = nullptr;
   obj->prev_obj = nullptr;
-  obj->next_root = nullptr;
-  obj->prev_root = nullptr;
   obj->is_reachable = false;
   obj->obj_typename = "String";
   obj->gc_ptrs_info.gc_ptr_count = 0;

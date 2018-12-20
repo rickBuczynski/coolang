@@ -14,10 +14,6 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   class_attributes.push_back(LlvmClass("Object")->getPointerTo());
   // obj_gc_prev_obj_index
   class_attributes.push_back(LlvmClass("Object")->getPointerTo());
-  // obj_gc_next_root_index
-  class_attributes.push_back(LlvmClass("Object")->getPointerTo());
-  // obj_gc_prev_root_index
-  class_attributes.push_back(LlvmClass("Object")->getPointerTo());
   // obj_gc_is_reachable_index
   // use an i8 instead of i1 since clang emits i8 for bool
   // i1 should work too since i8 is min addressable data but use i8 to be safe
