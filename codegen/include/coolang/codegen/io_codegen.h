@@ -61,11 +61,11 @@ class IoCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    // TODO this malloc leaks memory
     // TODO this won't work for lines longer than 1024 chars
     // TODO this is wastefull for lines less than 1024 chars
-    llvm::Value* in_str = builder_->CreateCall(
-        c_std_->GetMallocFunc(), {ast_to_code_map_->LlvmConstInt32(1024)});
+    llvm::Value* in_str =
+        builder_->CreateCall(c_std_->GetGcMallocStringFunc(),
+                             {ast_to_code_map_->LlvmConstInt32(1024)});
 
     llvm::AllocaInst* in_char = builder_->CreateAlloca(builder_->getInt8Ty());
     builder_->CreateStore(
