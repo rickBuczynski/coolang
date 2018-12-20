@@ -33,7 +33,7 @@ struct GcObj {
   bool is_reachable;
   // don't initialize this during malloc
   // the cool program itself handles initializing this
-  char* obj_typename;
+  const char* obj_typename;
   void* vtable;
   int typesize;
   void* constructor;
