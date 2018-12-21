@@ -146,6 +146,8 @@ class CodegenVisitor : public AstVisitor {
 
   void GenConstructor(const ClassAst& class_ast);
   void GenCopyConstructor(const ClassAst& class_ast);
+  void GenGcPtrsInfoConstruction(const ClassAst& class_ast,
+                                 llvm::StructType* ty, llvm::Value* ctee);
 
   void GenMethodBodies(const ClassAst& class_ast);
 
@@ -833,6 +835,69 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   StructStoreAtIndex(ty, ctee, ast_to_.GetCopyConstructor(&class_ast),
                      AstToCodeMap::obj_copy_constructor_index);
 
+  GenGcPtrsInfoConstruction(class_ast, ty, ctee);
+
+  // store default values to use during init or used after construction if no
+  // init expr for an attr
+  auto supers_then_this = class_ast.SupersThenThis();
+  for (size_t i = 0; i < supers_then_this.size(); i++) {
+    const ClassAst* cur_class = supers_then_this[i];
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
+      StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
+                         StructAttrIndex(cur_class, attr));
+    }
+  }
+
+  auto dummy_constructor_method =
+      MethodFeature(LineRange(0, 0), "constructor", {}, "", {});
+  ast_to_.SetLlvmFunction(&dummy_constructor_method, constructor);
+  ast_to_.SetCurrentMethod(&dummy_constructor_method);
+
+  // need to set a GC root to an obj during initialization of attributes because
+  // an allocation in an init expr could cause the obj to be destroyed
+  llvm::AllocaInst* self_alloca =
+      builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
+  builder_.CreateStore(constructor->arg_begin(), self_alloca);
+  llvm::Value* root = AddGcRoot(self_alloca);
+
+  // then store value from init expr
+  for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
+      if (attr->GetRootExpr()) {
+        attr->GetRootExpr()->Accept(*this);
+
+        llvm::Value* init_val = attr->GetRootExpr()->LlvmValue();
+        init_val = ConvertType(init_val, attr->GetRootExpr()->GetExprType(),
+                               attr->GetType());
+        StructStoreAtIndex(ty, ctee, init_val,
+                           StructAttrIndex(cur_class, attr));
+      }
+    }
+  }
+
+  builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
+
+  ast_to_.SetCurrentMethod(nullptr);
+  ast_to_.EraseMethod(&dummy_constructor_method);
+
+  builder_.CreateRetVoid();
+
+  GenCopyConstructor(class_ast);
+}
+
+void CodegenVisitor::GenCopyConstructor(const ClassAst& class_ast) {
+  llvm::Function* copy_constructor = ast_to_.GetCopyConstructor(&class_ast);
+
+  llvm::BasicBlock* entry =
+      llvm::BasicBlock::Create(context_, "entrypoint", copy_constructor);
+  builder_.SetInsertPoint(entry);
+  builder_.CreateRetVoid();
+  // TODO implement copy constructor
+}
+
+void CodegenVisitor::GenGcPtrsInfoConstruction(const ClassAst& class_ast,
+                                               llvm::StructType* ty,
+                                               llvm::Value* ctee) {
   // first store default values and gc_ptr_counts
   auto supers_then_this = class_ast.SupersThenThis();
   for (size_t i = 0; i < supers_then_this.size(); i++) {
@@ -892,64 +957,11 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
           ast_to_.GcPtrsInfoTy()->getPointerTo());
     } else {
       next_gc_ptrs_info = builder_.CreateStructGEP(
-          ast_to_.LlvmClass(&class_ast), constructor->args().begin(),
-          GcPtrsInfoIndex(supers_then_this[i + 1]));
+          ty, ctee, GcPtrsInfoIndex(supers_then_this[i + 1]));
     }
     StructStoreAtIndex(ast_to_.GcPtrsInfoTy(), gc_ptrs_info, next_gc_ptrs_info,
                        AstToCodeMap::gc_ptrs_next_index);
-
-    // store default vals for all attrs
-    for (const auto* attr : cur_class->GetAttributeFeatures()) {
-      StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
-                         StructAttrIndex(cur_class, attr));
-    }
   }
-
-  auto dummy_constructor_method =
-      MethodFeature(LineRange(0, 0), "constructor", {}, "", {});
-  ast_to_.SetLlvmFunction(&dummy_constructor_method, constructor);
-  ast_to_.SetCurrentMethod(&dummy_constructor_method);
-
-  // need to set a GC root to an obj during initialization of attributes because
-  // an allocation in an init expr could cause the obj to be destroyed
-  llvm::AllocaInst* self_alloca =
-      builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
-  builder_.CreateStore(constructor->arg_begin(), self_alloca);
-  llvm::Value* root = AddGcRoot(self_alloca);
-
-  // then store value from init expr
-  for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
-    for (const auto* attr : cur_class->GetAttributeFeatures()) {
-      if (attr->GetRootExpr()) {
-        attr->GetRootExpr()->Accept(*this);
-
-        llvm::Value* init_val = attr->GetRootExpr()->LlvmValue();
-        init_val = ConvertType(init_val, attr->GetRootExpr()->GetExprType(),
-                               attr->GetType());
-        StructStoreAtIndex(ty, ctee, init_val,
-                           StructAttrIndex(cur_class, attr));
-      }
-    }
-  }
-
-  builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {root});
-
-  ast_to_.SetCurrentMethod(nullptr);
-  ast_to_.EraseMethod(&dummy_constructor_method);
-
-  builder_.CreateRetVoid();
-
-  GenCopyConstructor(class_ast);
-}
-
-void CodegenVisitor::GenCopyConstructor(const ClassAst& class_ast) {
-  llvm::Function* copy_constructor = ast_to_.GetCopyConstructor(&class_ast);
-
-  llvm::BasicBlock* entry =
-      llvm::BasicBlock::Create(context_, "entrypoint", copy_constructor);
-  builder_.SetInsertPoint(entry);
-  builder_.CreateRetVoid();
-  // TODO implement copy constructor
 }
 
 llvm::Value* CodegenVisitor::AddGcRoot(llvm::AllocaInst* alloca_inst) {
