@@ -141,8 +141,8 @@ llvm::FunctionType* AstToCodeMap::GetConstructorFunctionType(
 llvm::FunctionType* AstToCodeMap::GetCopyConstructorFunctionType(
     const ClassAst* class_ast) {
   return llvm::FunctionType::get(builder_->getVoidTy(),
-                                 {LlvmClass(class_ast)->getPointerTo(),
-                                  LlvmClass(class_ast)->getPointerTo()},
+                                 {LlvmClass("Object")->getPointerTo(),
+                                  LlvmClass("Object")->getPointerTo()},
                                  false);
 }
 

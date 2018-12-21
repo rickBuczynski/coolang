@@ -891,8 +891,28 @@ void CodegenVisitor::GenCopyConstructor(const ClassAst& class_ast) {
   llvm::BasicBlock* entry =
       llvm::BasicBlock::Create(context_, "entrypoint", copy_constructor);
   builder_.SetInsertPoint(entry);
+
+  auto arg_iter = copy_constructor->arg_begin();
+  // the destination object being copy constructed
+  llvm::Value* dst = arg_iter;
+  arg_iter++;
+
+  // the source object being copied
+  llvm::Value* src = arg_iter;
+
+  // type of the constructee
+  llvm::StructType* ty = ast_to_.LlvmClass(&class_ast);
+
+  const auto type_size =
+      data_layout_.getTypeAllocSize(ast_to_.LlvmClass(&class_ast));
+
+  builder_.CreateCall(c_std_.GetGcCopyObjFunc(),
+                      {dst, src, ast_to_.LlvmConstInt32(type_size)});
+
+  GenGcPtrsInfoConstruction(class_ast, ty,
+                            builder_.CreateBitCast(dst, ty->getPointerTo()));
+
   builder_.CreateRetVoid();
-  // TODO implement copy constructor
 }
 
 void CodegenVisitor::GenGcPtrsInfoConstruction(const ClassAst& class_ast,

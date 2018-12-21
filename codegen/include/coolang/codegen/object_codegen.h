@@ -84,8 +84,11 @@ class ObjectCodegen {
     llvm::Value* copy_dst = builder_->CreateBitCast(
         copy, ast_to_code_map_->LlvmClass("Object")->getPointerTo());
 
-    builder_->CreateCall(c_std_->GetGcCopyObjFunc(),
-                         {copy_dst, func->arg_begin(), typesize});
+    llvm::Value* copy_constructor_func = builder_->CreateLoad(
+        builder_->CreateStructGEP(nullptr, func->arg_begin(),
+                                  AstToCodeMap::obj_copy_constructor_index));
+
+    builder_->CreateCall(copy_constructor_func, {copy_dst, func->arg_begin()});
 
     builder_->CreateRet(copy);
   }

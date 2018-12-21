@@ -1,6 +1,6 @@
 -- Test FC for of Object.copy
 
-class Killer
+class DontKillB
 {
   i : Int <- 2;
 };
@@ -38,7 +38,7 @@ class Main
       foocp1.setA(new B);
 	  
       -- B should not die here
-	  new Killer;
+	  new DontKillB;
     }
   };
 };
