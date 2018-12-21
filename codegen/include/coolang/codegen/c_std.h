@@ -22,9 +22,7 @@ class CStd {
   llvm::Constant* GetAtoiFunc() const { return atoi_func_; }
 
   llvm::Constant* GetGcMallocFunc() const { return gc_malloc_func_; }
-  llvm::Constant* GetGcMallocAndCopyFunc() const {
-    return gc_malloc_and_copy_func_;
-  }
+  llvm::Constant* GetGcCopyObjFunc() const { return gc_copy_obj_func_; }
   llvm::Constant* GetGcMallocStringFunc() const {
     return gc_malloc_string_func_;
   }
@@ -93,11 +91,12 @@ class CStd {
   llvm::Constant* gc_malloc_func_ =
       CreateCStdFuncDecl("gc_malloc", "String", {"Int"});
 
-  llvm::Constant* gc_malloc_and_copy_func_ = CreateCStdFuncDecl(
-      "gc_malloc_and_copy", ast_to_code_map_->LlvmBasicType("String"),
-      {ast_to_code_map_->LlvmBasicType("Int"),
-       ast_to_code_map_->LlvmClass("Object")->getPointerTo()},
-      false);
+  llvm::Constant* gc_copy_obj_func_ =
+      CreateCStdFuncDecl("gc_copy_obj", ast_to_code_map_->LlvmVoidType(),
+                         {ast_to_code_map_->LlvmClass("Object")->getPointerTo(),
+                          ast_to_code_map_->LlvmClass("Object")->getPointerTo(),
+                          ast_to_code_map_->LlvmBasicType("Int")},
+                         false);
 
   llvm::Constant* gc_malloc_string_func_ =
       CreateCStdFuncDecl("gc_malloc_string", "String", {"Int"});

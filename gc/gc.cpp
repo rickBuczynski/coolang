@@ -282,16 +282,15 @@ extern "C" void* gc_malloc(int size) {
   return static_cast<void*>(obj);
 }
 
-extern "C" void* gc_malloc_and_copy(int size, GcObj* copy_src) {
-  GcObj* obj = static_cast<GcObj*>(gc_malloc(size));
-
+extern "C" void gc_copy_obj(GcObj* copy_dst, GcObj* copy_src, int size) {
   // start the copy from &is_reachable so we don't copy next_obj and prev_obj
   // pointers. We want the copy to have it's own next_obj prev_obj not the same
   // as the original.
-  const size_t dont_copy_size = reinterpret_cast<char*>(&obj->is_reachable) -
-                                reinterpret_cast<char*>(obj);
-  memcpy(&obj->is_reachable, &copy_src->is_reachable, size - dont_copy_size);
-  return static_cast<void*>(obj);
+  const size_t dont_copy_size =
+      reinterpret_cast<char*>(&copy_dst->is_reachable) -
+      reinterpret_cast<char*>(copy_dst);
+  memcpy(&copy_dst->is_reachable, &copy_src->is_reachable,
+         size - dont_copy_size);
 }
 
 extern "C" void* gc_malloc_string(int size) {

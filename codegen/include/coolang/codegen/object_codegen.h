@@ -71,15 +71,22 @@ class ObjectCodegen {
         AstToCodeMap::obj_typesize_index);
     llvm::Value* typesize = builder_->CreateLoad(typesize_ptr);
 
-    // TODO GcMallocAndCopyFunc works for allocation and freeing the copy but it
-    // only gives the copy it's own gc info at the start of the object. The GC
-    // info that's interspersed in the attributes is still a copy of the old
+    // TODO GcMalloc And Copy Funcs work for allocation and freeing the copy but
+    // it only gives the copy it's own gc info at the start of the object. The
+    // GC info that's interspersed in the attributes is still a copy of the old
     // object and points to the old attributes. Need to use a version of a
     // constructor to set those for the new copy.
     // Without this if we re-assign an attribute of a copy to a new object it
     // will be freed by GC since we won't see it when marking the copy.
-    llvm::Value* copy = builder_->CreateCall(c_std_->GetGcMallocAndCopyFunc(),
-                                             {typesize, func->arg_begin()});
+    llvm::Value* copy =
+        builder_->CreateCall(c_std_->GetGcMallocFunc(), {typesize});
+
+    llvm::Value* copy_dst = builder_->CreateBitCast(
+        copy, ast_to_code_map_->LlvmClass("Object")->getPointerTo());
+
+    builder_->CreateCall(c_std_->GetGcCopyObjFunc(),
+                         {copy_dst, func->arg_begin(), typesize});
+
     builder_->CreateRet(copy);
   }
 
