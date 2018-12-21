@@ -145,6 +145,8 @@ class CodegenVisitor : public AstVisitor {
                           llvm::Value* val, int index);
 
   void GenConstructor(const ClassAst& class_ast);
+  void GenCopyConstructor(const ClassAst& class_ast);
+
   void GenMethodBodies(const ClassAst& class_ast);
 
   void GenMainFunc();
@@ -828,6 +830,9 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   StructStoreAtIndex(ty, ctee, constructor,
                      AstToCodeMap::obj_constructor_index);
 
+  StructStoreAtIndex(ty, ctee, ast_to_.GetCopyConstructor(&class_ast),
+                     AstToCodeMap::obj_copy_constructor_index);
+
   // first store default values and gc_ptr_counts
   auto supers_then_this = class_ast.SupersThenThis();
   for (size_t i = 0; i < supers_then_this.size(); i++) {
@@ -933,6 +938,18 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   ast_to_.EraseMethod(&dummy_constructor_method);
 
   builder_.CreateRetVoid();
+
+  GenCopyConstructor(class_ast);
+}
+
+void CodegenVisitor::GenCopyConstructor(const ClassAst& class_ast) {
+  llvm::Function* copy_constructor = ast_to_.GetCopyConstructor(&class_ast);
+
+  llvm::BasicBlock* entry =
+      llvm::BasicBlock::Create(context_, "entrypoint", copy_constructor);
+  builder_.SetInsertPoint(entry);
+  builder_.CreateRetVoid();
+  // TODO implement copy constructor
 }
 
 llvm::Value* CodegenVisitor::AddGcRoot(llvm::AllocaInst* alloca_inst) {

@@ -30,6 +30,9 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   // obj_constructor_index (to support "new SELF_TYPE")
   class_attributes.push_back(
       GetConstructorFunctionType(class_ast)->getPointerTo());
+  // obj_copy_constructor_index
+  class_attributes.push_back(
+      GetCopyConstructorFunctionType(class_ast)->getPointerTo());
   // obj_boxed_data_index
   class_attributes.push_back(builder_->getInt8PtrTy());
 
@@ -112,12 +115,35 @@ void AstToCodeMap::AddConstructor(const ClassAst* class_ast) {
       "construct"s + "-" + class_ast->GetName(), module_);
 
   constructors_.insert(std::make_pair(class_ast, constructor));
+
+  AddCopyConstructor(class_ast);
+}
+
+void AstToCodeMap::AddCopyConstructor(const ClassAst* class_ast) {
+  using namespace std::string_literals;
+
+  llvm::FunctionType* copy_constructor_func_type =
+      GetCopyConstructorFunctionType(class_ast);
+
+  llvm::Function* constructor = llvm::Function::Create(
+      copy_constructor_func_type, llvm::Function::ExternalLinkage,
+      "copy-construct"s + "-" + class_ast->GetName(), module_);
+
+  copy_constructors_.insert(std::make_pair(class_ast, constructor));
 }
 
 llvm::FunctionType* AstToCodeMap::GetConstructorFunctionType(
     const ClassAst* class_ast) {
   return llvm::FunctionType::get(builder_->getVoidTy(),
                                  {LlvmClass(class_ast)->getPointerTo()}, false);
+}
+
+llvm::FunctionType* AstToCodeMap::GetCopyConstructorFunctionType(
+    const ClassAst* class_ast) {
+  return llvm::FunctionType::get(builder_->getVoidTy(),
+                                 {LlvmClass(class_ast)->getPointerTo(),
+                                  LlvmClass(class_ast)->getPointerTo()},
+                                 false);
 }
 
 }  // namespace coolang

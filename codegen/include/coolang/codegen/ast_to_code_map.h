@@ -47,10 +47,12 @@ class AstToCodeMap {
   static constexpr int obj_typesize_index = 5;
   // need a pointer to constructor to handle "new SELF_TYPE"
   static constexpr int obj_constructor_index = 6;
-  static constexpr int obj_boxed_data_index = 7;
+  // need copy_constructor for copy method
+  static constexpr int obj_copy_constructor_index = 7;
+  static constexpr int obj_boxed_data_index = 8;
 
   // attributes start after the things above
-  static constexpr int obj_attributes_offset = 8;
+  static constexpr int obj_attributes_offset = 9;
 
   void AddAttributes(const ClassAst* class_ast);
   void AddMethods(const ClassAst* class_ast);
@@ -103,6 +105,13 @@ class AstToCodeMap {
     return constructors_.at(class_ast);
   }
   llvm::Function* GetConstructor(const std::string& type_name) {
+    return GetConstructor(GetClassByName(type_name));
+  }
+
+  llvm::Function* GetCopyConstructor(const ClassAst* class_ast) {
+    return copy_constructors_.at(class_ast);
+  }
+  llvm::Function* GetCopyConstructor(const std::string& type_name) {
     return GetConstructor(GetClassByName(type_name));
   }
 
@@ -169,18 +178,22 @@ class AstToCodeMap {
 
   llvm::Function* CurLlvmFunc() { return functions_.at(current_method_); }
 
-  llvm::FunctionType* GetConstructorFunctionType(const ClassAst* class_ast);
-
  private:
+  llvm::FunctionType* GetConstructorFunctionType(const ClassAst* class_ast);
+  llvm::FunctionType* GetCopyConstructorFunctionType(const ClassAst* class_ast);
+
   void Insert(const ClassAst* class_ast) {
     types_.insert(std::make_pair(
         class_ast, llvm::StructType::create(*context_, class_ast->GetName())));
     vtables_.insert(std::make_pair(class_ast, Vtable(*context_, class_ast)));
   }
 
+  void AddCopyConstructor(const ClassAst* class_ast);
+
   std::unordered_map<const ClassAst*, llvm::StructType*> types_;
   std::unordered_map<const ClassAst*, Vtable> vtables_;
   std::unordered_map<const ClassAst*, llvm::Function*> constructors_;
+  std::unordered_map<const ClassAst*, llvm::Function*> copy_constructors_;
 
   std::unordered_map<const MethodFeature*, llvm::Function*> functions_;
 

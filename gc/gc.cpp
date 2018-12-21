@@ -35,6 +35,7 @@ struct GcObj {
   void* vtable;
   int typesize;
   void* constructor;
+  void* copy_constructor;
   char* boxed_data;
 
   GcPtrsInfo gc_ptrs_info;
