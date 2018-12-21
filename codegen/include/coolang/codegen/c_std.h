@@ -16,9 +16,6 @@ class CStd {
   llvm::Constant* GetStrcpyFunc() const { return strcpy_func_; }
   llvm::Constant* GetStrncpyFunc() const { return strncpy_func_; }
   llvm::Constant* GetStrcatFunc() const { return strcat_func_; }
-  // TODO remove all use of malloc (should be all for Strings)
-  // and use gc_malloc instead. Will need to change String to be a pointer type
-  // instead of a basic type like int and bool
   llvm::Constant* GetExitFunc() const { return exit_func_; }
   llvm::Constant* GetStrCmpFunc() const { return strcmp_func_; }
   llvm::Constant* GetGetcharFunc() const { return getchar_func_; }

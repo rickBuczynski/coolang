@@ -1,0 +1,11 @@
+Allocated an object of type: Main
+Allocated an object of type: Foo
+Allocated an object of type: A
+Allocated an object of type: B
+Freeing an object of type: B -- THIS LINE IS WRONG B SHOULD NOT DIE HERE
+Allocated an object of type: Killer
+Freeing an object of type: Killer
+Freeing an object of type: Foo
+Freeing an object of type: A
+Freeing an object of type: Foo
+Freeing an object of type: Main

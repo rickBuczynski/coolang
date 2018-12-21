@@ -119,6 +119,7 @@ TEST(CodegenTest, gcrootsreassign) {
 TEST(CodegenTest, gcrootsletstr) {
   TestCodegen("gc-roots-let-str.cl", false, true);
 }
+TEST(CodegenTest, gccopies) { TestCodegen("gc-copies.cl", false, true); }
 
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
