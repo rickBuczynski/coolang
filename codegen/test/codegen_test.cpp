@@ -105,6 +105,9 @@ void TestCodegen(const std::string& input_file,
   EXPECT_EQ(expected_output, program_output);
 }
 
+// TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl", false,
+// true); }
+
 TEST(CodegenTest, gcrootslet) { TestCodegen("gc-roots-let.cl", false, true); }
 TEST(CodegenTest, gcrootssupertype) {
   TestCodegen("gc-roots-supertype.cl", false, true);

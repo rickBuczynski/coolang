@@ -71,6 +71,9 @@ class ObjectCodegen {
         AstToCodeMap::obj_typesize_index);
     llvm::Value* typesize = builder_->CreateLoad(typesize_ptr);
 
+    // TODO Add a GC verbose test for (new A).copy() should fail because
+    // there is no root for (new A). Fix by adding a root in this hardcoded
+    // method like we do in the general case of codegening a user method.
     llvm::Value* copy =
         builder_->CreateCall(c_std_->GetGcMallocFunc(), {typesize});
 
@@ -106,6 +109,10 @@ class ObjectCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
+    // TODO need to change all uses of CreateGlobalStringPtr to gc malloc a new
+    // string
+    // TODO add a test that assigns a gc root to a type name like this, it
+    // should cause issues when it tries to GC since there's no GC info
     builder_->CreateRet(builder_->CreateGlobalStringPtr("Bool"));
   }
 

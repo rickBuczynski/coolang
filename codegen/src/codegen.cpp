@@ -837,6 +837,14 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
   GenGcPtrsInfoConstruction(class_ast, ty, ctee);
 
+  // need to set a GC root to an obj during initialization of attributes because
+  // an allocation in an init expr or allocing a default empty string could
+  // cause the obj to be destroyed
+  llvm::AllocaInst* self_alloca =
+      builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
+  builder_.CreateStore(constructor->arg_begin(), self_alloca);
+  llvm::Value* root = AddGcRoot(self_alloca);
+
   // store default values to use during init or used after construction if no
   // init expr for an attr
   auto supers_then_this = class_ast.SupersThenThis();
@@ -852,13 +860,6 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
       MethodFeature(LineRange(0, 0), "constructor", {}, "", {});
   ast_to_.SetLlvmFunction(&dummy_constructor_method, constructor);
   ast_to_.SetCurrentMethod(&dummy_constructor_method);
-
-  // need to set a GC root to an obj during initialization of attributes because
-  // an allocation in an init expr could cause the obj to be destroyed
-  llvm::AllocaInst* self_alloca =
-      builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
-  builder_.CreateStore(constructor->arg_begin(), self_alloca);
-  llvm::Value* root = AddGcRoot(self_alloca);
 
   // then store value from init expr
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {

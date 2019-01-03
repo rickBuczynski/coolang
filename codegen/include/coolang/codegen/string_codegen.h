@@ -36,6 +36,10 @@ class StringCodegen {
     arg_iter++;
     llvm::Value* rhs_arg = arg_iter;
 
+    // Need GC roots to preserve params since this func allocates
+    llvm::AllocaInst* lhs_root = AddRootForStrParam(lhs_arg);
+    llvm::AllocaInst* rhs_root = AddRootForStrParam(rhs_arg);
+
     llvm::Value* lhs_len =
         builder_->CreateCall(c_std_->GetStrlenFunc(), {lhs_arg});
     llvm::Value* rhs_len =
@@ -49,6 +53,9 @@ class StringCodegen {
         builder_->CreateCall(c_std_->GetGcMallocStringFunc(), {concated_len});
     builder_->CreateCall(c_std_->GetStrcpyFunc(), {concated_val, lhs_arg});
     builder_->CreateCall(c_std_->GetStrcatFunc(), {concated_val, rhs_arg});
+
+    builder_->CreateCall(c_std_->GetGcRemoveStringRootFunc(), {rhs_root});
+    builder_->CreateCall(c_std_->GetGcRemoveStringRootFunc(), {lhs_root});
 
     builder_->CreateRet(concated_val);
   }
@@ -68,6 +75,9 @@ class StringCodegen {
     arg_iter++;
     llvm::Value* substr_len = arg_iter;
 
+    // Need a GC root to preserve self param since this func allocates
+    llvm::AllocaInst* root = AddRootForStrParam(str_lhs);
+
     llvm::Value* const_one =
         llvm::ConstantInt::get(*context_, llvm::APInt(32, 1, true));
     llvm::Value* malloc_len = builder_->CreateAdd(substr_len, const_one);
@@ -84,6 +94,8 @@ class StringCodegen {
         llvm::ConstantInt::get(*context_, llvm::APInt(8, 0, true)),
         substr_last_ptr);
 
+    builder_->CreateCall(c_std_->GetGcRemoveStringRootFunc(), {root});
+
     builder_->CreateRet(substr_val);
   }
 
@@ -98,6 +110,15 @@ class StringCodegen {
     llvm::Value* len_val = builder_->CreateCall(
         c_std_->GetStrlenFunc(), {string_length_func->arg_begin()});
     builder_->CreateRet(len_val);
+  }
+
+  // TODO this code is duplicated from GenMethodBodies
+  llvm::AllocaInst* AddRootForStrParam(llvm::Value* str_param) const {
+    llvm::AllocaInst* str_alloca =
+        builder_->CreateAlloca(ast_to_code_map_->LlvmBasicType("String"));
+    builder_->CreateStore(str_param, str_alloca);
+    builder_->CreateCall(c_std_->GetGcAddStringRootFunc(), {str_alloca});
+    return str_alloca;
   }
 
   llvm::LLVMContext* context_;

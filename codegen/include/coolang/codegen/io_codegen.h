@@ -63,6 +63,9 @@ class IoCodegen {
 
     // TODO this won't work for lines longer than 1024 chars
     // TODO this is wastefull for lines less than 1024 chars
+    // TODO Add a GC verbose test for (new IO).in_string() should fail because
+    // there is no root for (new IO). Fix by adding a root in this hardcoded
+    // method like we do in the general case of codegening a user method.
     llvm::Value* in_str =
         builder_->CreateCall(c_std_->GetGcMallocStringFunc(),
                              {ast_to_code_map_->LlvmConstInt32(1024)});

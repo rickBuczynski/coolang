@@ -295,7 +295,7 @@ extern "C" void gc_copy_obj(GcObj* copy_dst, GcObj* copy_src, int size) {
 }
 
 extern "C" void* gc_malloc_string(int size) {
-  // TODO Collect when allocating string
+  Collect();
 
   if (gc_is_verbose) {
     printf("Allocated a string\n");
