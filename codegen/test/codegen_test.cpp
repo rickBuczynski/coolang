@@ -108,6 +108,9 @@ void TestCodegen(const std::string& input_file,
 // TEST(CodegenTest, stringmethods) { TestCodegen("string-methods.cl", false,
 // true); }
 
+  TEST(CodegenTest, shadowattrcase) { TestCodegen("shadow-attr-case.cl", false, true); }
+/*
+
 TEST(CodegenTest, gcrootslet) { TestCodegen("gc-roots-let.cl", false, true); }
 TEST(CodegenTest, gcrootssupertype) {
   TestCodegen("gc-roots-supertype.cl", false, true);
@@ -230,5 +233,5 @@ TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
 TEST(CodegenTest, typenameobject) { TestCodegen("typename-object-io.cl"); }
 TEST(CodegenTest, whileloop) { TestCodegen("whileloop.cl"); }
 TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
-
+*/
 }  // namespace

@@ -96,10 +96,29 @@ class ObjectCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    llvm::Value* typename_ptr = builder_->CreateStructGEP(
+    llvm::Value* typename_gep = builder_->CreateStructGEP(
         ast_to_code_map_->LlvmClass("Object"), func->arg_begin(),
         AstToCodeMap::obj_typename_index);
-    builder_->CreateRet(builder_->CreateLoad(typename_ptr));
+    llvm::Value* typename_val = builder_->CreateLoad(typename_gep);
+
+    llvm::Value* malloc_len =
+        builder_->CreateCall(c_std_->GetStrlenFunc(), {typename_val});
+    llvm::Value* malloc_val =
+        builder_->CreateCall(c_std_->GetGcMallocStringFunc(), {malloc_len});
+
+    builder_->CreateCall(c_std_->GetStrcpyFunc(), {malloc_val, typename_val});
+    // TODO add a test for GC with string from object type_name
+    builder_->CreateRet(malloc_val);
+  }
+
+  // TODO this code duplicated from codegen.cpp
+  llvm::Value* MallocStrConst(std::string str) const {
+    llvm::Value* malloc_val = builder_->CreateCall(
+        c_std_->GetGcMallocStringFunc(),
+        {ast_to_code_map_->LlvmConstInt32(str.length() + 1)});
+    llvm::Value* str_global = builder_->CreateGlobalStringPtr(str);
+    builder_->CreateCall(c_std_->GetStrcpyFunc(), {malloc_val, str_global});
+    return malloc_val;
   }
 
   void GenBoolTypeName() const {
@@ -108,12 +127,8 @@ class ObjectCodegen {
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
-
-    // TODO need to change all uses of CreateGlobalStringPtr to gc malloc a new
-    // string
-    // TODO add a test that assigns a gc root to a type name like this, it
-    // should cause issues when it tries to GC since there's no GC info
-    builder_->CreateRet(builder_->CreateGlobalStringPtr("Bool"));
+    // TODO add a test for GC with string from bool type_name
+    builder_->CreateRet(MallocStrConst("Bool"));
   }
 
   void GenStringTypeName() const {
@@ -123,7 +138,7 @@ class ObjectCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    builder_->CreateRet(builder_->CreateGlobalStringPtr("String"));
+    builder_->CreateRet(MallocStrConst("String"));
   }
 
   void GenIntTypeName() const {
@@ -133,7 +148,7 @@ class ObjectCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    builder_->CreateRet(builder_->CreateGlobalStringPtr("Int"));
+    builder_->CreateRet(MallocStrConst("Int"));
   }
 
   void GenBoolCopy() const {
