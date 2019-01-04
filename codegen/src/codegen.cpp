@@ -1115,6 +1115,8 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
   return new_val;
 }
 
+// TODO BoxedBasic needs to keep strings alive for GC
+// This is causing tests to fail (e.g. shadow-attr-case)
 llvm::Value* CodegenVisitor::CreateBoxedBasic(const std::string& type_name,
                                               llvm::Value* basic_val) {
   llvm::Value* boxed_val = GenAllocAndConstruct("Object");
