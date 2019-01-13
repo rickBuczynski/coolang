@@ -848,11 +848,32 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   // store default values to use during init or used after construction if no
   // init expr for an attr
   auto supers_then_this = class_ast.SupersThenThis();
-  for (size_t i = 0; i < supers_then_this.size(); i++) {
-    const ClassAst* cur_class = supers_then_this[i];
+  for (const ClassAst* cur_class : supers_then_this) {
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
-      StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
-                         StructAttrIndex(cur_class, attr));
+      // for strings the default value is an empty string which allocates and
+      // triggers GC. So we store a null to prevent us from trying to mark
+      // garbage data in a string slot during GC
+      if (attr->GetType() == "String") {
+        StructStoreAtIndex(
+            ty, ctee, llvm::ConstantPointerNull::get(builder_.getInt8PtrTy()),
+            StructAttrIndex(cur_class, attr));
+      } else {
+        StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
+                           StructAttrIndex(cur_class, attr));
+      }
+    }
+  }
+
+  // for strings the default value is an empty string which allocates. Need to
+  // set string default values once all attributes have been set to null so we
+  // don't try to mark garbage data in an attribute during GC triggered by
+  // allocing the empty string.
+  for (const ClassAst* cur_class : supers_then_this) {
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
+      if (attr->GetType() == "String") {
+        StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
+                           StructAttrIndex(cur_class, attr));
+      }
     }
   }
 
