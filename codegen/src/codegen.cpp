@@ -215,8 +215,30 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
                   "Match on void in case statement.");
   }
 
+  llvm::AllocaInst* case_val_alloca = builder_.CreateAlloca(
+      ast_to_.LlvmBasicOrClassPtrTy(case_expr.GetCaseExpr()->GetExprType()));
+  builder_.CreateStore(case_val, case_val_alloca);
+  llvm::Value* case_val_root = nullptr;
+  if (!IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+    case_val_root = AddGcRoot(case_val_alloca);
+  } else if (case_expr.GetCaseExpr()->GetExprType() == "String") {
+    case_val_root = case_val_alloca;
+    builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {case_val_alloca});
+  }
+
   llvm::Value* case_val_as_obj =
       ConvertType(case_val, case_expr.GetCaseExpr()->GetExprType(), "Object");
+
+  // if we have a basic type then case_val_as_obj is boxed and is a separate
+  // allocation so it needs its own root
+  llvm::Value* boxed_basic_root = nullptr;
+  if (IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+    llvm::AllocaInst* case_val_as_obj_alloca =
+        builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy("Object"));
+    builder_.CreateStore(case_val_as_obj, case_val_as_obj_alloca);
+    boxed_basic_root = AddGcRoot(case_val_as_obj_alloca);
+  }
+
   llvm::Value* case_val_type = builder_.CreateCall(
       ast_to_.LlvmFunc("Object", "type_name"), {case_val_as_obj});
 
@@ -294,6 +316,15 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
                          case_expr.GetBranches().size());
   for (const auto& phi_val_and_bb : branch_vals_and_bbs) {
     pn->addIncoming(phi_val_and_bb.first, phi_val_and_bb.second);
+  }
+
+  if (!IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {case_val_root});
+  } else if (case_expr.GetCaseExpr()->GetExprType() == "String") {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {boxed_basic_root});
+    builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {case_val_root});
+  } else {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {boxed_basic_root});
   }
 
   case_expr.SetLlvmValue(pn);
@@ -834,6 +865,10 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
 
   StructStoreAtIndex(ty, ctee, ast_to_.GetCopyConstructor(&class_ast),
                      AstToCodeMap::obj_copy_constructor_index);
+
+  StructStoreAtIndex(ty, ctee,
+                     llvm::ConstantPointerNull::get(builder_.getInt8PtrTy()),
+                     AstToCodeMap::obj_boxed_data_index);
 
   GenGcPtrsInfoConstruction(class_ast, ty, ctee);
 
