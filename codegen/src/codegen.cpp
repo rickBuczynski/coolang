@@ -242,6 +242,11 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
   llvm::Value* case_val_type = builder_.CreateCall(
       ast_to_.LlvmFunc("Object", "type_name"), {case_val_as_obj});
 
+  llvm::AllocaInst* typename_root =
+      builder_.CreateAlloca(ast_to_.LlvmBasicType("String"));
+  builder_.CreateStore(case_val_type, typename_root);
+  builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {typename_root});
+
   llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-case");
 
   std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> branch_vals_and_bbs;
@@ -318,6 +323,7 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
     pn->addIncoming(phi_val_and_bb.first, phi_val_and_bb.second);
   }
 
+  builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {typename_root});
   if (!IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
     builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {case_val_root});
   } else if (case_expr.GetCaseExpr()->GetExprType() == "String") {

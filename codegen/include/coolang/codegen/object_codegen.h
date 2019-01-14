@@ -101,8 +101,9 @@ class ObjectCodegen {
         AstToCodeMap::obj_typename_index);
     llvm::Value* typename_val = builder_->CreateLoad(typename_gep);
 
-    llvm::Value* malloc_len =
-        builder_->CreateCall(c_std_->GetStrlenFunc(), {typename_val});
+    llvm::Value* malloc_len = builder_->CreateAdd(
+        builder_->CreateCall(c_std_->GetStrlenFunc(), {typename_val}),
+        ast_to_code_map_->LlvmConstInt32(1));
     llvm::Value* malloc_val =
         builder_->CreateCall(c_std_->GetGcMallocStringFunc(), {malloc_len});
 
