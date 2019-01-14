@@ -32,9 +32,7 @@ void RunProgram(const std::filesystem::path& in_path,
   std::filesystem::path output_file_path = out_path;
   output_file_path.replace_extension(".out");
 
-  // std::string command = exe_path.string() + " > " +
-  // output_file_path.string();
-  std::string command = exe_path.string() + " > " + in_path.string() + ".out";
+  std::string command = exe_path.string() + " > " + output_file_path.string();
   if (use_stdin_redirection) {
     command += " < ";
     command += in_path.string();
@@ -107,25 +105,21 @@ void TestCodegen(const std::string& input_file,
   EXPECT_EQ(expected_output, program_output);
 }
 
+TEST(CodegenTest, gcrootslet) { TestCodegen("gc-roots-let.cl", false, true); }
 TEST(CodegenTest, gcrootssupertype) {
   TestCodegen("gc-roots-supertype.cl", false, true);
 }
-
-/*
- *
-
-
+TEST(CodegenTest, gcrootseqcmp) {
+  TestCodegen("gc-roots-eqcmp.cl", false, true);
+}
 TEST(CodegenTest, gcrootsargs) { TestCodegen("gc-roots-args.cl", false, true); }
 TEST(CodegenTest, gcrootsreassign) {
-TestCodegen("gc-roots-reassign.cl", false, true);
+  TestCodegen("gc-roots-reassign.cl", false, true);
 }
 TEST(CodegenTest, gcrootsletstr) {
-TestCodegen("gc-roots-let-str.cl", false, true);
+  TestCodegen("gc-roots-let-str.cl", false, true);
 }
 TEST(CodegenTest, gccopies) { TestCodegen("gc-copies.cl", false, true); }
-
-
-
 
 TEST(CodegenTest, abort) { TestCodegen("abort.cl"); }
 TEST(CodegenTest, abort2) { TestCodegen("abort-2.cl"); }
@@ -150,19 +144,19 @@ TEST(CodegenTest, copyobject) { TestCodegen("copy-object.cl"); }
 TEST(CodegenTest, copyselfdispatch) { TestCodegen("copy-self-dispatch.cl"); }
 TEST(CodegenTest, copyselfinit) { TestCodegen("copy-self-init.cl"); }
 TEST(CodegenTest, dispatchoverridedynamic) {
-TestCodegen("dispatch-override-dynamic.cl");
+  TestCodegen("dispatch-override-dynamic.cl");
 }
 TEST(CodegenTest, dispatchoverridedynamiccomplex) {
-TestCodegen("dispatch-override-dynamic-complex.cl");
+  TestCodegen("dispatch-override-dynamic-complex.cl");
 }
 TEST(CodegenTest, dispatchoverridestatic) {
-TestCodegen("dispatch-override-static.cl");
+  TestCodegen("dispatch-override-static.cl");
 }
 TEST(CodegenTest, dispatchvoiddynamic) {
-TestCodegen("dispatch-void-dynamic.cl");
+  TestCodegen("dispatch-void-dynamic.cl");
 }
 TEST(CodegenTest, dispatchvoidstatic) {
-TestCodegen("dispatch-void-static.cl");
+  TestCodegen("dispatch-void-static.cl");
 }
 TEST(CodegenTest, dispatchvoidlet) { TestCodegen("dispatchvoidlet.cl"); }
 TEST(CodegenTest, evalorderargs) { TestCodegen("eval-order-args.cl"); }
@@ -179,10 +173,10 @@ TEST(CodegenTest, initordersuper) { TestCodegen("init-order-super.cl"); }
 TEST(CodegenTest, instring) { TestCodegen("in-string.cl", true); }
 TEST(CodegenTest, instringeof) { TestCodegen("in-string-eof.cl", true); }
 TEST(CodegenTest, intcopytypenameabort) {
-TestCodegen("int-copy-typename-abort.cl");
+  TestCodegen("int-copy-typename-abort.cl");
 }
 TEST(CodegenTest, interactionattrinitmethod) {
-TestCodegen("interaction-attrinit-method.cl");
+  TestCodegen("interaction-attrinit-method.cl");
 }
 TEST(CodegenTest, lamgc) { TestCodegen("lam-gc.cl"); }
 TEST(CodegenTest, lam) { TestCodegen("lam.cl"); }
@@ -191,15 +185,15 @@ TEST(CodegenTest, letnested) { TestCodegen("let-nested.cl"); }
 TEST(CodegenTest, letuseprev) { TestCodegen("let-use-prev.cl"); }
 TEST(CodegenTest, letinit) { TestCodegen("letinit.cl"); }
 TEST(CodegenTest, many_objects_on_heap) {
-TestCodegen("many_objects_on_heap.cl");
+  TestCodegen("many_objects_on_heap.cl");
 }
 TEST(CodegenTest, modparam) { TestCodegen("mod-param.cl"); }
 TEST(CodegenTest, modparamnointobjcast) {
-TestCodegen("mod-param-no-int-obj-cast.cl");
+  TestCodegen("mod-param-no-int-obj-cast.cl");
 }
 TEST(CodegenTest, multipledispatch) { TestCodegen("multiple-dispatch.cl"); }
 TEST(CodegenTest, multiplestaticdispatch) {
-TestCodegen("multiple-static-dispatch.cl");
+  TestCodegen("multiple-static-dispatch.cl");
 }
 // TODO nestedarith test crashes the parser with a stack overflow
 // TEST(CodegenTest, nestedarith) { TestCodegen("nested-arith.cl"); }
@@ -233,5 +227,5 @@ TEST(CodegenTest, typenamecl) { TestCodegen("typename.cl"); }
 TEST(CodegenTest, typenameobject) { TestCodegen("typename-object-io.cl"); }
 TEST(CodegenTest, whileloop) { TestCodegen("whileloop.cl"); }
 TEST(CodegenTest, whileval) { TestCodegen("while-val.cl"); }
-*/
+
 }  // namespace
