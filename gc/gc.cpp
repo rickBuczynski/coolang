@@ -70,6 +70,10 @@ void MarkObj(GcObj* obj) {
 
   obj->is_reachable = true;
 
+  if (obj->boxed_data != nullptr && strcmp(obj->obj_typename, "String") == 0) {
+    MarkObj(ObjFromString(obj->boxed_data));
+  }
+
   GcPtrsInfo* gc_ptrs_info = &obj->gc_ptrs_info;
 
   while (gc_ptrs_info != nullptr) {
@@ -295,7 +299,7 @@ extern "C" void gc_copy_obj(GcObj* copy_dst, GcObj* copy_src, int size) {
 }
 
 extern "C" void* gc_malloc_string(int size) {
-  // TODO Collect when allocating string
+  Collect();
 
   if (gc_is_verbose) {
     printf("Allocated a string\n");
@@ -309,6 +313,7 @@ extern "C" void* gc_malloc_string(int size) {
   obj->prev_obj = nullptr;
   obj->is_reachable = false;
   obj->obj_typename = "String";
+  obj->boxed_data = nullptr;
   obj->gc_ptrs_info.gc_ptr_count = 0;
   obj->gc_ptrs_info.gc_ptrs = nullptr;
   obj->gc_ptrs_info.gc_str_count = 0;

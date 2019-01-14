@@ -1,16 +1,10 @@
 Allocated an object of type: Main
 Allocated an object of type: B
 Allocated an object of type: C
-Allocated a string
-C and B should live
-Freeing an object of type: String
-Allocated an object of type: E
-Allocated a string
-C and B should die now
-Freeing an object of type: String
-Freeing an object of type: E
+Allocated an object of type: CandBShouldLive
+Freeing an object of type: CandBShouldLive
 Freeing an object of type: C
 Freeing an object of type: B
-Allocated an object of type: E
-Freeing an object of type: E
+Allocated an object of type: CandBShouldDieNow
+Freeing an object of type: CandBShouldDieNow
 Freeing an object of type: Main

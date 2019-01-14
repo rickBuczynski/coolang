@@ -29,7 +29,11 @@ class D {
  foo:Int;
 };
 
-class E {
+class DshouldDieNow {
+ foo:Int;
+};
+
+class ABCshouldDieNow {
  foo:Int;
 };
 
@@ -48,14 +52,10 @@ class Main inherits IO {
 		d:D <- new D,
 		  in {
 			c.setA(a);
-			out_int(i);
-			out_string("\n");
 			a.setC1(c);
 		  };
-	  out_string("D should die now\n");
-	  new E;
+	  new DshouldDieNow;
     };
-	out_string("A, B, C, E should die now\n");
-	new E;
+	new ABCshouldDieNow;
   } };
 };

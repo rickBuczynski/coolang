@@ -6,7 +6,11 @@ class B inherits A {
  bar:Int;
 };
 
-class Killer {
+class AshouldDieNow {
+ foo:Int;
+};
+
+class BshouldDieNow {
  foo:Int;
 };
 
@@ -16,10 +20,8 @@ class Main inherits IO {
       a:A <- new A,
     in {
       a <- new B;
-	  out_string("A should die now\n");
-	  new Killer;
+	  new AshouldDieNow;
     };
-	out_string("B should die now\n");
-	new Killer;
+	new BshouldDieNow;
   } };
 };

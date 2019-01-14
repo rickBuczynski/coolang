@@ -1,16 +1,10 @@
 Allocated an object of type: Main
 Allocated an object of type: A
 Allocated an object of type: B
-Allocated a string
-A should die now
-Freeing an object of type: String
 Freeing an object of type: A
-Allocated an object of type: Killer
-Allocated a string
-B should die now
-Freeing an object of type: String
-Freeing an object of type: Killer
+Allocated an object of type: AshouldDieNow
+Freeing an object of type: AshouldDieNow
 Freeing an object of type: B
-Allocated an object of type: Killer
-Freeing an object of type: Killer
+Allocated an object of type: BshouldDieNow
+Freeing an object of type: BshouldDieNow
 Freeing an object of type: Main

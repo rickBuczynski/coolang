@@ -215,10 +215,37 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
                   "Match on void in case statement.");
   }
 
+  llvm::AllocaInst* case_val_alloca = builder_.CreateAlloca(
+      ast_to_.LlvmBasicOrClassPtrTy(case_expr.GetCaseExpr()->GetExprType()));
+  builder_.CreateStore(case_val, case_val_alloca);
+  llvm::Value* case_val_root = nullptr;
+  if (!IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+    case_val_root = AddGcRoot(case_val_alloca);
+  } else if (case_expr.GetCaseExpr()->GetExprType() == "String") {
+    case_val_root = case_val_alloca;
+    builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {case_val_alloca});
+  }
+
   llvm::Value* case_val_as_obj =
       ConvertType(case_val, case_expr.GetCaseExpr()->GetExprType(), "Object");
+
+  // if we have a basic type then case_val_as_obj is boxed and is a separate
+  // allocation so it needs its own root
+  llvm::Value* boxed_basic_root = nullptr;
+  if (IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+    llvm::AllocaInst* case_val_as_obj_alloca =
+        builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy("Object"));
+    builder_.CreateStore(case_val_as_obj, case_val_as_obj_alloca);
+    boxed_basic_root = AddGcRoot(case_val_as_obj_alloca);
+  }
+
   llvm::Value* case_val_type = builder_.CreateCall(
       ast_to_.LlvmFunc("Object", "type_name"), {case_val_as_obj});
+
+  llvm::AllocaInst* typename_root =
+      builder_.CreateAlloca(ast_to_.LlvmBasicType("String"));
+  builder_.CreateStore(case_val_type, typename_root);
+  builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {typename_root});
 
   llvm::BasicBlock* done_bb = llvm::BasicBlock::Create(context_, "done-case");
 
@@ -294,6 +321,16 @@ void CodegenVisitor::Visit(const CaseExpr& case_expr) {
                          case_expr.GetBranches().size());
   for (const auto& phi_val_and_bb : branch_vals_and_bbs) {
     pn->addIncoming(phi_val_and_bb.first, phi_val_and_bb.second);
+  }
+
+  builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {typename_root});
+  if (!IsBasicType(case_expr.GetCaseExpr()->GetExprType())) {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {case_val_root});
+  } else if (case_expr.GetCaseExpr()->GetExprType() == "String") {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {boxed_basic_root});
+    builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {case_val_root});
+  } else {
+    builder_.CreateCall(c_std_.GetGcRemoveRootFunc(), {boxed_basic_root});
   }
 
   case_expr.SetLlvmValue(pn);
@@ -835,16 +872,49 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
   StructStoreAtIndex(ty, ctee, ast_to_.GetCopyConstructor(&class_ast),
                      AstToCodeMap::obj_copy_constructor_index);
 
+  StructStoreAtIndex(ty, ctee,
+                     llvm::ConstantPointerNull::get(builder_.getInt8PtrTy()),
+                     AstToCodeMap::obj_boxed_data_index);
+
   GenGcPtrsInfoConstruction(class_ast, ty, ctee);
+
+  // need to set a GC root to an obj during initialization of attributes because
+  // an allocation in an init expr or allocing a default empty string could
+  // cause the obj to be destroyed
+  llvm::AllocaInst* self_alloca =
+      builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
+  builder_.CreateStore(constructor->arg_begin(), self_alloca);
+  llvm::Value* root = AddGcRoot(self_alloca);
 
   // store default values to use during init or used after construction if no
   // init expr for an attr
   auto supers_then_this = class_ast.SupersThenThis();
-  for (size_t i = 0; i < supers_then_this.size(); i++) {
-    const ClassAst* cur_class = supers_then_this[i];
+  for (const ClassAst* cur_class : supers_then_this) {
     for (const auto* attr : cur_class->GetAttributeFeatures()) {
-      StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
-                         StructAttrIndex(cur_class, attr));
+      // for strings the default value is an empty string which allocates and
+      // triggers GC. So we store a null to prevent us from trying to mark
+      // garbage data in a string slot during GC
+      if (attr->GetType() == "String") {
+        StructStoreAtIndex(
+            ty, ctee, llvm::ConstantPointerNull::get(builder_.getInt8PtrTy()),
+            StructAttrIndex(cur_class, attr));
+      } else {
+        StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
+                           StructAttrIndex(cur_class, attr));
+      }
+    }
+  }
+
+  // for strings the default value is an empty string which allocates. Need to
+  // set string default values once all attributes have been set to null so we
+  // don't try to mark garbage data in an attribute during GC triggered by
+  // allocing the empty string.
+  for (const ClassAst* cur_class : supers_then_this) {
+    for (const auto* attr : cur_class->GetAttributeFeatures()) {
+      if (attr->GetType() == "String") {
+        StructStoreAtIndex(ty, ctee, LlvmDefaultVal(attr->GetType()),
+                           StructAttrIndex(cur_class, attr));
+      }
     }
   }
 
@@ -852,13 +922,6 @@ void CodegenVisitor::GenConstructor(const ClassAst& class_ast) {
       MethodFeature(LineRange(0, 0), "constructor", {}, "", {});
   ast_to_.SetLlvmFunction(&dummy_constructor_method, constructor);
   ast_to_.SetCurrentMethod(&dummy_constructor_method);
-
-  // need to set a GC root to an obj during initialization of attributes because
-  // an allocation in an init expr could cause the obj to be destroyed
-  llvm::AllocaInst* self_alloca =
-      builder_.CreateAlloca(ast_to_.LlvmBasicOrClassPtrTy(class_ast.GetName()));
-  builder_.CreateStore(constructor->arg_begin(), self_alloca);
-  llvm::Value* root = AddGcRoot(self_alloca);
 
   // then store value from init expr
   for (const ClassAst* cur_class : class_ast.SupersThenThis()) {
@@ -1114,6 +1177,8 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
   return new_val;
 }
 
+// TODO BoxedBasic needs to keep strings alive for GC
+// This is causing tests to fail (e.g. shadow-attr-case)
 llvm::Value* CodegenVisitor::CreateBoxedBasic(const std::string& type_name,
                                               llvm::Value* basic_val) {
   llvm::Value* boxed_val = GenAllocAndConstruct("Object");
