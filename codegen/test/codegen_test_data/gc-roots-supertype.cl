@@ -31,7 +31,11 @@ class D {
  foo:Int;
 };
 
-class E {
+class CandBShouldLive {
+ foo:Int;
+};
+
+class CandBShouldDieNow {
  foo:Int;
 };
 
@@ -46,10 +50,8 @@ class Main inherits IO {
 			c.setA(b);
 			b.setC1(c);
 		  };
-	  out_string("C and B should live\n");
-	  new E;
+	  new CandBShouldLive;
     };
-	out_string("C and B should die now\n");
-	new E;
+	new CandBShouldDieNow;
   } };
 };
