@@ -105,7 +105,7 @@ void TestCodegen(const std::string& input_file,
   EXPECT_EQ(expected_output, program_output);
 }
 
-// TEST(CodegenTest, gcnewcopy) { TestCodegen("gc-new-copy.cl", false, true); }
+TEST(CodegenTest, gcnewcopy) { TestCodegen("gc-new-copy.cl", false, true); }
 
 TEST(CodegenTest, gcrootslet) { TestCodegen("gc-roots-let.cl", false, true); }
 TEST(CodegenTest, gcrootssupertype) {

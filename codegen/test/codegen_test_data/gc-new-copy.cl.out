@@ -1,0 +1,6 @@
+Allocated an object of type: Main
+Allocated an object of type: A
+Allocated an object of type: A
+Freeing an object of type: A
+Freeing an object of type: A
+Freeing an object of type: Main

@@ -74,9 +74,11 @@ class ObjectCodegen {
         ast_to_code_map_->LlvmClass("Object"), func->arg_begin(),
         AstToCodeMap::obj_typename_index));
 
-    // TODO Add a GC verbose test for (new A).copy() should fail because
-    // there is no root for (new A). Fix by adding a root in this hardcoded
-    // method like we do in the general case of codegening a user method.
+    llvm::Value* root = builder_->CreateAlloca(
+        ast_to_code_map_->LlvmBasicOrClassPtrTy("Object"));
+    builder_->CreateStore(func->arg_begin(), root);
+    builder_->CreateCall(c_std_->GetGcAddRootFunc(), {root});
+
     llvm::Value* copy = builder_->CreateCall(c_std_->GetGcMallocFunc(),
                                              {typesize, obj_typename});
 
@@ -86,8 +88,9 @@ class ObjectCodegen {
     llvm::Value* copy_constructor_func = builder_->CreateLoad(
         builder_->CreateStructGEP(nullptr, func->arg_begin(),
                                   AstToCodeMap::obj_copy_constructor_index));
-
     builder_->CreateCall(copy_constructor_func, {copy_dst, func->arg_begin()});
+
+    builder_->CreateCall(c_std_->GetGcRemoveRootFunc(), {root});
 
     builder_->CreateRet(copy);
   }
