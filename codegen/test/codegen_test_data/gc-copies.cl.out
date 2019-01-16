@@ -1,6 +1,7 @@
 Allocated an object of type: Main
 Allocated an object of type: Foo
 Allocated an object of type: A
+Allocated an object of type: Foo
 Allocated an object of type: B
 Allocated an object of type: DontKillB
 Freeing an object of type: DontKillB

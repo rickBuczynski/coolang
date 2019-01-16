@@ -66,16 +66,19 @@ class ObjectCodegen {
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
 
-    llvm::Value* typesize_ptr = builder_->CreateStructGEP(
+    llvm::Value* typesize = builder_->CreateLoad(builder_->CreateStructGEP(
         ast_to_code_map_->LlvmClass("Object"), func->arg_begin(),
-        AstToCodeMap::obj_typesize_index);
-    llvm::Value* typesize = builder_->CreateLoad(typesize_ptr);
+        AstToCodeMap::obj_typesize_index));
+
+    llvm::Value* obj_typename = builder_->CreateLoad(builder_->CreateStructGEP(
+        ast_to_code_map_->LlvmClass("Object"), func->arg_begin(),
+        AstToCodeMap::obj_typename_index));
 
     // TODO Add a GC verbose test for (new A).copy() should fail because
     // there is no root for (new A). Fix by adding a root in this hardcoded
     // method like we do in the general case of codegening a user method.
-    llvm::Value* copy =
-        builder_->CreateCall(c_std_->GetGcMallocFunc(), {typesize});
+    llvm::Value* copy = builder_->CreateCall(c_std_->GetGcMallocFunc(),
+                                             {typesize, obj_typename});
 
     llvm::Value* copy_dst = builder_->CreateBitCast(
         copy, ast_to_code_map_->LlvmClass("Object")->getPointerTo());

@@ -89,7 +89,7 @@ class CStd {
   llvm::Constant* exit_func_ = CreateCStdFuncDecl("exit", "Void", {"Int"});
 
   llvm::Constant* gc_malloc_func_ =
-      CreateCStdFuncDecl("gc_malloc", "String", {"Int"});
+      CreateCStdFuncDecl("gc_malloc", "String", {"Int", "String"});
 
   llvm::Constant* gc_copy_obj_func_ =
       CreateCStdFuncDecl("gc_copy_obj", ast_to_code_map_->LlvmVoidType(),

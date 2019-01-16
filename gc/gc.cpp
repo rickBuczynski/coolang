@@ -272,11 +272,15 @@ extern "C" void gc_system_destroy() {
   }
 }
 
-extern "C" void* gc_malloc(int size) {
+extern "C" void* gc_malloc(int size, char* obj_typename) {
   Collect();
 
   auto* obj = static_cast<GcObj*>(malloc(size));
   gc_alloc_count++;
+
+  if (gc_is_verbose) {
+    printf("Allocated an object of type: %s\n", obj_typename);
+  }
 
   obj->next_obj = nullptr;
   obj->prev_obj = nullptr;
