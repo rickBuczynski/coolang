@@ -114,11 +114,9 @@ class ObjectCodegen {
         builder_->CreateCall(c_std_->GetGcMallocStringFunc(), {malloc_len});
 
     builder_->CreateCall(c_std_->GetStrcpyFunc(), {malloc_val, typename_val});
-    // TODO add a test for GC with string from object type_name
     builder_->CreateRet(malloc_val);
   }
 
-  // TODO this code duplicated from codegen.cpp
   llvm::Value* MallocStrConst(std::string str) const {
     llvm::Value* malloc_val = builder_->CreateCall(
         c_std_->GetGcMallocStringFunc(),
@@ -134,7 +132,6 @@ class ObjectCodegen {
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
-    // TODO add a test for GC with string from bool type_name
     builder_->CreateRet(MallocStrConst("Bool"));
   }
 
@@ -174,9 +171,6 @@ class ObjectCodegen {
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
-
-    // TODO either need to make an actual copy of somehow mark that this points
-    // to same string for when I do GC
     builder_->CreateRet(func->arg_begin());
   }
 

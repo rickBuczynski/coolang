@@ -112,7 +112,6 @@ class StringCodegen {
     builder_->CreateRet(len_val);
   }
 
-  // TODO this code is duplicated from GenMethodBodies
   llvm::AllocaInst* AddRootForStrParam(llvm::Value* str_param) const {
     llvm::AllocaInst* str_alloca =
         builder_->CreateAlloca(ast_to_code_map_->LlvmBasicType("String"));
