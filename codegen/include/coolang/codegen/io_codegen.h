@@ -60,12 +60,11 @@ class IoCodegen {
     llvm::BasicBlock* entry =
         llvm::BasicBlock::Create(*context_, "entrypoint", func);
     builder_->SetInsertPoint(entry);
+    // We don't need to add a GC root even though this function allocates since
+    // we don't access 'self' at all in this function it's okay if it dies
 
     // TODO this won't work for lines longer than 1024 chars
     // TODO this is wastefull for lines less than 1024 chars
-    // TODO Add a GC verbose test for (new IO).in_string() should fail because
-    // there is no root for (new IO). Fix by adding a root in this hardcoded
-    // method like we do in the general case of codegening a user method.
     llvm::Value* in_str =
         builder_->CreateCall(c_std_->GetGcMallocStringFunc(),
                              {ast_to_code_map_->LlvmConstInt32(1024)});
