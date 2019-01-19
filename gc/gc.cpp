@@ -3,14 +3,6 @@
 #include <cstdlib>
 #include <cstring>
 
-/*
-class FILE;
-
-extern "C" int printf(const char*, ...);
-extern "C" int fprintf(FILE *stream, const char *format, ...);
-extern "C" void* malloc(int size);
-*/
-
 bool gc_is_verbose = false;
 
 struct GcObj;
@@ -40,13 +32,6 @@ struct GcObj {
 
   GcPtrsInfo gc_ptrs_info;
 };
-
-void PrintObj(const GcObj* obj) {
-  printf("obj\n");
-  // fprintf(stderr, "  address=%d\n", reinterpret_cast<int>(obj));
-  printf("  is_reachable=%d\n", static_cast<int>(obj->is_reachable));
-  printf("  typename=%s\n", obj->obj_typename);
-}
 
 void SetNext(GcObj* obj, GcObj* next) { obj->next_obj = next; }
 void SetPrev(GcObj* obj, GcObj* prev) { obj->prev_obj = prev; }
@@ -131,23 +116,8 @@ struct GcRootStack {
   }
 
   void PopRoot(GcRoot root) {
-    if (roots[length - 1].Obj() != root.Obj()) {
-      printf("BADBADBADBADBADBADBADBADBAD\n");
-      printf("Root at top of stack points to:\n");
-      PrintObj(roots[length].Obj());
-      printf("Root to remove points to:\n");
-      PrintObj(root.Obj());
-    }
+    assert(roots[length - 1].Obj() == root.Obj());
     length--;
-  }
-
-  void PrintRoots() const {
-    printf("Current GC roots:\n");
-    for (int i = 0; i < length; i++) {
-      printf("Root that points to:\n");
-      PrintObj(roots[i].Obj());
-    }
-    printf("End of current GC roots\n\n");
   }
 
   void MarkReachable() const {
@@ -163,24 +133,6 @@ struct GcRootStack {
 
 class GcList {
  public:
-  void PrintList() const {
-    GcObj* obj = head_;
-    GcObj* prev = nullptr;
-
-    printf("%s start\n", ListName());
-    while (obj != nullptr) {
-      PrintObj(obj);
-
-      if (prev != GetPrev(obj)) {
-        printf("  BADBADBADBADBADBADBADBADBADBADBADBADBADBAD\n");
-      }
-
-      prev = obj;
-      obj = GetNext(obj);
-    }
-    printf("%s end\n\n", ListName());
-  }
-
   void UnmarkList() const {
     GcObj* obj = head_;
     while (obj != nullptr) {
@@ -212,10 +164,7 @@ class GcList {
     GcObj* prev = GetPrev(obj);
     GcObj* next = GetNext(obj);
 
-    if (prev == nullptr && obj != head_) {
-      printf("Tried to remove an obj that's not in list: %s\n", ListName());
-      return;
-    }
+    assert(prev != nullptr || obj == head_);
 
     if (obj == head_) {
       head_ = GetNext(obj);
