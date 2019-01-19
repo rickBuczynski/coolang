@@ -107,6 +107,7 @@ TEST(SemanticTest, missingclass) { TestSemantic("missingclass.test"); }
 TEST(SemanticTest, neg) { TestSemantic("neg.test"); }
 TEST(SemanticTest, negnonint) { TestSemantic("negnonint.test"); }
 TEST(SemanticTest, newselftype) { TestSemantic("newselftype.test"); }
+TEST(SemanticTest, newundefined) { TestSemantic("newundefined.test"); }
 TEST(SemanticTest, nomain) { TestSemantic("nomain.test"); }
 TEST(SemanticTest, notnonbool) { TestSemantic("notnonbool.test"); }
 TEST(SemanticTest, objectdispatchabort) {

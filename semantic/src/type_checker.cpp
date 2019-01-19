@@ -92,8 +92,16 @@ class TypeCheckVisitor : public AstVisitor {
     Visit(static_cast<const BinOpExpr&>(node));
     node.SetExprType("Bool");
   }
-  // TODO NewExpr with undeclared type should give error
-  void Visit(const NewExpr& node) override { node.SetExprType(node.GetType()); }
+  void Visit(const NewExpr& node) override {
+    if (node.GetType() != "SELF_TYPE" &&
+        program_ast_->GetClassByName(node.GetType()) == nullptr) {
+      errors_.emplace_back(node.GetLineRange().end_line_num,
+                           "Type " + node.GetType() + " in 'new " +
+                               node.GetType() + "' is not defined.",
+                           program_ast_->GetFileName());
+    }
+    node.SetExprType(node.GetType());
+  }
   void Visit(const AssignExpr& node) override;
   void Visit(const BoolExpr& node) override { node.SetExprType("Bool"); }
   void Visit(const ClassAst& node) override;

@@ -1,0 +1,2 @@
+newundefined.test:3: Type NotDefinedClass in 'new NotDefinedClass' is not defined.
+Compilation halted due to static semantic errors.

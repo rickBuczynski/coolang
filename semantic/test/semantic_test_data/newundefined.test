@@ -1,0 +1,6 @@
+class Main { 
+  main () : Object { {
+    new NotDefinedClass;
+	new Object;
+  } }; 
+};
