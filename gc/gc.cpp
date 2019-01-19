@@ -33,12 +33,6 @@ struct GcObj {
   GcPtrsInfo gc_ptrs_info;
 };
 
-void SetNext(GcObj* obj, GcObj* next) { obj->next_obj = next; }
-void SetPrev(GcObj* obj, GcObj* prev) { obj->prev_obj = prev; }
-GcObj* GetNext(GcObj* obj) { return obj->next_obj; }
-GcObj* GetPrev(GcObj* obj) { return obj->prev_obj; }
-const char* ListName() { return "gc objs"; }
-
 GcObj* ObjFromString(char* str_data_start) {
   if (str_data_start == nullptr) {
     return nullptr;
@@ -137,14 +131,14 @@ class GcList {
     GcObj* obj = head_;
     while (obj != nullptr) {
       obj->is_reachable = false;
-      obj = GetNext(obj);
+      obj = obj->next_obj;
     }
   }
 
   void Sweep() {
     GcObj* obj = head_;
     while (obj != nullptr) {
-      GcObj* next = GetNext(obj);
+      GcObj* next = obj->next_obj;
 
       if (!obj->is_reachable) {
         if (gc_is_verbose) {
@@ -161,28 +155,28 @@ class GcList {
   }
 
   void Remove(GcObj* obj) {
-    GcObj* prev = GetPrev(obj);
-    GcObj* next = GetNext(obj);
+    GcObj* prev = obj->prev_obj;
+    GcObj* next = obj->next_obj;
 
     assert(prev != nullptr || obj == head_);
 
     if (obj == head_) {
-      head_ = GetNext(obj);
+      head_ = obj->next_obj;
     }
 
     if (prev != nullptr) {
-      SetNext(prev, next);
+      prev->next_obj = next;
     }
 
     if (next != nullptr) {
-      SetPrev(next, prev);
+      next->prev_obj = prev;
     }
   }
 
   void PushFront(GcObj* obj) {
-    SetNext(obj, head_);
+    obj->next_obj = head_;
     if (head_ != nullptr) {
-      SetPrev(head_, obj);
+      head_->prev_obj = obj;
     }
     head_ = obj;
   }
