@@ -1,6 +1,6 @@
 project(gc)
 
-include (${CMAKE_SOURCE_DIR}/3rd_party/cmrc/CMakeRC.cmake)
+include (${CMAKE_SOURCE_DIR}/third_party/cmrc/CMakeRC.cmake)
 
 set(SOURCES
   gc.cpp
