@@ -6,7 +6,7 @@
 #include <iostream>
 #include <optional>
 #include <set>
-#include "coolang/codegen/windows_com.hpp"
+#include "windows_com/windows_com.hpp"
 
 namespace coolang {
 

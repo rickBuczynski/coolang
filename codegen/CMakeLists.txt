@@ -18,7 +18,6 @@ set(HEADERS
   include/coolang/codegen/platform.h
   include/coolang/codegen/linux_platform.h
   include/coolang/codegen/windows_platform.h
-  include/coolang/codegen/windows_com.hpp
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
@@ -35,6 +34,7 @@ ELSE()
 ENDIF()
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/3rd_party/windows_com/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(${PROJECT_NAME}_test test/codegen_test.cpp)
