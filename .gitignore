@@ -1,5 +1,5 @@
 /build
-/codegen/test/codegen_test_data/test_output
+/third_party/gocool/testdata/codegen
 *.TMP
 /gc/gc32.ll
 /gc/gc64.ll
