@@ -1,0 +1,11 @@
+language: cpp
+
+os:
+  - linux
+
+compiler:
+  - clang
+  - gcc
+
+script:
+  - mkdir build && cd build && cmake .. && make -j8 codegen_test && ./codegen/codegen_test
