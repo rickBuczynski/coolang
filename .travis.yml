@@ -1,11 +1,40 @@
 language: cpp
+os: linux
+dist: xenial
 
-os:
-  - linux
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-7']
+      env:
+        - CXX=g++-7
 
-compiler:
-  - clang
-  - gcc
+    - compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-8']
+      env:
+        - CXX=g++-8
+
+    - compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-7']
+          packages: ['clang-7', 'g++-7']
+      env:
+        - CXX=clang++-7
+
+    - compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
+          packages: ['clang-8', 'g++-8']
+      env:
+        - CXX=clang++-8
 
 script:
   - mkdir build && cd build && cmake .. && make -j8 codegen_test && ./codegen/codegen_test
