@@ -13,7 +13,10 @@ set(HEADERS
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+# TODO forcing lexer to link with stdc++fs forces the other projects to link it to (since they all depend on lexer). Is there a better way?
+# TODO right now even when compiling with clang we're still using gcc's std lib
+# see https://stackoverflow.com/questions/52427986/cannot-use-stdfilesystem-even-if-declared-supported
+if (NOT MSVC)
   target_link_libraries(${PROJECT_NAME} stdc++fs)
 endif()
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
