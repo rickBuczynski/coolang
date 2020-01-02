@@ -16,6 +16,7 @@
 
 #include <cmrc/cmrc.hpp>
 #include <iostream>
+
 #include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/c_std.h"
 #include "coolang/codegen/io_codegen.h"
@@ -1189,7 +1190,22 @@ llvm::Value* CodegenVisitor::GenAllocAndConstruct(
 
 llvm::Value* CodegenVisitor::CreateBoxedBasic(const std::string& type_name,
                                               llvm::Value* basic_val) {
-  llvm::Value* boxed_val = GenAllocAndConstruct("Object");
+  llvm::Value* boxed_val;
+  // if we have a string it might be a temporary that would be destroyed when we
+  // alloc Object. So we need to create a root before we trasfer ownership of
+  // the string into the boxed basic.
+  if (type_name == "String") {
+    llvm::AllocaInst* alloca_inst =
+        builder_.CreateAlloca(ast_to_.LlvmBasicType("String"));
+    builder_.CreateStore(basic_val, alloca_inst);
+    builder_.CreateCall(c_std_.GetGcAddStringRootFunc(), {alloca_inst});
+
+    boxed_val = GenAllocAndConstruct("Object");
+
+    builder_.CreateCall(c_std_.GetGcRemoveStringRootFunc(), {alloca_inst});
+  } else {
+    boxed_val = GenAllocAndConstruct("Object");
+  }
 
   llvm::Value* typename_ptr_ptr = builder_.CreateStructGEP(
       ast_to_.LlvmClass("Object"), boxed_val, AstToCodeMap::obj_typename_index);
