@@ -8,7 +8,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
-          packages: ['gcc-8', 'g++-8', 'clang-8', 'llvm-8', 'llvm-8-dev']
+          packages: ['libedit-dev', 'gcc-8', 'g++-8', 'clang-8', 'llvm-8', 'llvm-8-dev']
       env:
         - CC=gcc-8
         - CXX=g++-8
@@ -17,7 +17,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
-          packages: ['gcc-8', 'g++-8', 'clang-8', 'llvm-8', 'llvm-8-dev']
+          packages: ['libedit-dev', 'gcc-8', 'g++-8', 'clang-8', 'llvm-8', 'llvm-8-dev']
       env:
         - CC=clang-8
         - CXX=clang++-8
