@@ -7,7 +7,7 @@ set(SOURCES
 )
 
 add_custom_command(OUTPUT gc64.ll
-  COMMAND clang++ -m64 -S -emit-llvm -fno-exceptions gc.cpp -o gc64.ll
+  COMMAND clang++-${COOLANG_LLVM_VERSION} -m64 -S -emit-llvm -fno-exceptions gc.cpp -o gc64.ll
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS gc.cpp
 )
@@ -16,7 +16,7 @@ cmrc_add_resource_library(gc64ll gc64.ll)
 add_dependencies(gc64ll gc64_ll_target)
 
 add_custom_command(OUTPUT gc32.ll
-  COMMAND clang++ -m32 -S -emit-llvm -fno-exceptions gc.cpp -o gc32.ll
+  COMMAND clang++-${COOLANG_LLVM_VERSION} -m32 -S -emit-llvm -fno-exceptions gc.cpp -o gc32.ll
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS gc.cpp
 )
