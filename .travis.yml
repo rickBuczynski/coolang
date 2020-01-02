@@ -7,8 +7,8 @@ matrix:
     - compiler: gcc
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['gcc-8', 'g++-8']
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
+          packages: ['gcc-8', 'g++-8', 'llvm-8']
       env:
         - CC=gcc-8
         - CXX=g++-8
@@ -17,7 +17,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
-          packages: ['clang-8', 'g++-8']
+          packages: ['clang-8', 'g++-8', 'llvm-8']
       env:
         - CC=clang-8
         - CXX=clang++-8
