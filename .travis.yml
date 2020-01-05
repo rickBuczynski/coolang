@@ -2,9 +2,9 @@ language: cpp
 
 matrix:
     - os: windows
-    before_script:
-      - choco install llvm --version=8.0.1
 
+before_script:
+  - if [ $TRAVIS_OS_NAME = windows ]; then choco install llvm --version=8.0.1; fi
 
 script:
   - mkdir build && cd build && cmake .. && cat "C:/Users/travis/build/rickBuczynski/coolang/build/CMakeFiles/CMakeOutput.log"
