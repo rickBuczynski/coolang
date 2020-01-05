@@ -24,5 +24,7 @@ matrix:
         - CC=clang-8
         - CXX=clang++-8
 
+    - os: windows
+
 script:
   - mkdir build && cd build && cmake .. && make -j8 codegen_test && ./codegen/codegen_test
