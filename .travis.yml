@@ -1,30 +1,7 @@
 language: cpp
 
 matrix:
-  include:
-    - os: linux
-      dist: xenial
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
-          packages: ['libedit-dev', 'gcc-8', 'g++-8', 'clang-8', 'llvm-8', 'llvm-8-dev']
-      env:
-        - CC=gcc-8
-        - CXX=g++-8
-
-    - os: linux
-      dist: xenial
-      compiler: clang
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
-          packages: ['libedit-dev', 'gcc-8', 'g++-8', 'clang-8', 'llvm-8', 'llvm-8-dev']
-      env:
-        - CC=clang-8
-        - CXX=clang++-8
-
     - os: windows
 
 script:
-  - mkdir build && cd build && cmake .. && make -j8 codegen_test && ./codegen/codegen_test
+  - mkdir build && cd build && cmake .. && cat "C:/Users/travis/build/rickBuczynski/coolang/build/CMakeFiles/CMakeOutput.log"
