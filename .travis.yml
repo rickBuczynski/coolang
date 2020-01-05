@@ -1,10 +1,10 @@
 language: cpp
-os: linux
-dist: xenial
 
 matrix:
   include:
-    - compiler: gcc
+    - os: linux
+      dist: xenial
+      compiler: gcc
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
@@ -13,7 +13,9 @@ matrix:
         - CC=gcc-8
         - CXX=g++-8
 
-    - compiler: clang
+    - os: linux
+      dist: xenial
+      compiler: clang
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
