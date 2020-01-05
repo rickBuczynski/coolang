@@ -9,4 +9,8 @@ before_script:
   - if [ $TRAVIS_OS_NAME = windows ]; then 7z x llvm.7z -y -o"C:\Program Files (x86)"; fi
 
 script:
-  - mkdir build && cd build && cmake .. && cat "C:/Users/travis/build/rickBuczynski/coolang/build/CMakeFiles/CMakeOutput.log"
+  - mkdir build
+  - cd build
+  - cmake ..
+  - cmake --build . --config Release
+  - ctest --verbose

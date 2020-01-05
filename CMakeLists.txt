@@ -48,6 +48,9 @@ endif()
 
 add_subdirectory(third_party/googletest)
 add_subdirectory(third_party/gflags)
+
+enable_testing()
+
 add_subdirectory(lexer)
 add_subdirectory(parser)
 add_subdirectory(semantic)
