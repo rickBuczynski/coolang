@@ -5,8 +5,7 @@ matrix:
 
 before_script:
   - if [ $TRAVIS_OS_NAME = windows ]; then choco install llvm --version=8.0.1 --allow-downgrade; fi
-  - if [ $TRAVIS_OS_NAME = windows ]; then $wc = New-Object net.webclient; fi
-  - if [ $TRAVIS_OS_NAME = windows ]; then $wc.Downloadfile("https://github.com/vovkos/llvm-package-windows/releases/download/llvm-8.0.0/llvm-8.0.0-windows-x86-msvc15-msvcrt.7z", "llvm.7z"); fi
+  - if [ $TRAVIS_OS_NAME = windows ]; then (New-Object net.webclient).Downloadfile("https://github.com/vovkos/llvm-package-windows/releases/download/llvm-8.0.0/llvm-8.0.0-windows-x86-msvc15-msvcrt.7z", "llvm.7z"); fi
 
 script:
   - mkdir build && cd build && cmake .. && cat "C:/Users/travis/build/rickBuczynski/coolang/build/CMakeFiles/CMakeOutput.log"
