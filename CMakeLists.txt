@@ -7,6 +7,29 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(COOLANG_LLVM_VERSION 8)
+
+# on windows we can't run "clang++-8" we have to run "clang++ --version" and make sure it's 8
+if(WIN32)
+  EXECUTE_PROCESS(COMMAND clang++ --version OUTPUT_VARIABLE CLANG_VERSION_OUTPUT)
+  if(NOT CLANG_VERSION_OUTPUT)
+    message(FATAL_ERROR "Coolang requires Clang version " ${COOLANG_LLVM_VERSION} " to be installed")
+  endif()
+  
+  string (REGEX REPLACE ".*clang version ([0-9]+)\\.[0-9]+.*" "\\1" COOLANG_CLANG_VERSION ${CLANG_VERSION_OUTPUT})
+  if (NOT ${COOLANG_CLANG_VERSION} STREQUAL ${COOLANG_LLVM_VERSION})
+    message(FATAL_ERROR "Coolang requires Clang version " ${COOLANG_LLVM_VERSION} " to be installed")
+  endif()
+  
+  set(COOLANG_CLANG_COMMAND clang++)
+else()
+  EXECUTE_PROCESS(COMMAND clang++-${COOLANG_LLVM_VERSION} --version OUTPUT_VARIABLE CLANG_VERSION_OUTPUT)
+  if(NOT CLANG_VERSION_OUTPUT)
+    message(FATAL_ERROR "Coolang requires Clang version " ${COOLANG_LLVM_VERSION} " to be installed")
+  endif()
+
+  set(COOLANG_CLANG_COMMAND clang++-${COOLANG_LLVM_VERSION})
+endif()
+
 find_package(LLVM ${COOLANG_LLVM_VERSION} REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -16,7 +39,6 @@ llvm_map_components_to_libnames(llvm_libs all)
 list(REMOVE_ITEM llvm_libs LLVM)
 list(REMOVE_ITEM llvm_libs LTO)
 list(REMOVE_ITEM llvm_libs "OptRemarks")
-
 
 if(MSVC)
   # see https://github.com/google/googletest/blob/master/googletest/README.md and https://stackoverflow.com/questions/12540970/how-to-make-gtest-build-mdd-instead-of-mtd-by-default-using-cmake
