@@ -6,9 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(COOLANG_LLVM_VERSION 8)
+set(COOLANG_LLVM_VERSION 9)
 
-# on windows we can't run "clang++-8" we have to run "clang++ --version" and make sure it's 8
+# on windows we can't run "clang++-9" we have to run "clang++ --version" and make sure it's 9
 if(WIN32)
   EXECUTE_PROCESS(COMMAND clang++ --version OUTPUT_VARIABLE CLANG_VERSION_OUTPUT)
   if(NOT CLANG_VERSION_OUTPUT)
