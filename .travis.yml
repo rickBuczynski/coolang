@@ -7,7 +7,7 @@ matrix:
       compiler: gcc
       addons:
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-9']
           packages: ['libedit-dev', 'gcc-8', 'g++-8', 'clang-9', 'llvm-9', 'llvm-9-dev']
       env:
         - CC=gcc-8
