@@ -45,11 +45,19 @@ Coolang is a compiler for the [COOL language](https://en.wikipedia.org/wiki/Cool
 ### Build and run tests
 
 ```
-mkdir build
-cd build
-cmake ..
-cmake --build .
-ctest --verbose
+$ mkdir build
+$ cd build
+$ cmake ..
+$ cmake --build .
+$ ctest --verbose
+```
+then compile a hello world program
+
+```
+$ echo "class Main inherits IO { main() : Object { out_string(\"Hello, world\\n\") }; };" > hello.cl
+$ ./coolang hello.cl
+$ ./hello
+Hello, world
 ```
 
 This is not an official Google product. 
