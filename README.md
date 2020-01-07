@@ -11,8 +11,8 @@ Coolang is a COOL (Classroom Object Oriented Language) compiler with LLVM backen
 - CMake 3.10 (or more recent)
 - a C++17 compiler
 - LLVM 8 and Clang 8
- - see https://apt.llvm.org/
- - install the packages: `clang-8`, `llvm-8`, `llvm-8-dev`
+    - see https://apt.llvm.org/
+    - install the packages: `clang-8`, `llvm-8`, `llvm-8-dev`
 - also install the `libedit-dev` package since llvm fails to link if it's not installed
 
 #### Windows
