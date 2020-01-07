@@ -22,7 +22,7 @@ Coolang is a COOL (Classroom Object Oriented Language) compiler with LLVM backen
 - LLVM 8 and Clang 8
      - Options for how to get Clang 8
           - Download the installer from here and run http://releases.llvm.org/download.html
-               - Confusingly, the installer is called LLVM-8.0.1-... but it doesn't install the LLVM development libs, we'll do that after
+               - Confusingly, the installer is called LLVM-8.0.1-... but it doesn't install the LLVM development libs, we'll do that later
           - Or if you use the chocolatey package manager:
                - ```choco install llvm --version=8.0.1```
                - this also calls itself LLVM but doesn't include development libs
