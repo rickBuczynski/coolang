@@ -36,7 +36,6 @@ Coolang is a COOL (Classroom Object Oriented Language) compiler with LLVM backen
           - Install LLVM using vcpkg
                - Note LLVM is huge and vcpkg will take ~1hour to build and install it even on a fast machine
                - If vcpkg has updated their LLVM version at head to 9 or later you may need to reset your vcpkg client to a previous version that still uses llvm 8, see https://github.com/microsoft/vcpkg/commits/master/ports/llvm
-               - ```vcpkg install llvm```
                - later when running CMake you'll need to set your `-DCMAKE_TOOLCHAIN_FILE` as usual for vcpkg
           - Build from source and install
                - Same warning as with using vcpkg this will probably take even longer than 1hour
