@@ -1,7 +1,6 @@
 # Coolang
 
-Coolang is a compiler for the COOL language with an LLVM backend.
-See https://en.wikipedia.org/wiki/Cool_(programming_language)
+Coolang is a compiler for the [COOL language](https://en.wikipedia.org/wiki/Cool_(programming_language)) with an LLVM backend.
 
 [![Build Status](https://travis-ci.com/rickBuczynski/coolang.svg?branch=master)](https://travis-ci.com/rickBuczynski/coolang)
 
