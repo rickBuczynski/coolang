@@ -53,10 +53,18 @@ $ ctest --verbose
 ```
 then compile a hello world program
 
+##### Linux
 ```
 $ echo "class Main inherits IO { main() : Object { out_string(\"Hello, world\\n\") }; };" > hello.cl
 $ ./coolang hello.cl
 $ ./hello
+Hello, world
+```
+##### Windows
+```
+$ [IO.File]::WriteAllLines((Join-Path -Path (Resolve-Path .) -ChildPath "hello.cl"), "class Main inherits IO { main() : Object { out_string(`"Hello, world`\n`") }; };")
+$ .\Debug\coolang.exe hello.cl
+$ .\hello.exe
 Hello, world
 ```
 
