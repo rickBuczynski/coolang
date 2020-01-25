@@ -22,16 +22,27 @@
 #include <iostream>
 #include <optional>
 #include <set>
+
+#include "coolang/codegen/bitness.h"
 #include "windows_com/windows_com.hpp"
 
 namespace coolang {
 
 class WindowsPlatform {
  public:
+  static std::string BitStr(Bitness bitness) {
+    switch (bitness) {
+      case Bitness::x32:
+        return "x86";
+      case Bitness::x64:
+        return "x64";
+    }
+  }
+
   static std::string GetLinkerCommand(
       const std::filesystem::path& obj_path,
       const std::filesystem::path& std_lib_obj_path,
-      const std::filesystem::path& exe_path) {
+      const std::filesystem::path& exe_path, Bitness bitness) {
     std::string obj_input_linker_arg = obj_path.string();
     obj_input_linker_arg += " ";
 
@@ -39,8 +50,10 @@ class WindowsPlatform {
     output_exe_linker_arg += exe_path.string();
     output_exe_linker_arg += " ";
 
-    const auto msvc_linker_path = GetMsvcLinkerPath();
-    const auto msvc_lib_path = GetMsvcLibPath();
+    const std::string bit_str = BitStr(bitness);
+
+    const auto msvc_linker_path = GetMsvcLinkerPath(bit_str);
+    const auto msvc_lib_path = GetMsvcLibPath(bit_str);
 
     if (!msvc_linker_path.has_value() || !msvc_lib_path.has_value()) {
       std::cerr << "Linking failed because a Visual Studio 2017 installation "
@@ -57,8 +70,9 @@ class WindowsPlatform {
       std::exit(1);
     }
 
-    const auto um_path = (win10_kit_lib_path.value() / "um/x64").string();
-    const auto ucrt_path = (win10_kit_lib_path.value() / "ucrt/x64").string();
+    const auto um_path = (win10_kit_lib_path.value() / "um" / bit_str).string();
+    const auto ucrt_path =
+        (win10_kit_lib_path.value() / "ucrt" / bit_str).string();
 
     std::string linker_cmd = "cmd /C \"";
     linker_cmd += "\"" + msvc_linker_path.value().string() + "\" ";
@@ -184,20 +198,23 @@ class WindowsPlatform {
     return msvc_install_path.value() / R"(VC\Tools\MSVC)" / tools_version;
   }
 
-  static std::optional<std::filesystem::path> GetMsvcLinkerPath() {
+  static std::optional<std::filesystem::path> GetMsvcLinkerPath(
+      const std::string& bit_str) {
     const auto msvc_tool_path = GetMsvcToolsPath();
     if (!msvc_tool_path.has_value()) {
       return std::nullopt;
     }
-    return msvc_tool_path.value() / R"(bin\Hostx64\x64\link.exe)";
+    return msvc_tool_path.value() / "bin" / ("Host" + bit_str) / bit_str /
+           "link.exe";
   }
 
-  static std::optional<std::filesystem::path> GetMsvcLibPath() {
+  static std::optional<std::filesystem::path> GetMsvcLibPath(
+      const std::string& bit_str) {
     const auto msvc_tool_path = GetMsvcToolsPath();
     if (!msvc_tool_path.has_value()) {
       return std::nullopt;
     }
-    return msvc_tool_path.value() / R"(lib\x64)";
+    return msvc_tool_path.value() / "lib" / bit_str;
   }
 };
 

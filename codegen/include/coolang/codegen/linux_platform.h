@@ -18,6 +18,9 @@
 #define COOLANG_CODEGEN_LINUX_PLATFORM_H
 
 #include <filesystem>
+#include <iostream>
+
+#include "coolang/codegen/bitness.h"
 
 namespace coolang {
 
@@ -28,7 +31,17 @@ class LinuxPlatform {
 
   static std::string GetLinkerCommand(const std::filesystem::path& obj_path,
                                       const std::filesystem::path& gc_obj_path,
-                                      const std::filesystem::path& exe_path) {
+                                      const std::filesystem::path& exe_path,
+                                      Bitness bitness) {
+    switch (bitness) {
+      case Bitness::x32: {
+        std::cerr << "32bit is not support on Linux, only 64bit is supported.";
+        abort();
+      }
+      case Bitness::x64:
+        break;
+    }
+
     std::string obj_input_linker_arg = obj_path.string();
     obj_input_linker_arg += " ";
 
@@ -40,7 +53,8 @@ class LinuxPlatform {
     output_exe_linker_arg += " ";
 
     std::string linker_cmd = "g++ ";
-    // TODO why do I get "relocation R_X86_64_32S against symbol...." errors without -no-pie
+    // TODO why do I get "relocation R_X86_64_32S against symbol...." errors
+    // without -no-pie
     linker_cmd += "-no-pie ";
 
     linker_cmd += output_exe_linker_arg;

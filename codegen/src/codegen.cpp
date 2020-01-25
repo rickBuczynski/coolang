@@ -18,6 +18,7 @@
 #include <iostream>
 
 #include "coolang/codegen/ast_to_code_map.h"
+#include "coolang/codegen/bitness.h"
 #include "coolang/codegen/c_std.h"
 #include "coolang/codegen/io_codegen.h"
 #include "coolang/codegen/object_codegen.h"
@@ -53,10 +54,10 @@ CMRC_DECLARE(gc64ll);
 
 namespace coolang {
 
-platform::Bitness GetBitness() {
+Bitness GetBitness() {
   const auto target_triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-  if (target_triple.isArch32Bit()) return platform::Bitness::x32;
-  if (target_triple.isArch64Bit()) return platform::Bitness::x64;
+  if (target_triple.isArch32Bit()) return Bitness::x32;
+  if (target_triple.isArch64Bit()) return Bitness::x64;
   std::cerr << "Target triple: " << target_triple.normalize()
             << " is not supported because it is not 32bit or 64bit";
   abort();
@@ -1462,12 +1463,12 @@ void OutputModuleToObjectFile(llvm::Module* module,
 
 llvm::StringRef GetGcLl() {
   switch (GetBitness()) {
-    case platform::Bitness::x32: {
+    case Bitness::x32: {
       auto fs = cmrc::gc32ll::get_filesystem();
       auto gc_ll_file = fs.open("gc32.ll");
       return {gc_ll_file.begin(), gc_ll_file.size()};
     }
-    case platform::Bitness::x64: {
+    case Bitness::x64: {
       auto fs = cmrc::gc64ll::get_filesystem();
       auto gc_ll_file = fs.open("gc64.ll");
       return {gc_ll_file.begin(), gc_ll_file.size()};
@@ -1500,8 +1501,8 @@ void Codegen::GenerateCode(bool gc_verbose) const {
 }
 
 void Codegen::Link() const {
-  std::string linker_cmd =
-      platform::GetLinkerCommand(obj_path_, gc_obj_path_, exe_path_);
+  std::string linker_cmd = platform::GetLinkerCommand(obj_path_, gc_obj_path_,
+                                                      exe_path_, GetBitness());
   system(linker_cmd.c_str());
 }
 

@@ -18,6 +18,7 @@ set(HEADERS
   include/coolang/codegen/platform.h
   include/coolang/codegen/linux_platform.h
   include/coolang/codegen/windows_platform.h
+  include/coolang/codegen/bitness.h
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
