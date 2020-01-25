@@ -1415,15 +1415,11 @@ Codegen::~Codegen() = default;
 
 void OutputModuleToObjectFile(llvm::Module* module,
                               const std::filesystem::path& obj_path) {
-  const auto target_triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
-  std::cout << "target_triple=" << target_triple.normalize() << "\n";
-  std::cout << "target_triple arch=" << target_triple.getArchName().str()
-            << "\n";
-  module->setTargetTriple(target_triple.normalize());
+  const auto target_triple = llvm::sys::getDefaultTargetTriple();
+  module->setTargetTriple(target_triple);
 
   std::string error;
-  const auto target =
-      llvm::TargetRegistry::lookupTarget(target_triple.normalize(), error);
+  const auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
 
   // Print an error and exit if we couldn't find the requested target.
   // This generally occurs if we've forgotten to initialise the
@@ -1438,8 +1434,8 @@ void OutputModuleToObjectFile(llvm::Module* module,
 
   const llvm::TargetOptions opt;
   const auto rm = llvm::Optional<llvm::Reloc::Model>();
-  auto the_target_machine = target->createTargetMachine(
-      target_triple.normalize(), cpu, features, opt, rm);
+  auto the_target_machine =
+      target->createTargetMachine(target_triple, cpu, features, opt, rm);
 
   module->setDataLayout(the_target_machine->createDataLayout());
 
