@@ -48,14 +48,19 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
-// TODO support 64 bit windows
-
+CMRC_DECLARE(gc32ll);
 CMRC_DECLARE(gc64ll);
-namespace gcll = cmrc::gc64ll;
-const char* gcll_path = "gc64.ll";
-
 
 namespace coolang {
+
+platform::Bitness GetBitness() {
+  const auto target_triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+  if (target_triple.isArch32Bit()) return platform::Bitness::x32;
+  if (target_triple.isArch64Bit()) return platform::Bitness::x64;
+  std::cerr << "Target triple: " << target_triple.normalize()
+            << " is not supported because it is not 32bit or 64bit";
+  abort();
+}
 
 class CodegenVisitor : public AstVisitor {
  public:
@@ -1407,12 +1412,15 @@ Codegen::~Codegen() = default;
 
 void OutputModuleToObjectFile(llvm::Module* module,
                               const std::filesystem::path& obj_path) {
-  const auto target_triple = llvm::sys::getDefaultTargetTriple();
-  std::cout << "target_triple=" << target_triple << "\n";
-  module->setTargetTriple(target_triple);
+  const auto target_triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+  std::cout << "target_triple=" << target_triple.normalize() << "\n";
+  std::cout << "target_triple arch=" << target_triple.getArchName().str()
+            << "\n";
+  module->setTargetTriple(target_triple.normalize());
 
   std::string error;
-  const auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
+  const auto target =
+      llvm::TargetRegistry::lookupTarget(target_triple.normalize(), error);
 
   // Print an error and exit if we couldn't find the requested target.
   // This generally occurs if we've forgotten to initialise the
@@ -1427,8 +1435,8 @@ void OutputModuleToObjectFile(llvm::Module* module,
 
   const llvm::TargetOptions opt;
   const auto rm = llvm::Optional<llvm::Reloc::Model>();
-  auto the_target_machine =
-      target->createTargetMachine(target_triple, cpu, features, opt, rm);
+  auto the_target_machine = target->createTargetMachine(
+      target_triple.normalize(), cpu, features, opt, rm);
 
   module->setDataLayout(the_target_machine->createDataLayout());
 
@@ -1452,6 +1460,21 @@ void OutputModuleToObjectFile(llvm::Module* module,
   dest.flush();
 }
 
+llvm::StringRef GetGcLl() {
+  switch (GetBitness()) {
+    case platform::Bitness::x32: {
+      auto fs = cmrc::gc32ll::get_filesystem();
+      auto gc_ll_file = fs.open("gc32.ll");
+      return {gc_ll_file.begin(), gc_ll_file.size()};
+    }
+    case platform::Bitness::x64: {
+      auto fs = cmrc::gc64ll::get_filesystem();
+      auto gc_ll_file = fs.open("gc64.ll");
+      return {gc_ll_file.begin(), gc_ll_file.size()};
+    }
+  }
+}
+
 void Codegen::GenerateCode(bool gc_verbose) const {
   CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get(),
                                  gc_verbose);
@@ -1469,12 +1492,8 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   llvm::LLVMContext context;
   llvm::SMDiagnostic smd;
 
-  auto fs = gcll::get_filesystem();
-  auto gc_ll_file = fs.open(gcll_path);
-  const llvm::StringRef gc_ll_str_ref(gc_ll_file.begin(), gc_ll_file.size());
-
   std::unique_ptr<llvm::Module> gc_module =
-      parseIR({gc_ll_str_ref, "gc"}, smd, context);
+      parseIR({GetGcLl(), "gc"}, smd, context);
   OutputModuleToObjectFile(gc_module.get(), gc_obj_path_);
 
   OutputModuleToObjectFile(module_.get(), obj_path_);
