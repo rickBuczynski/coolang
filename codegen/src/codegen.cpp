@@ -1408,6 +1408,7 @@ Codegen::~Codegen() = default;
 void OutputModuleToObjectFile(llvm::Module* module,
                               const std::filesystem::path& obj_path) {
   const auto target_triple = llvm::sys::getDefaultTargetTriple();
+  std::cout << "target_triple=" << target_triple << "\n";
   module->setTargetTriple(target_triple);
 
   std::string error;
