@@ -30,9 +30,8 @@ Coolang is a compiler for the [COOL language](https://en.wikipedia.org/wiki/Cool
                - this also calls itself LLVM but doesn't include development libs
      - Options for how to get LLVM 8 development libs
           - Download a pre-built binary from here: https://github.com/vovkos/llvm-package-windows/releases/tag/llvm-8.0.0
-               - note these are built for Visual Studio 15 and 14 (aka 2017 and 2015) so they might not work for Visual Studio 2019 (aka 16)
-               - TODO test if these work on 2019
-               - Choose one to download based on your Visual Studio version and compile options (x86, and msvcrt-dbg are default)
+               - note these are built for Visual Studio 15 and 14 (aka 2017 and 2015) but Visual Studio 2019 (aka 16) can still use them
+               - Choose one to download based on your Visual Studio version and compile options (x86, and msvcrt-dbg are default for Visual Studio 2017, for 2019 the defaults are amd64, and msvcrt-dbg)
                - Extract to somewhere CMake will look for packages ("C:\Program Files (x86)" or "C:\Program Files" by default)
           - Or install LLVM using vcpkg
                - Note LLVM is huge and vcpkg will take ~1hour to build and install it even on a fast machine
