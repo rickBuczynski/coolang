@@ -49,7 +49,9 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
+#ifdef _WIN32
 CMRC_DECLARE(gc32ll);
+#endif
 CMRC_DECLARE(gc64ll);
 
 namespace coolang {
@@ -1464,9 +1466,13 @@ void OutputModuleToObjectFile(llvm::Module* module,
 llvm::StringRef GetGcLl() {
   switch (GetBitness()) {
     case Bitness::x32: {
+#ifdef _WIN32
       auto fs = cmrc::gc32ll::get_filesystem();
       auto gc_ll_file = fs.open("gc32.ll");
       return {gc_ll_file.begin(), gc_ll_file.size()};
+#endif
+      std::cerr << "32bit is only supported on windows.";
+      abort();
     }
     case Bitness::x64: {
       auto fs = cmrc::gc64ll::get_filesystem();
