@@ -18,6 +18,7 @@ set(HEADERS
   include/coolang/codegen/platform.h
   include/coolang/codegen/linux_platform.h
   include/coolang/codegen/windows_platform.h
+  include/coolang/codegen/bitness.h
 )
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
@@ -26,12 +27,11 @@ target_link_libraries(${PROJECT_NAME}
   ${llvm_libs}
 )
 
-# TODO windows should support 32 and 64 bit
+# we only support 32 bit on windows since it's the default for visual studio 2017 and earlier
 IF (WIN32)
   target_link_libraries(${PROJECT_NAME} gc32ll)
-ELSE()
-  target_link_libraries(${PROJECT_NAME} gc64ll)
 ENDIF()
+target_link_libraries(${PROJECT_NAME} gc64ll)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/windows_com/include)

@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef COOLANG_CODEGEN_PLATFORM_H
-#define COOLANG_CODEGEN_PLATFORM_H
-
-#include <filesystem>
-
-#include "coolang/codegen/bitness.h"
+#ifndef COOLANG_CODEGEN_BITNESS_H
+#define COOLANG_CODEGEN_BITNESS_H
 
 namespace coolang {
-namespace platform {
 
-std::string GetLinkerCommand(const std::filesystem::path& obj_path,
-                             const std::filesystem::path& std_lib_obj_path,
-                             const std::filesystem::path& exe_path,
-                             Bitness bitness);
-std::string GetObjectFileExtension();
-std::string GetExeFileExtension();
+enum class Bitness { x32, x64 };
 
-}  // namespace platform
 }  // namespace coolang
 
-#endif  // COOLANG_CODEGEN_PLATFORM_H
+#endif  // COOLANG_CODEGEN_BITNESS_H

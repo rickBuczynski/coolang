@@ -18,6 +18,7 @@
 #include <iostream>
 
 #include "coolang/codegen/ast_to_code_map.h"
+#include "coolang/codegen/bitness.h"
 #include "coolang/codegen/c_std.h"
 #include "coolang/codegen/io_codegen.h"
 #include "coolang/codegen/object_codegen.h"
@@ -48,20 +49,21 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
-// TODO support 64 bit windows
 #ifdef _WIN32
 CMRC_DECLARE(gc32ll);
-namespace gcll = cmrc::gc32ll;
-const char* gcll_path = "gc32.ll";
 #endif
-
-#ifdef __unix__
 CMRC_DECLARE(gc64ll);
-namespace gcll = cmrc::gc64ll;
-const char* gcll_path = "gc64.ll";
-#endif
 
 namespace coolang {
+
+Bitness GetBitness() {
+  const auto target_triple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+  if (target_triple.isArch32Bit()) return Bitness::x32;
+  if (target_triple.isArch64Bit()) return Bitness::x64;
+  std::cerr << "Target triple: " << target_triple.normalize()
+            << " is not supported because it is not 32bit or 64bit";
+  abort();
+}
 
 class CodegenVisitor : public AstVisitor {
  public:
@@ -1457,6 +1459,25 @@ void OutputModuleToObjectFile(llvm::Module* module,
   dest.flush();
 }
 
+llvm::StringRef GetGcLl() {
+  switch (GetBitness()) {
+    case Bitness::x32: {
+#ifdef _WIN32
+      auto fs = cmrc::gc32ll::get_filesystem();
+      auto gc_ll_file = fs.open("gc32.ll");
+      return {gc_ll_file.begin(), gc_ll_file.size()};
+#endif
+      std::cerr << "32bit is only supported on windows.";
+      abort();
+    }
+    case Bitness::x64: {
+      auto fs = cmrc::gc64ll::get_filesystem();
+      auto gc_ll_file = fs.open("gc64.ll");
+      return {gc_ll_file.begin(), gc_ll_file.size()};
+    }
+  }
+}
+
 void Codegen::GenerateCode(bool gc_verbose) const {
   CodegenVisitor codegen_visitor(*ast_, context_.get(), module_.get(),
                                  gc_verbose);
@@ -1474,20 +1495,16 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   llvm::LLVMContext context;
   llvm::SMDiagnostic smd;
 
-  auto fs = gcll::get_filesystem();
-  auto gc_ll_file = fs.open(gcll_path);
-  const llvm::StringRef gc_ll_str_ref(gc_ll_file.begin(), gc_ll_file.size());
-
   std::unique_ptr<llvm::Module> gc_module =
-      parseIR({gc_ll_str_ref, "gc"}, smd, context);
+      parseIR({GetGcLl(), "gc"}, smd, context);
   OutputModuleToObjectFile(gc_module.get(), gc_obj_path_);
 
   OutputModuleToObjectFile(module_.get(), obj_path_);
 }
 
 void Codegen::Link() const {
-  std::string linker_cmd =
-      platform::GetLinkerCommand(obj_path_, gc_obj_path_, exe_path_);
+  std::string linker_cmd = platform::GetLinkerCommand(obj_path_, gc_obj_path_,
+                                                      exe_path_, GetBitness());
   system(linker_cmd.c_str());
 }
 
