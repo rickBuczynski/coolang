@@ -27,10 +27,11 @@ target_link_libraries(${PROJECT_NAME}
   ${llvm_libs}
 )
 
-# we only support 32 bit on windows since it's the default for visual studio 2017 and earlier
+# we support both 32 and 64 bit on windows since it's the 32 bit is the default for visual studio 2017 and earlier
 IF (WIN32)
   target_link_libraries(${PROJECT_NAME} gc32ll)
 ENDIF()
+# on other platforms we only support 64 bit
 target_link_libraries(${PROJECT_NAME} gc64ll)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
