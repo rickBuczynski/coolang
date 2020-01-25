@@ -57,8 +57,8 @@ class WindowsPlatform {
       std::exit(1);
     }
 
-    const auto um_path = (win10_kit_lib_path.value() / "um/x86").string();
-    const auto ucrt_path = (win10_kit_lib_path.value() / "ucrt/x86").string();
+    const auto um_path = (win10_kit_lib_path.value() / "um/x64").string();
+    const auto ucrt_path = (win10_kit_lib_path.value() / "ucrt/x64").string();
 
     std::string linker_cmd = "cmd /C \"";
     linker_cmd += "\"" + msvc_linker_path.value().string() + "\" ";
@@ -74,7 +74,6 @@ class WindowsPlatform {
     linker_cmd += "-LIBPATH:\"" + um_path + "\" ";
     linker_cmd += "-LIBPATH:\"" + ucrt_path + "\" ";
     linker_cmd += "-SUBSYSTEM:CONSOLE ";
-    linker_cmd += "-MACHINE:X86 ";
     linker_cmd += "-NOLOGO";
     linker_cmd += "\"";
 
@@ -190,7 +189,7 @@ class WindowsPlatform {
     if (!msvc_tool_path.has_value()) {
       return std::nullopt;
     }
-    return msvc_tool_path.value() / R"(bin\Hostx86\x86\link.exe)";
+    return msvc_tool_path.value() / R"(bin\Hostx64\x64\link.exe)";
   }
 
   static std::optional<std::filesystem::path> GetMsvcLibPath() {
@@ -198,7 +197,7 @@ class WindowsPlatform {
     if (!msvc_tool_path.has_value()) {
       return std::nullopt;
     }
-    return msvc_tool_path.value() / R"(lib\x86)";
+    return msvc_tool_path.value() / R"(lib\x64)";
   }
 };
 

@@ -49,17 +49,11 @@
 #include "llvm/Transforms/Scalar/GVN.h"
 
 // TODO support 64 bit windows
-#ifdef _WIN32
-CMRC_DECLARE(gc32ll);
-namespace gcll = cmrc::gc32ll;
-const char* gcll_path = "gc32.ll";
-#endif
 
-#ifdef __unix__
 CMRC_DECLARE(gc64ll);
 namespace gcll = cmrc::gc64ll;
 const char* gcll_path = "gc64.ll";
-#endif
+
 
 namespace coolang {
 
