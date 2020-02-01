@@ -54,6 +54,8 @@ if(MSVC)
   # without /wd4996 we get weird warning from LLVM headers even with external:W0
   # the other /wdXXXX could be fixed/removed
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX /wd4267 /wd4244 /wd4996 /experimental:external /external:anglebrackets /external:W0")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 endif()
 
 enable_testing()
