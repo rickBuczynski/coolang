@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <variant>
-#include "coolang/lexer/token.h"
 #include "coolang/parser/parser.h"
+
+#include <variant>
+
+#include "coolang/lexer/token.h"
 
 namespace coolang {
 
@@ -165,7 +167,7 @@ std::variant<ProgramAst, std::vector<ParseError>> Parser::ParseProgram() {
       try {
         classes.push_back(ParseClass());
 
-        auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
+        ExpectToken<TokenSemi>(lexer_->PeekToken());
         lexer_->PopToken();
       } catch (const UnexpectedTokenExcpetion& e) {
         const auto parse_error =
@@ -212,7 +214,7 @@ ClassAst Parser::ParseClass() {
     inherits_type = inherits_type_token.get_data();
   }
 
-  auto lbrace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
+  ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
   std::vector<std::unique_ptr<Feature>> features;
@@ -225,11 +227,11 @@ ClassAst Parser::ParseClass() {
       parse_errors_.push_back(parse_error);
       lexer_->AdvanceToNext<TokenSemi>();
     }
-    auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
+    ExpectToken<TokenSemi>(lexer_->PeekToken());
     lexer_->PopToken();
   }
 
-  auto rbrace_token = ExpectToken<TokenRbrace>(lexer_->PeekToken());
+  ExpectToken<TokenRbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
   auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
@@ -271,7 +273,7 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  auto left_paren_token = ExpectToken<TokenLparen>(lexer_->PeekToken());
+  ExpectToken<TokenLparen>(lexer_->PeekToken());
   lexer_->PopToken();
 
   std::vector<Formal> args;
@@ -284,16 +286,16 @@ std::unique_ptr<MethodFeature> Parser::ParseMethodFeature() {
     }
   }
 
-  auto right_paren_token = ExpectToken<TokenRparen>(lexer_->PeekToken());
+  ExpectToken<TokenRparen>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  auto colon_token = ExpectToken<TokenColon>(lexer_->PeekToken());
+  ExpectToken<TokenColon>(lexer_->PeekToken());
   lexer_->PopToken();
 
   auto type_id_token = ExpectToken<TokenTypeId>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  auto left_brace_token = ExpectToken<TokenLbrace>(lexer_->PeekToken());
+  ExpectToken<TokenLbrace>(lexer_->PeekToken());
   lexer_->PopToken();
 
   std::unique_ptr<Expr> expr = ParseExpr(0);
@@ -333,7 +335,7 @@ Formal Parser::ParseFormal() const {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  auto colon_token = ExpectToken<TokenColon>(lexer_->PeekToken());
+  ExpectToken<TokenColon>(lexer_->PeekToken());
   lexer_->PopToken();
 
   auto type_id_token = ExpectToken<TokenTypeId>(lexer_->PeekToken());
@@ -491,7 +493,7 @@ std::unique_ptr<CaseExpr> Parser::ParseCaseExpr() {
       lexer_->AdvanceToNext<TokenSemi>();
     }
 
-    auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
+    ExpectToken<TokenSemi>(lexer_->PeekToken());
     lexer_->PopToken();
   }
 
@@ -630,7 +632,7 @@ std::unique_ptr<LetExpr> Parser::ParseLetExpr() {
     }
   }
 
-  auto token_in = ExpectToken<TokenIn>(lexer_->PeekToken());
+  ExpectToken<TokenIn>(lexer_->PeekToken());
   lexer_->PopToken();
 
   std::unique_ptr<Expr> in_expr = ParseExpr(0);
@@ -682,7 +684,7 @@ std::unique_ptr<BlockExpr> Parser::ParseBlockExpr() {
       lexer_->AdvanceToNext<TokenSemi>();
     }
 
-    auto semi_token = ExpectToken<TokenSemi>(lexer_->PeekToken());
+    ExpectToken<TokenSemi>(lexer_->PeekToken());
     lexer_->PopToken();
   }
 
@@ -738,7 +740,7 @@ std::unique_ptr<AssignExpr> Parser::ParseAssignExpr() {
   auto object_id_token = ExpectToken<TokenObjectId>(lexer_->PeekToken());
   lexer_->PopToken();
 
-  auto assign_token = ExpectToken<TokenAssign>(lexer_->PeekToken());
+  ExpectToken<TokenAssign>(lexer_->PeekToken());
   lexer_->PopToken();
 
   auto rhs_expr = ParseExpr(0);
