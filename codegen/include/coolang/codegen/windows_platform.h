@@ -37,6 +37,8 @@ class WindowsPlatform {
       case Bitness::x64:
         return "x64";
     }
+    std::cerr << "Bitness enum unknown value: " << (int)bitness << "\n";
+    abort();
   }
 
   static std::string GetLinkerCommand(

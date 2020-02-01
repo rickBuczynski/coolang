@@ -5,6 +5,11 @@ project(coolang)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+if(MSVC)
+  # without /wd4996 we get weird warning from LLVM headers even with external:W0
+  # the other /wdXXXX could be fixed/removed
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX /wd4267 /wd4244 /wd4996 /experimental:external /external:anglebrackets /external:W0")
+endif()
 
 set(COOLANG_LLVM_VERSION 8)
 
