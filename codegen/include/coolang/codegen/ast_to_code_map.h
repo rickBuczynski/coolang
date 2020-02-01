@@ -28,12 +28,10 @@ namespace coolang {
 class AstToCodeMap {
  public:
   AstToCodeMap(llvm::LLVMContext* context, llvm::Module* module,
-               llvm::IRBuilder<>* builder, llvm::DataLayout* data_layout,
-               const ProgramAst* program_ast)
+               llvm::IRBuilder<>* builder, const ProgramAst* program_ast)
       : context_(context),
         module_(module),
         builder_(builder),
-        data_layout_(data_layout),
         program_ast_(program_ast) {
     for (const auto& class_ast : program_ast->GetClasses()) {
       Insert(&class_ast);
@@ -217,7 +215,6 @@ class AstToCodeMap {
   llvm::LLVMContext* context_;
   llvm::Module* module_;
   llvm::IRBuilder<>* builder_;
-  llvm::DataLayout* data_layout_;
 
   const ProgramAst* program_ast_;
   const ClassAst* current_class_ = nullptr;

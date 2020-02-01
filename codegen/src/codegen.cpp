@@ -75,7 +75,7 @@ class CodegenVisitor : public AstVisitor {
         module_(module),
         data_layout_(module_),
         builder_(context_),
-        ast_to_(&context_, module_, &builder_, &data_layout_, &program_ast),
+        ast_to_(&context_, module_, &builder_, &program_ast),
         c_std_(module_, &ast_to_),
         object_codegen_(&context_, &builder_, &ast_to_, &c_std_),
         gc_verbose_(gc_verbose) {}
