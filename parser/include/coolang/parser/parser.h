@@ -31,7 +31,7 @@ class ParseError {
       : unexpected_token_(std::move(unexpected_token)),
         file_path_(std::move(file_path)) {}
 
-  std::string ToString(int indent_depth) const {
+  std::string ToString() const {
     using namespace std::string_literals;
     return ""s + '"' + file_path_.filename().string() + '"' + ", line " +
            std::to_string(GetLineNum(unexpected_token_)) +
@@ -42,7 +42,7 @@ class ParseError {
   static std::string ToString(const std::vector<ParseError>& errors) {
     std::string str;
     for (const auto& err : errors) {
-      str += err.ToString(0);
+      str += err.ToString();
     }
     str += "Compilation halted due to lex and parse errors\n";
     return str;

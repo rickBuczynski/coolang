@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "coolang/codegen/ast_to_code_map.h"
+
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
+
 #include "coolang/codegen/vtable.h"
 #include "coolang/parser/ast.h"
 
@@ -45,8 +47,7 @@ void AstToCodeMap::AddAttributes(const ClassAst* class_ast) {
   class_attributes.push_back(
       GetConstructorFunctionType(class_ast)->getPointerTo());
   // obj_copy_constructor_index
-  class_attributes.push_back(
-      GetCopyConstructorFunctionType(class_ast)->getPointerTo());
+  class_attributes.push_back(GetCopyConstructorFunctionType()->getPointerTo());
   // obj_boxed_data_index
   class_attributes.push_back(builder_->getInt8PtrTy());
 
@@ -137,7 +138,7 @@ void AstToCodeMap::AddCopyConstructor(const ClassAst* class_ast) {
   using namespace std::string_literals;
 
   llvm::FunctionType* copy_constructor_func_type =
-      GetCopyConstructorFunctionType(class_ast);
+      GetCopyConstructorFunctionType();
 
   llvm::Function* constructor = llvm::Function::Create(
       copy_constructor_func_type, llvm::Function::ExternalLinkage,
@@ -152,8 +153,7 @@ llvm::FunctionType* AstToCodeMap::GetConstructorFunctionType(
                                  {LlvmClass(class_ast)->getPointerTo()}, false);
 }
 
-llvm::FunctionType* AstToCodeMap::GetCopyConstructorFunctionType(
-    const ClassAst* class_ast) {
+llvm::FunctionType* AstToCodeMap::GetCopyConstructorFunctionType() {
   return llvm::FunctionType::get(builder_->getVoidTy(),
                                  {LlvmClass("Object")->getPointerTo(),
                                   LlvmClass("Object")->getPointerTo()},

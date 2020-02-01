@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+
 #include <filesystem>
 #include <iostream>
 #include <string>
 #include <variant>
+
 #include "coolang/codegen/codegen.h"
 #include "coolang/lexer/lexer.h"
 #include "coolang/parser/parser.h"

@@ -30,7 +30,7 @@ class SemanticError {
         error_message_(std::move(error_message)),
         file_path_(std::move(file_path)) {}
 
-  std::string ToString(int indent_depth) const {
+  std::string ToString() const {
     return file_path_.filename().string() + ":" + std::to_string(line_num_) +
            ": " + error_message_ + "\n";
   }
@@ -38,7 +38,7 @@ class SemanticError {
   static std::string ToString(const std::vector<SemanticError>& errors) {
     std::string str;
     for (const auto& err : errors) {
-      str += err.ToString(0);
+      str += err.ToString();
     }
     str += "Compilation halted due to static semantic errors.\n";
     return str;

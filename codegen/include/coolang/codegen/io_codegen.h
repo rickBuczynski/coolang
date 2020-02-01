@@ -18,6 +18,7 @@
 #define COOLANG_CODEGEN_IO_CODEGEN_H
 
 #include <llvm/IR/LLVMContext.h>
+
 #include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/c_std.h"
 

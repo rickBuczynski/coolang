@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "coolang/semantic/type_checker.h"
+
 #include <set>
 #include <stack>
+
 #include "coolang/parser/ast.h"
 
 namespace coolang {
@@ -124,10 +126,12 @@ class TypeCheckVisitor : public AstVisitor {
     node.GetExpr()->Accept(*this);
     RemoveFromScope(node.GetId());
   }
-  void Visit(const MethodFeature& node) override {
-  }  // not needed, handled by class visitor
-  void Visit(const AttributeFeature& node) override {
-  }  // not needed, handled by class visitor
+
+  // not needed, handled by class visitor
+  void Visit(const MethodFeature&) override {}
+  // not needed, handled by class visitor
+  void Visit(const AttributeFeature&) override {}
+
   void Visit(const ProgramAst& node) override;
 
  private:

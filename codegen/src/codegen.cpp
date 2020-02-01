@@ -92,7 +92,7 @@ class CodegenVisitor : public AstVisitor {
   void Visit(const NegExpr& neg_expr) override;
   void Visit(const BlockExpr& block) override;
   void Visit(const ObjectExpr& obj) override;
-  void Visit(const BinOpExpr& binop) override {}
+  void Visit(const BinOpExpr&) override {}
   void Visit(const MultiplyExpr& mult) override;
   void Visit(const LessThanEqualCompareExpr& le_expr) override;
   void Visit(const SubtractExpr& minus) override;
@@ -104,9 +104,9 @@ class CodegenVisitor : public AstVisitor {
   void Visit(const AssignExpr& assign) override;
   void Visit(const BoolExpr& bool_expr) override;
   void Visit(const ClassAst& class_ast) override;
-  void Visit(const CaseBranch& case_branch) override {}
-  void Visit(const MethodFeature& method_feature) override {}
-  void Visit(const AttributeFeature& attr_feature) override {}
+  void Visit(const CaseBranch&) override {}
+  void Visit(const MethodFeature&) override {}
+  void Visit(const AttributeFeature&) override {}
 
   void Visit(const ProgramAst& prog) override;
 
@@ -1467,9 +1467,10 @@ llvm::StringRef GetGcLl() {
       auto fs = cmrc::gc32ll::get_filesystem();
       auto gc_ll_file = fs.open("gc32.ll");
       return {gc_ll_file.begin(), gc_ll_file.size()};
-#endif
+#else
       std::cerr << "32bit is only supported on windows.";
       abort();
+#endif
     }
     case Bitness::x64: {
       auto fs = cmrc::gc64ll::get_filesystem();

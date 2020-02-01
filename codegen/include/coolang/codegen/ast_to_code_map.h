@@ -19,6 +19,7 @@
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
+
 #include "coolang/codegen/vtable.h"
 #include "coolang/parser/ast.h"
 
@@ -141,11 +142,11 @@ class AstToCodeMap {
     return type;
   }
 
-  llvm::ConstantInt* LlvmConstInt32(uint64_t i) const {
+  llvm::ConstantInt* LlvmConstInt32(int32_t i) const {
     return llvm::ConstantInt::get(*context_, llvm::APInt(32, i, true));
   }
 
-  llvm::ConstantInt* LlvmConstInt8(uint64_t i) const {
+  llvm::ConstantInt* LlvmConstInt8(int8_t i) const {
     return llvm::ConstantInt::get(*context_, llvm::APInt(8, i, true));
   }
 
@@ -196,7 +197,7 @@ class AstToCodeMap {
 
  private:
   llvm::FunctionType* GetConstructorFunctionType(const ClassAst* class_ast);
-  llvm::FunctionType* GetCopyConstructorFunctionType(const ClassAst* class_ast);
+  llvm::FunctionType* GetCopyConstructorFunctionType();
 
   void Insert(const ClassAst* class_ast) {
     types_.insert(std::make_pair(

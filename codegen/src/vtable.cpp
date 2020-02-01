@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "coolang/codegen/vtable.h"
+
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-#include "coolang/codegen/vtable.h"
-#include "coolang/parser/ast.h"
+
 #include <set>
+
+#include "coolang/parser/ast.h"
 
 namespace coolang {
 
@@ -46,7 +49,8 @@ void Vtable::BuildVtable(llvm::Module* module,
   global_instance_ = vtable;
 }
 
-size_t Vtable::GetIndexOfMethodFeature(const MethodFeature* method_feature) const {
+size_t Vtable::GetIndexOfMethodFeature(
+    const MethodFeature* method_feature) const {
   std::set<std::string> already_seen_method_ids;
   size_t vtable_method_index = 0;
   for (const auto* cool_class : class_ast_->SupersThenThis()) {
@@ -61,8 +65,7 @@ size_t Vtable::GetIndexOfMethodFeature(const MethodFeature* method_feature) cons
       already_seen_method_ids.insert(method->GetId());
     }
   }
-  throw std::invalid_argument(
-                              "Method: " + method_feature->GetId() +
+  throw std::invalid_argument("Method: " + method_feature->GetId() +
                               " not defined in class: " +
                               class_ast_->GetName() + " or its super classes.");
 }
