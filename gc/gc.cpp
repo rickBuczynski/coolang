@@ -299,3 +299,8 @@ extern "C" void gc_remove_root(GcObj** root) {
 extern "C" void gc_remove_string_root(char** root) {
   gc_roots->PopRoot(GcRoot(root));
 }
+
+extern "C" void* IO_out_string(void* io, char* str) {
+  printf("%s", str);
+  return io;
+}

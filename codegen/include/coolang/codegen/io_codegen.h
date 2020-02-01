@@ -34,28 +34,12 @@ class IoCodegen {
         c_std_(c_std) {}
 
   void GenAllFuncBodies() const {
-    GenIoOutString();
     GenIoOutInt();
     GenIoInString();
     GenIoInInt();
   }
 
  private:
-  void GenIoOutString() const {
-    llvm::Function* func = ast_to_code_map_->LlvmFunc("IO", "out_string");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(*context_, "entrypoint", func);
-    builder_->SetInsertPoint(entry);
-
-    llvm::Value* format_str = builder_->CreateGlobalStringPtr("%s");
-    auto arg_iterator = func->arg_begin();
-    arg_iterator++;
-    llvm::Value* args[] = {format_str, arg_iterator};
-    builder_->CreateCall(c_std_->GetPrintfFunc(), args);
-    builder_->CreateRet(func->arg_begin());
-  }
-
   void GenIoOutInt() const {
     llvm::Function* func = ast_to_code_map_->LlvmFunc("IO", "out_int");
 

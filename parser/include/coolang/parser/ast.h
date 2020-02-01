@@ -35,6 +35,11 @@ inline bool IsBasicType(const std::string& class_name) {
   return class_name == "Int" || class_name == "String" || class_name == "Bool";
 }
 
+inline bool IsBuiltInType(const std::string& class_name) {
+  return IsBasicType(class_name) || class_name == "Object" ||
+         class_name == "String" || class_name == "IO";
+}
+
 class LineRange {
  public:
   LineRange(int start_line_num, int end_line_num)

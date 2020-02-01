@@ -92,11 +92,17 @@ void AstToCodeMap::AddMethods(const ClassAst* class_ast) {
       arg_types.push_back(LlvmBasicOrClassPtrTy(arg.GetType()));
     }
 
+    // use _ for basic type symbols names so we can define them in C code
+    // use - for non-basic types to avoid conflict with other Type/Method combos
+    std::string func_symbol_name =
+        IsBuiltInType(class_ast->GetName())
+            ? class_ast->GetName() + "_" + method->GetId()
+            : class_ast->GetName() + "-" + method->GetId();
+
     llvm::FunctionType* func_type =
         llvm::FunctionType::get(return_type, arg_types, false);
     llvm::Function* func = llvm::Function::Create(
-        func_type, llvm::Function::ExternalLinkage,
-        class_ast->GetName() + "-" + method->GetId(), module_);
+        func_type, llvm::Function::ExternalLinkage, func_symbol_name, module_);
     functions_[method] = func;
 
     if (TypeUsesVtable(class_ast->GetName())) {
