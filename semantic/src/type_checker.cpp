@@ -573,8 +573,8 @@ void TypeCheckVisitor::Visit(const ClassAst& node) {
                 " has undefined type " + declared_return_type + ".",
             node.GetContainingFilePath());
       } else if (!IsSubtype(inferred_return_type, declared_return_type) ||
-                 declared_return_type == "SELF_TYPE" &&
-                     inferred_return_type != "SELF_TYPE") {
+                 (declared_return_type == "SELF_TYPE" &&
+                  inferred_return_type != "SELF_TYPE")) {
         errors_.emplace_back(method_feature->GetLineRange().end_line_num,
                              "Inferred return type " + inferred_return_type +
                                  " of method " + method_feature->GetId() +
