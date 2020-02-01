@@ -124,6 +124,7 @@ struct GcRootStack {
   }
 
   void PopRoot(GcRoot root) {
+    (void)root;  // prevent warning root not referenced in release build
     assert(roots[length - 1].Obj() == root.Obj());
     length--;
   }
