@@ -1,5 +1,4 @@
 /build
 /third_party/gocool/testdata/codegen/test_output/
 *.TMP
-/gc/gc32.ll
-/gc/gc64.ll
+*.ll
