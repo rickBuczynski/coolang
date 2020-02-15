@@ -47,9 +47,10 @@ class Codegen {
   std::unique_ptr<llvm::LLVMContext> context_;
   std::unique_ptr<llvm::Module> module_;
 
-  std::filesystem::path gc_obj_path_;
   std::filesystem::path obj_path_;
   std::filesystem::path exe_path_;
+
+  const std::vector<std::string> stdlib_fstems = {"gc", "io"};
 };
 
 }  // namespace coolang

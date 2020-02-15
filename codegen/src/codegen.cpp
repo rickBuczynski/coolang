@@ -44,16 +44,12 @@
 #include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/bitness.h"
 #include "coolang/codegen/c_std.h"
-#include "coolang/codegen/io_codegen.h"
 #include "coolang/codegen/object_codegen.h"
 #include "coolang/codegen/platform.h"
 #include "coolang/codegen/string_codegen.h"
 #include "coolang/codegen/vtable.h"
 
-#ifdef _WIN32
-CMRC_DECLARE(gc32ll);
-#endif
-CMRC_DECLARE(gc64ll);
+CMRC_DECLARE(coolstd);
 
 namespace coolang {
 
@@ -1362,9 +1358,6 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
 
   object_codegen_.GenAllFuncBodies();
 
-  IoCodegen io_codegen(&context_, &builder_, &ast_to_, &c_std_);
-  io_codegen.GenAllFuncBodies();
-
   StringCodegen string_codegen(&context_, &builder_, &ast_to_, &c_std_);
   string_codegen.GenAllFuncBodies();
 
@@ -1406,10 +1399,6 @@ Codegen::Codegen(ProgramAst& ast, std::optional<std::filesystem::path> obj_path,
     exe_path_ = ast_->GetFilePath();
     exe_path_.replace_extension(platform::GetExeFileExtension());
   }
-
-  gc_obj_path_ = obj_path_;
-  gc_obj_path_.replace_filename("gc");
-  gc_obj_path_.replace_extension(platform::GetObjectFileExtension());
 }
 
 Codegen::~Codegen() = default;
@@ -1460,26 +1449,34 @@ void OutputModuleToObjectFile(llvm::Module* module,
   dest.flush();
 }
 
-llvm::StringRef GetGcLl() {
+llvm::StringRef GetLlFileContents(const std::string file_stem) {
   switch (GetBitness()) {
     case Bitness::x32: {
 #ifdef _WIN32
-      auto fs = cmrc::gc32ll::get_filesystem();
-      auto gc_ll_file = fs.open("gc32.ll");
-      return {gc_ll_file.begin(), gc_ll_file.size()};
+      auto fs = cmrc::coolstd::get_filesystem();
+      auto ll_file = fs.open(file_stem + "32.ll");
+      return {ll_file.begin(), ll_file.size()};
 #else
       std::cerr << "32bit is only supported on windows.";
       abort();
 #endif
     }
     case Bitness::x64: {
-      auto fs = cmrc::gc64ll::get_filesystem();
-      auto gc_ll_file = fs.open("gc64.ll");
-      return {gc_ll_file.begin(), gc_ll_file.size()};
+      auto fs = cmrc::coolstd::get_filesystem();
+      auto ll_file = fs.open(file_stem + "64.ll");
+      return {ll_file.begin(), ll_file.size()};
     }
   }
   std::cerr << "Bitness enum unknown value: " << (int)GetBitness() << "\n";
   abort();
+}
+
+std::filesystem::path GetCoolStdObjPath(const std::string& fstem,
+                                        const std::filesystem::path& obj_path) {
+  auto path = obj_path;
+  path.replace_filename(fstem);
+  path.replace_extension(platform::GetObjectFileExtension());
+  return path;
 }
 
 void Codegen::GenerateCode(bool gc_verbose) const {
@@ -1499,16 +1496,21 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   llvm::LLVMContext context;
   llvm::SMDiagnostic smd;
 
-  std::unique_ptr<llvm::Module> gc_module =
-      parseIR({GetGcLl(), "gc"}, smd, context);
-  OutputModuleToObjectFile(gc_module.get(), gc_obj_path_);
-
+  for (const auto& fstem : stdlib_fstems) {
+    std::unique_ptr<llvm::Module> module =
+        parseIR({GetLlFileContents(fstem), fstem}, smd, context);
+    OutputModuleToObjectFile(module.get(), GetCoolStdObjPath(fstem, obj_path_));
+  }
   OutputModuleToObjectFile(module_.get(), obj_path_);
 }
 
 void Codegen::Link() const {
-  std::string linker_cmd = platform::GetLinkerCommand(obj_path_, gc_obj_path_,
-                                                      exe_path_, GetBitness());
+  std::vector<std::filesystem::path> obj_paths = {obj_path_};
+  for (const auto& fstem : stdlib_fstems) {
+    obj_paths.push_back(GetCoolStdObjPath(fstem, obj_path_));
+  }
+  std::string linker_cmd =
+      platform::GetLinkerCommand(obj_paths, exe_path_, GetBitness());
   system(linker_cmd.c_str());
 }
 

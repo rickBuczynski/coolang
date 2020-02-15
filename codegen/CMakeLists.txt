@@ -11,7 +11,6 @@ set(HEADERS
   include/coolang/codegen/ast_to_code_map.h
   include/coolang/codegen/codegen.h
   include/coolang/codegen/vtable.h
-  include/coolang/codegen/io_codegen.h
   include/coolang/codegen/object_codegen.h
   include/coolang/codegen/string_codegen.h
   include/coolang/codegen/c_std.h
@@ -27,12 +26,7 @@ target_link_libraries(${PROJECT_NAME}
   ${llvm_libs}
 )
 
-# we support both 32 and 64 bit on windows since 32 bit is the default for visual studio 2017 and earlier
-IF (WIN32)
-  target_link_libraries(${PROJECT_NAME} gc32ll)
-ENDIF()
-# on other platforms we only support 64 bit
-target_link_libraries(${PROJECT_NAME} gc64ll)
+target_link_libraries(${PROJECT_NAME} coolstd)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/windows_com/include)
