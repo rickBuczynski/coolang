@@ -17,6 +17,8 @@
 #include <cstdlib>
 #include <cstring>
 
+extern "C" char* gc_malloc_string(int size);
+
 extern "C" void* IO_out_string(void* io, char* str) {
   printf("%s", str);
   return io;
@@ -25,4 +27,33 @@ extern "C" void* IO_out_string(void* io, char* str) {
 extern "C" void* IO_out_int(void* io, int i) {
   printf("%d", i);
   return io;
+}
+
+extern "C" char* IO_in_string(void* io) {
+  static constexpr int init_buf_size = 250;
+
+  int i = 0;
+  int buf_size = init_buf_size;
+  char* buf = static_cast<char*>(malloc(buf_size));
+  if (buf == nullptr) return nullptr;
+  for (char c = getchar(); c != 0 && c != '\n' && c != EOF; c = getchar()) {
+    buf[i] = c;
+    i++;
+    if (i == buf_size) {
+      buf_size *= 2;
+      char* new_buf = static_cast<char*>(realloc(buf, buf_size));
+      if (new_buf == nullptr) {
+        free(buf);
+        return nullptr;
+      } else {
+        buf = new_buf;
+      }
+    }
+  }
+  buf[i] = 0;
+  i++;
+  char* gc_str = gc_malloc_string(i);
+  memcpy(gc_str, buf, i);
+  free(buf);
+  return gc_str;
 }
