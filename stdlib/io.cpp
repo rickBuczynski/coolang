@@ -21,3 +21,8 @@ extern "C" void* IO_out_string(void* io, char* str) {
   printf("%s", str);
   return io;
 }
+
+extern "C" void* IO_out_int(void* io, int i) {
+  printf("%d", i);
+  return io;
+}
