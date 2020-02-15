@@ -33,25 +33,9 @@ class IoCodegen {
         ast_to_code_map_(ast_to_code_map),
         c_std_(c_std) {}
 
-  void GenAllFuncBodies() const { GenIoInInt(); }
+  void GenAllFuncBodies() const {}
 
  private:
-  void GenIoInInt() const {
-    llvm::Function* func = ast_to_code_map_->LlvmFunc("IO", "in_int");
-
-    llvm::BasicBlock* entry =
-        llvm::BasicBlock::Create(*context_, "entrypoint", func);
-    builder_->SetInsertPoint(entry);
-
-    llvm::Value* str = builder_->CreateCall(
-        ast_to_code_map_->LlvmFunc("IO", "in_string"), {func->arg_begin()});
-
-    llvm::Value* str_as_int =
-        builder_->CreateCall(c_std_->GetAtoiFunc(), {str});
-
-    builder_->CreateRet(str_as_int);
-  }
-
   llvm::LLVMContext* context_;
   llvm::IRBuilder<>* builder_;
   AstToCodeMap* ast_to_code_map_;

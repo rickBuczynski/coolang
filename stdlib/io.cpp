@@ -29,7 +29,7 @@ extern "C" void* IO_out_int(void* io, int i) {
   return io;
 }
 
-extern "C" char* IO_in_string(void* io) {
+char* get_in_buf(int* final_buf_size) {
   static constexpr int init_buf_size = 250;
 
   int i = 0;
@@ -52,8 +52,33 @@ extern "C" char* IO_in_string(void* io) {
   }
   buf[i] = 0;
   i++;
-  char* gc_str = gc_malloc_string(i);
-  memcpy(gc_str, buf, i);
+  *final_buf_size = i;
+  return buf;
+}
+
+extern "C" char* IO_in_string(void* io) {
+  int buf_size;
+  char* buf = get_in_buf(&buf_size);
+  if (buf == nullptr) {
+    printf("IO_in_string failed to allocate\n");
+    abort();
+  }
+
+  char* gc_str = gc_malloc_string(buf_size);
+  memcpy(gc_str, buf, buf_size);
   free(buf);
   return gc_str;
+}
+
+extern "C" int IO_in_int(void* io) {
+  int buf_size;
+  char* buf = get_in_buf(&buf_size);
+  if (buf == nullptr) {
+    printf("IO_in_int failed to allocate\n");
+    abort();
+  }
+
+  int i = atoi(buf);
+  free(buf);
+  return i;
 }
