@@ -1458,8 +1458,8 @@ llvm::StringRef GetLlFileContents(const std::string file_stem) {
     case Bitness::x32: {
 #ifdef _WIN32
       auto fs = cmrc::coolstd::get_filesystem();
-      auto gc_ll_file = fs.open(file_stem + "32.ll");
-      return {gc_ll_file.begin(), gc_ll_file.size()};
+      auto ll_file = fs.open(file_stem + "32.ll");
+      return {ll_file.begin(), ll_file.size()};
 #else
       std::cerr << "32bit is only supported on windows.";
       abort();
@@ -1467,8 +1467,8 @@ llvm::StringRef GetLlFileContents(const std::string file_stem) {
     }
     case Bitness::x64: {
       auto fs = cmrc::coolstd::get_filesystem();
-      auto gc_ll_file = fs.open(file_stem + "64.ll");
-      return {gc_ll_file.begin(), gc_ll_file.size()};
+      auto ll_file = fs.open(file_stem + "64.ll");
+      return {ll_file.begin(), ll_file.size()};
     }
   }
   std::cerr << "Bitness enum unknown value: " << (int)GetBitness() << "\n";
