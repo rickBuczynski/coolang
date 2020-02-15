@@ -44,7 +44,6 @@
 #include "coolang/codegen/ast_to_code_map.h"
 #include "coolang/codegen/bitness.h"
 #include "coolang/codegen/c_std.h"
-#include "coolang/codegen/io_codegen.h"
 #include "coolang/codegen/object_codegen.h"
 #include "coolang/codegen/platform.h"
 #include "coolang/codegen/string_codegen.h"
@@ -1358,9 +1357,6 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   ast_to_.AddMethods(prog.GetBoolClass());
 
   object_codegen_.GenAllFuncBodies();
-
-  IoCodegen io_codegen(&context_, &builder_, &ast_to_, &c_std_);
-  io_codegen.GenAllFuncBodies();
 
   StringCodegen string_codegen(&context_, &builder_, &ast_to_, &c_std_);
   string_codegen.GenAllFuncBodies();

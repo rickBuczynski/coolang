@@ -11,7 +11,6 @@ set(HEADERS
   include/coolang/codegen/ast_to_code_map.h
   include/coolang/codegen/codegen.h
   include/coolang/codegen/vtable.h
-  include/coolang/codegen/io_codegen.h
   include/coolang/codegen/object_codegen.h
   include/coolang/codegen/string_codegen.h
   include/coolang/codegen/c_std.h
