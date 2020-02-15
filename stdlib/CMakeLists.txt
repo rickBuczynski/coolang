@@ -26,7 +26,6 @@ macro(add_coolang_stdlib fstem)
       DEPENDS ${fstem}.cpp
     )
     add_custom_target(${fstem}32_ll_target DEPENDS ${fstem}32.ll)
-    # TODO this tries to read LL_FILES from local scope which doesn't work cause we set in parent scope above so it just reads empty...
     set(LL_FILES "${fstem}32.ll;${LL_FILES}")
     set(LL_TARGETS "${fstem}32_ll_target;${LL_TARGETS}")
 
