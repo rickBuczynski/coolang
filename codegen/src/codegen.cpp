@@ -1500,23 +1500,23 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   llvm::LLVMContext context;
   llvm::SMDiagnostic smd;
 
-  std::unique_ptr<llvm::Module> gc_module =
-      parseIR({GetLlFileContents("gc"), "gc"}, smd, context);
-  OutputModuleToObjectFile(gc_module.get(), GetCoolStdObjPath("gc", obj_path_));
-
-  std::unique_ptr<llvm::Module> io_module =
-      parseIR({GetLlFileContents("io"), "io"}, smd, context);
-  OutputModuleToObjectFile(io_module.get(), GetCoolStdObjPath("io", obj_path_));
+  for (const auto& fstem : stdlib_fstems) {
+    std::unique_ptr<llvm::Module> gc_module =
+        parseIR({GetLlFileContents(fstem), fstem}, smd, context);
+    OutputModuleToObjectFile(gc_module.get(),
+                             GetCoolStdObjPath(fstem, obj_path_));
+  }
 
   OutputModuleToObjectFile(module_.get(), obj_path_);
 }
 
 void Codegen::Link() const {
-  // TODO GenerateCode returns a vector of obj_paths and passes to Link
+  std::vector<std::filesystem::path> obj_paths = {obj_path_};
+  for (const auto& fstem : stdlib_fstems) {
+    obj_paths.push_back(GetCoolStdObjPath(fstem, obj_path_));
+  }
   std::string linker_cmd =
-      platform::GetLinkerCommand({obj_path_, GetCoolStdObjPath("gc", obj_path_),
-                                  GetCoolStdObjPath("io", obj_path_)},
-                                 exe_path_, GetBitness());
+      platform::GetLinkerCommand(obj_paths, exe_path_, GetBitness());
   system(linker_cmd.c_str());
 }
 
