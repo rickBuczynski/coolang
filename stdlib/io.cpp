@@ -56,7 +56,7 @@ char* get_in_buf(int* final_buf_size) {
   return buf;
 }
 
-extern "C" char* IO_in_string(void* io) {
+extern "C" char* IO_in_string(void*) {
   int buf_size;
   char* buf = get_in_buf(&buf_size);
   if (buf == nullptr) {
@@ -70,7 +70,7 @@ extern "C" char* IO_in_string(void* io) {
   return gc_str;
 }
 
-extern "C" int IO_in_int(void* io) {
+extern "C" int IO_in_int(void*) {
   int buf_size;
   char* buf = get_in_buf(&buf_size);
   if (buf == nullptr) {

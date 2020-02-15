@@ -36,8 +36,5 @@ endmacro()
 add_coolang_stdlib("gc")
 add_coolang_stdlib("io")
 
-message(LL_FILES=${LL_FILES})
-message(LL_TARGETS=${LL_TARGETS})
-
 cmrc_add_resource_library(coolstd ${LL_FILES})
 add_dependencies(coolstd ${LL_TARGETS})
