@@ -1501,12 +1501,10 @@ void Codegen::GenerateCode(bool gc_verbose) const {
   llvm::SMDiagnostic smd;
 
   for (const auto& fstem : stdlib_fstems) {
-    std::unique_ptr<llvm::Module> gc_module =
+    std::unique_ptr<llvm::Module> module =
         parseIR({GetLlFileContents(fstem), fstem}, smd, context);
-    OutputModuleToObjectFile(gc_module.get(),
-                             GetCoolStdObjPath(fstem, obj_path_));
+    OutputModuleToObjectFile(module.get(), GetCoolStdObjPath(fstem, obj_path_));
   }
-
   OutputModuleToObjectFile(module_.get(), obj_path_);
 }
 
