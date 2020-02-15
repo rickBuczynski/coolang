@@ -27,12 +27,7 @@ target_link_libraries(${PROJECT_NAME}
   ${llvm_libs}
 )
 
-# we support both 32 and 64 bit on windows since 32 bit is the default for visual studio 2017 and earlier
-IF (WIN32)
-  target_link_libraries(${PROJECT_NAME} gc32ll)
-ENDIF()
-# on other platforms we only support 64 bit
-target_link_libraries(${PROJECT_NAME} gc64ll)
+target_link_libraries(${PROJECT_NAME} coolstd)
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/windows_com/include)

@@ -42,11 +42,13 @@ class WindowsPlatform {
   }
 
   static std::string GetLinkerCommand(
-      const std::filesystem::path& obj_path,
-      const std::filesystem::path& std_lib_obj_path,
+      const std::vector<std::filesystem::path>& obj_paths,
       const std::filesystem::path& exe_path, Bitness bitness) {
-    std::string obj_input_linker_arg = obj_path.string();
-    obj_input_linker_arg += " ";
+    std::string obj_input_linker_arg;
+    for (const auto& obj_path : obj_paths) {
+      obj_input_linker_arg += obj_path.string();
+      obj_input_linker_arg += " ";
+    }
 
     std::string output_exe_linker_arg = "-OUT:";
     output_exe_linker_arg += exe_path.string();
@@ -78,8 +80,7 @@ class WindowsPlatform {
 
     std::string linker_cmd = "cmd /C \"";
     linker_cmd += "\"" + msvc_linker_path.value().string() + "\" ";
-    linker_cmd += obj_path.string() + " ";
-    linker_cmd += std_lib_obj_path.string() + " ";
+    linker_cmd += obj_input_linker_arg;
     linker_cmd += output_exe_linker_arg;
     linker_cmd += "libcmt.lib ";
     // TODO windows requires legacy_stdio_definitions.lib in new versions of

@@ -29,10 +29,9 @@ class LinuxPlatform {
   static std::string GetObjectFileExtension() { return ".o"; }
   static std::string GetExeFileExtension() { return ""; }
 
-  static std::string GetLinkerCommand(const std::filesystem::path& obj_path,
-                                      const std::filesystem::path& gc_obj_path,
-                                      const std::filesystem::path& exe_path,
-                                      Bitness bitness) {
+  static std::string GetLinkerCommand(
+      const std::vector<std::filesystem::path>& obj_paths,
+      const std::filesystem::path& exe_path, Bitness bitness) {
     switch (bitness) {
       case Bitness::x32: {
         std::cerr << "32bit is not support on Linux, only 64bit is supported.";
@@ -42,11 +41,12 @@ class LinuxPlatform {
         break;
     }
 
-    std::string obj_input_linker_arg = obj_path.string();
-    obj_input_linker_arg += " ";
+    std::string obj_input_linker_arg;
 
-    obj_input_linker_arg += gc_obj_path.string();
-    obj_input_linker_arg += " ";
+    for (const auto& obj_path : obj_paths) {
+      obj_input_linker_arg += obj_path.string();
+      obj_input_linker_arg += " ";
+    }
 
     std::string output_exe_linker_arg = "-o ";
     output_exe_linker_arg += exe_path.string();

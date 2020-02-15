@@ -33,12 +33,10 @@ using PlatformClass = WindowsPlatform;
 using PlatformClass = LinuxPlatform;
 #endif
 
-std::string GetLinkerCommand(const std::filesystem::path& obj_path,
-                             const std::filesystem::path& gc_obj_path,
-                             const std::filesystem::path& exe_path,
-                             Bitness bitness) {
-  return PlatformClass::GetLinkerCommand(obj_path, gc_obj_path, exe_path,
-                                         bitness);
+std::string GetLinkerCommand(
+    const std::vector<std::filesystem::path>& obj_paths,
+    const std::filesystem::path& exe_path, Bitness bitness) {
+  return PlatformClass::GetLinkerCommand(obj_paths, exe_path, bitness);
 }
 
 std::string GetObjectFileExtension() {
