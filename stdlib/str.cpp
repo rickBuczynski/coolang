@@ -23,3 +23,15 @@ extern "C" char* String_concat(char* lhs, char* rhs) {
 
   return concated_str;
 }
+
+extern "C" char* String_substr(char* str, int start_index, int substr_len) {
+  // Need a GC root to preserve self param since this func allocates
+  gc_add_string_root(&str);
+
+  char* substr = gc_malloc_string(substr_len + 1);
+  strncpy_s(substr, substr_len + 1, str + start_index, substr_len);
+
+  gc_remove_string_root(&str);
+
+  return substr;
+}

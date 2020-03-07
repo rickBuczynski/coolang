@@ -33,50 +33,10 @@ class StringCodegen {
         c_std_(c_std) {}
 
   void GenAllFuncBodies() const {
-    CreateStringSubstrFunc();
     CreateStringLengthFunc();
   }
 
  private:
-  void CreateStringSubstrFunc() const {
-    llvm::Function* string_substr_func =
-        ast_to_code_map_->LlvmFunc("String", "substr");
-
-    llvm::BasicBlock* string_substr_entry =
-        llvm::BasicBlock::Create(*context_, "entrypoint", string_substr_func);
-    builder_->SetInsertPoint(string_substr_entry);
-
-    auto arg_iter = string_substr_func->arg_begin();
-    llvm::Value* str_lhs = arg_iter;
-    arg_iter++;
-    llvm::Value* int_start_index = arg_iter;
-    arg_iter++;
-    llvm::Value* substr_len = arg_iter;
-
-    // Need a GC root to preserve self param since this func allocates
-    llvm::AllocaInst* root = AddRootForStrParam(str_lhs);
-
-    llvm::Value* const_one =
-        llvm::ConstantInt::get(*context_, llvm::APInt(32, 1, true));
-    llvm::Value* malloc_len = builder_->CreateAdd(substr_len, const_one);
-
-    llvm::Value* substr_val =
-        builder_->CreateCall(c_std_->GetGcMallocStringFunc(), {malloc_len});
-    llvm::Value* substr_start_ptr =
-        builder_->CreateGEP(str_lhs, int_start_index);
-    builder_->CreateCall(c_std_->GetStrncpyFunc(),
-                         {substr_val, substr_start_ptr, substr_len});
-
-    llvm::Value* substr_last_ptr = builder_->CreateGEP(substr_val, substr_len);
-    builder_->CreateStore(
-        llvm::ConstantInt::get(*context_, llvm::APInt(8, 0, true)),
-        substr_last_ptr);
-
-    builder_->CreateCall(c_std_->GetGcRemoveStringRootFunc(), {root});
-
-    builder_->CreateRet(substr_val);
-  }
-
   void CreateStringLengthFunc() const {
     llvm::Function* string_length_func =
         ast_to_code_map_->LlvmFunc("String", "length");
