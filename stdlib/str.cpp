@@ -35,3 +35,7 @@ extern "C" char* String_substr(char* str, int start_index, int substr_len) {
 
   return substr;
 }
+
+extern "C" int String_length(char* str) {
+  return strlen(str);
+}

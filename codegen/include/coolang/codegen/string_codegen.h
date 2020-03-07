@@ -33,22 +33,9 @@ class StringCodegen {
         c_std_(c_std) {}
 
   void GenAllFuncBodies() const {
-    CreateStringLengthFunc();
   }
 
  private:
-  void CreateStringLengthFunc() const {
-    llvm::Function* string_length_func =
-        ast_to_code_map_->LlvmFunc("String", "length");
-
-    llvm::BasicBlock* string_length_entry =
-        llvm::BasicBlock::Create(*context_, "entrypoint", string_length_func);
-    builder_->SetInsertPoint(string_length_entry);
-
-    llvm::Value* len_val = builder_->CreateCall(
-        c_std_->GetStrlenFunc(), {string_length_func->arg_begin()});
-    builder_->CreateRet(len_val);
-  }
 
   llvm::AllocaInst* AddRootForStrParam(llvm::Value* str_param) const {
     llvm::AllocaInst* str_alloca =
