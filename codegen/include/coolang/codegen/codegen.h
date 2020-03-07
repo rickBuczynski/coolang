@@ -50,7 +50,7 @@ class Codegen {
   std::filesystem::path obj_path_;
   std::filesystem::path exe_path_;
 
-  const std::vector<std::string> stdlib_fstems = {"gc", "io"};
+  const std::vector<std::string> stdlib_fstems = {"gc", "io", "str"};
 };
 
 }  // namespace coolang

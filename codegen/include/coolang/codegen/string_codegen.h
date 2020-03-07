@@ -33,49 +33,11 @@ class StringCodegen {
         c_std_(c_std) {}
 
   void GenAllFuncBodies() const {
-    CreateStringConcatFunc();
     CreateStringSubstrFunc();
     CreateStringLengthFunc();
   }
 
  private:
-  void CreateStringConcatFunc() const {
-    llvm::Function* string_concat_func =
-        ast_to_code_map_->LlvmFunc("String", "concat");
-
-    llvm::BasicBlock* string_concat_entry =
-        llvm::BasicBlock::Create(*context_, "entrypoint", string_concat_func);
-    builder_->SetInsertPoint(string_concat_entry);
-
-    auto arg_iter = string_concat_func->arg_begin();
-    llvm::Value* lhs_arg = arg_iter;
-    arg_iter++;
-    llvm::Value* rhs_arg = arg_iter;
-
-    // Need GC roots to preserve params since this func allocates
-    llvm::AllocaInst* lhs_root = AddRootForStrParam(lhs_arg);
-    llvm::AllocaInst* rhs_root = AddRootForStrParam(rhs_arg);
-
-    llvm::Value* lhs_len =
-        builder_->CreateCall(c_std_->GetStrlenFunc(), {lhs_arg});
-    llvm::Value* rhs_len =
-        builder_->CreateCall(c_std_->GetStrlenFunc(), {rhs_arg});
-    llvm::Value* const_one =
-        llvm::ConstantInt::get(*context_, llvm::APInt(32, 1, true));
-    llvm::Value* concated_len = builder_->CreateAdd(lhs_len, rhs_len);
-    concated_len = builder_->CreateAdd(concated_len, const_one);
-
-    llvm::Value* concated_val =
-        builder_->CreateCall(c_std_->GetGcMallocStringFunc(), {concated_len});
-    builder_->CreateCall(c_std_->GetStrcpyFunc(), {concated_val, lhs_arg});
-    builder_->CreateCall(c_std_->GetStrcatFunc(), {concated_val, rhs_arg});
-
-    builder_->CreateCall(c_std_->GetGcRemoveStringRootFunc(), {rhs_root});
-    builder_->CreateCall(c_std_->GetGcRemoveStringRootFunc(), {lhs_root});
-
-    builder_->CreateRet(concated_val);
-  }
-
   void CreateStringSubstrFunc() const {
     llvm::Function* string_substr_func =
         ast_to_code_map_->LlvmFunc("String", "substr");

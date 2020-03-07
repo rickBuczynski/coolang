@@ -5,6 +5,7 @@ include (${CMAKE_SOURCE_DIR}/third_party/cmrc/CMakeRC.cmake)
 set(SOURCES
   gc.cpp
   io.cpp
+  str.cpp
 )
 add_library(${PROJECT_NAME} ${SOURCES})
 
@@ -34,6 +35,7 @@ endmacro()
 
 add_coolang_stdlib("gc")
 add_coolang_stdlib("io")
+add_coolang_stdlib("str")
 
 cmrc_add_resource_library(coolstd ${LL_FILES})
 add_dependencies(coolstd ${LL_TARGETS})
