@@ -46,7 +46,6 @@
 #include "coolang/codegen/c_std.h"
 #include "coolang/codegen/object_codegen.h"
 #include "coolang/codegen/platform.h"
-#include "coolang/codegen/string_codegen.h"
 #include "coolang/codegen/vtable.h"
 
 CMRC_DECLARE(coolstd);
@@ -1357,9 +1356,6 @@ void CodegenVisitor::Visit(const ProgramAst& prog) {
   ast_to_.AddMethods(prog.GetBoolClass());
 
   object_codegen_.GenAllFuncBodies();
-
-  StringCodegen string_codegen(&context_, &builder_, &ast_to_, &c_std_);
-  string_codegen.GenAllFuncBodies();
 
   for (const auto& class_ast : prog.GetClasses()) {
     ast_to_.AddAttributes(&class_ast);

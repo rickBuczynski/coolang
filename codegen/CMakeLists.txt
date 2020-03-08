@@ -12,7 +12,6 @@ set(HEADERS
   include/coolang/codegen/codegen.h
   include/coolang/codegen/vtable.h
   include/coolang/codegen/object_codegen.h
-  include/coolang/codegen/string_codegen.h
   include/coolang/codegen/c_std.h
   include/coolang/codegen/platform.h
   include/coolang/codegen/linux_platform.h
