@@ -15,8 +15,8 @@ extern "C" char* String_concat(char* lhs, char* rhs) {
   int concated_size = strlen(lhs) + strlen(rhs) + 1;
   char* concated_str = gc_malloc_string(concated_size);
 
-  strcpy_s(concated_str, concated_size, lhs);
-  strcat_s(concated_str, concated_size, rhs);
+  strcpy(concated_str, lhs);
+  strcat(concated_str, rhs);
 
   gc_remove_string_root(&rhs);
   gc_remove_string_root(&lhs);
@@ -29,13 +29,12 @@ extern "C" char* String_substr(char* str, int start_index, int substr_len) {
   gc_add_string_root(&str);
 
   char* substr = gc_malloc_string(substr_len + 1);
-  strncpy_s(substr, substr_len + 1, str + start_index, substr_len);
+  strncpy(substr, str + start_index, substr_len);
+  substr[substr_len] = 0;
 
   gc_remove_string_root(&str);
 
   return substr;
 }
 
-extern "C" int String_length(char* str) {
-  return strlen(str);
-}
+extern "C" int String_length(char* str) { return strlen(str); }
