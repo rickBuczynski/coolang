@@ -14,12 +14,7 @@ set(HEADERS
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} parser)
-
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-add_executable(${PROJECT_NAME}_test test/semantic_test.cpp)
-target_link_libraries(${PROJECT_NAME}_test gtest gtest_main ${PROJECT_NAME})
-target_include_directories(${PROJECT_NAME}_test SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/googletest/googletest/include)
-target_include_directories(${PROJECT_NAME}_test SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/googletest/googlemock/include)
+add_coolang_test(${PROJECT_NAME})
 target_compile_definitions(${PROJECT_NAME}_test PRIVATE SEMANTIC_TEST_DATA_PATH="${CMAKE_SOURCE_DIR}/third_party/gocool/testdata/typecheck/")
-add_test(${PROJECT_NAME}_test ${PROJECT_NAME}_test)

@@ -60,6 +60,18 @@ endif()
 
 enable_testing()
 
+function(add_coolang_test proj)
+  add_executable(${proj}_test test/${proj}_test.cpp)
+  target_link_libraries(${proj}_test gtest gtest_main ${PROJECT_NAME})
+  # older c++17 compilers reduire linking this to use std::filesystem
+  if (NOT MSVC)
+    target_link_libraries(${proj}_test stdc++fs)
+  endif()
+  target_include_directories(${proj}_test SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/googletest/googletest/include)
+  target_include_directories(${proj}_test SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/googletest/googlemock/include)
+  add_test(${proj}_test ${proj}_test)
+endfunction()
+
 add_subdirectory(lexer)
 add_subdirectory(parser)
 add_subdirectory(semantic)
@@ -73,3 +85,8 @@ target_link_libraries(${PROJECT_NAME} lexer)
 target_link_libraries(${PROJECT_NAME} parser)
 target_link_libraries(${PROJECT_NAME} semantic)
 target_link_libraries(${PROJECT_NAME} codegen)
+
+  # older c++17 compilers reduire linking this to use std::filesystem
+  if (NOT MSVC)
+    target_link_libraries(${PROJECT_NAME} stdc++fs)
+  endif()
