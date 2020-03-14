@@ -41,8 +41,10 @@ list(REMOVE_ITEM llvm_libs LTO)
 list(REMOVE_ITEM llvm_libs "OptRemarks")
 
 if(MSVC)
-  # see https://github.com/google/googletest/blob/master/googletest/README.md and https://stackoverflow.com/questions/12540970/how-to-make-gtest-build-mdd-instead-of-mtd-by-default-using-cmake
-  # TODO MSVC uses shared crt by default but I should find a way to check and only force shared if using it
+  # Prevent GoogleTest from overriding our compiler/linker options
+  # when building with Visual Studio
+  # see https://github.com/google/googletest/blob/master/googletest/README.md and 
+  https://www.testcookbook.com/book/cpp/setting-up-cmake-google-test.html
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 endif()
 
