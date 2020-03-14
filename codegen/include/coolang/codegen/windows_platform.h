@@ -83,7 +83,7 @@ class WindowsPlatform {
     linker_cmd += obj_input_linker_arg;
     linker_cmd += output_exe_linker_arg;
     linker_cmd += "libcmt.lib ";
-    // TODO windows requires legacy_stdio_definitions.lib in new versions of
+    // windows requires legacy_stdio_definitions.lib in new versions of
     // MSVC to link against printf but not in old versions
     // https://github.com/rust-lang/rust/issues/42830
     linker_cmd += "legacy_stdio_definitions.lib ";
