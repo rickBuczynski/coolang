@@ -1,6 +1,3 @@
-// for windows to avoid warnings for non using _s versions of string functions
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
