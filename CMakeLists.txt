@@ -43,8 +43,8 @@ list(REMOVE_ITEM llvm_libs "OptRemarks")
 if(MSVC)
   # Prevent GoogleTest from overriding our compiler/linker options
   # when building with Visual Studio
-  # see https://github.com/google/googletest/blob/master/googletest/README.md and 
-  https://www.testcookbook.com/book/cpp/setting-up-cmake-google-test.html
+  # see https://github.com/google/googletest/blob/master/googletest/README.md 
+  # and https://www.testcookbook.com/book/cpp/setting-up-cmake-google-test.html
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 endif()
 
