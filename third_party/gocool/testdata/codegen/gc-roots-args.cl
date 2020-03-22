@@ -1,6 +1,6 @@
 class A {
  foo:Int;
- --b:B <- new B; -- TODO this messes up the type name when print As allocation since its allocated after A but before As allocation is printed
+ b:B <- new B;
 };
 
 class B {
