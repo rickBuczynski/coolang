@@ -1419,9 +1419,8 @@ void OutputModuleToObjectFile(llvm::Module* module,
   const auto features = "";
 
   const llvm::TargetOptions opt;
-  const auto rm = llvm::Optional<llvm::Reloc::Model>();
-  auto the_target_machine =
-      target->createTargetMachine(target_triple, cpu, features, opt, rm);
+  auto the_target_machine = target->createTargetMachine(
+      target_triple, cpu, features, opt, llvm::Reloc::PIC_);
 
   module->setDataLayout(the_target_machine->createDataLayout());
 
