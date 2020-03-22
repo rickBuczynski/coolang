@@ -25,6 +25,12 @@ matrix:
         - CXX=clang++-8
 
     - os: windows
+      env:
+        - set COOLANG_CMAKE_ARCHITECTURE_FLAG="-A Win32"
+
+    - os: windows
+      env:
+        - set COOLANG_CMAKE_ARCHITECTURE_FLAG="-A x64"
 
 before_script:
   - if [ $TRAVIS_OS_NAME = windows ]; then choco install llvm --version=8.0.1 --allow-downgrade; fi
@@ -34,6 +40,6 @@ before_script:
 script:
   - mkdir build
   - cd build
-  - cmake ..
+  - if [ $TRAVIS_OS_NAME = windows ]; then cmake .. %COOLANG_CMAKE_ARCHITECTURE_FLAG%; else cmake ..; fi
   - cmake --build . --config Release
   - ctest --verbose
