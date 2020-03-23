@@ -25,15 +25,24 @@ matrix:
         - CXX=clang++-8
 
     - os: windows
+      env:
+        - COOLANG_WIN_CMAKE_ARCHITECTURE_FLAG="-A Win32"
+        - COOLANG_WIN_LLVM_PACKAGE_URL="https://github.com/vovkos/llvm-package-windows/releases/download/llvm-8.0.0/llvm-8.0.0-windows-x86-msvc15-msvcrt.7z"
+        
+
+    - os: windows
+      env:
+        - COOLANG_WIN_CMAKE_ARCHITECTURE_FLAG="-A x64"
+        - COOLANG_WIN_LLVM_PACKAGE_URL="https://github.com/vovkos/llvm-package-windows/releases/download/llvm-8.0.0/llvm-8.0.0-windows-amd64-msvc15-msvcrt.7z"
 
 before_script:
   - if [ $TRAVIS_OS_NAME = windows ]; then choco install llvm --version=8.0.1 --allow-downgrade; fi
-  - if [ $TRAVIS_OS_NAME = windows ]; then wget https://github.com/vovkos/llvm-package-windows/releases/download/llvm-8.0.0/llvm-8.0.0-windows-x86-msvc15-msvcrt.7z -O llvm.7z; fi
+  - if [ $TRAVIS_OS_NAME = windows ]; then wget $COOLANG_WIN_LLVM_PACKAGE_URL -O llvm.7z; fi
   - if [ $TRAVIS_OS_NAME = windows ]; then 7z x llvm.7z -y -o"C:\Program Files (x86)"; fi
 
 script:
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake .. $COOLANG_WIN_CMAKE_ARCHITECTURE_FLAG
   - cmake --build . --config Release
   - ctest --verbose
