@@ -52,7 +52,7 @@ class LinuxPlatform {
     output_exe_linker_arg += exe_path.string();
     output_exe_linker_arg += " ";
 
-    std::string linker_cmd = "g++ ";
+    std::string linker_cmd = "clang++ ";
 
     linker_cmd += output_exe_linker_arg;
     linker_cmd += obj_input_linker_arg;
