@@ -40,6 +40,7 @@ before_script:
 script:
   - mkdir build
   - cd build
+  - echo $COOLANG_CMAKE_ARCHITECTURE_FLAG
   - cmake .. $COOLANG_CMAKE_ARCHITECTURE_FLAG
   - cmake --build . --config Release
   - ctest --verbose
