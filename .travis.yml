@@ -19,7 +19,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-xenial-8']
-          packages: ['libedit-dev', 'gcc-8', 'g++-8', 'clang-8', 'llvm-8', 'llvm-8-dev']
+          packages: ['libedit-dev', 'libstdc++-8-dev', 'clang-8', 'llvm-8', 'llvm-8-dev']
       env:
         - CC=clang-8
         - CXX=clang++-8
@@ -28,7 +28,6 @@ matrix:
       env:
         - COOLANG_WIN_CMAKE_ARCHITECTURE_FLAG="-A Win32"
         - COOLANG_WIN_LLVM_PACKAGE_URL="https://github.com/vovkos/llvm-package-windows/releases/download/llvm-8.0.0/llvm-8.0.0-windows-x86-msvc15-msvcrt.7z"
-        
 
     - os: windows
       env:
